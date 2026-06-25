@@ -292,7 +292,7 @@ async function startServer() {
                   }
                 },
                 {
-                  text: "Extract all tasks, commitments, and deadlines from this image. Return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences. Each item must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the deadline phrase as mentioned, or 'No deadline mentioned' if none), urgency (string: must be exactly 'high', 'medium', or 'low' — high means due within 48 hours or overdue, medium means due within a week, low means due later). If you find no tasks, return an empty array []. Never return anything except the JSON array."
+                  text: "Look carefully at every part of this image and extract ALL tasks, commitments, plans, meetups, and deadlines visible in the text. This includes: explicit deadlines (pay by Friday), scheduled meetings (meet Saturday at 5 PM), plans that were agreed upon (we're meeting at X place on Y date), things someone needs to do or remember (book hotel, pay fee, confirm headcount). Be thorough — read every message carefully. Return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences. Each item must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the specific date/time mentioned, or 'No deadline mentioned' if none), urgency (string: must be exactly 'high', 'medium', or 'low' — high means due within 48 hours, medium means due within a week, low means due later or no clear deadline). If you genuinely find nothing actionable, return []. Never return anything except the JSON array."
                 }
               ]
             }
