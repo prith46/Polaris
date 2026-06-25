@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Inter:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-googlesans: "Google Sans", "Product Sans", system-ui, sans-serif;
+  
+  --color-polaris-bg: #F7F5F0;
+  --color-polaris-primary: #0E1B2A;
+  --color-polaris-secondary: #5B6B7B;
+  --color-polaris-accent: #C8893B;
+  --color-polaris-border: rgba(14,27,42,0.08);
+}
+

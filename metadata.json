@@ -1,0 +1,6 @@
+{
+  "name": "Polaris",
+  "description": "Your fixed point before the deadline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
