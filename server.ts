@@ -37,7 +37,7 @@ async function startServer() {
       const systemInstruction = "You are a deadline extraction engine. Your ONLY job is to read the email text provided and extract every commitment, task, or deadline mentioned. You must return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences — just the raw JSON array. Each item in the array must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the deadline phrase exactly as mentioned in the email, or 'No deadline mentioned' if none), urgency (string: must be exactly one of 'high', 'medium', or 'low' — high means due within 48 hours or overdue, medium means due within a week, low means due later or no clear deadline). If you find no tasks or deadlines, return an empty array: []. Never return anything except the JSON array.";
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash-lite",
         contents: `Extract all deadlines and tasks from this email:\n\n${bodyText}`,
         config: {
           systemInstruction,
