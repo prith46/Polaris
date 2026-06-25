@@ -584,6 +584,16 @@ export default function App() {
   } | null>(null);
   const [copiedDrafts, setCopiedDrafts] = useState<Record<string, boolean>>({});
 
+  // States for Multimodal Image Scanning
+  const [inboxSubTab, setInboxSubTab] = useState<'emails' | 'scan'>('emails');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imageScanError, setImageScanError] = useState<string | null>(null);
+  const [isImageScanning, setIsImageScanning] = useState(false);
+  const [imageScanResultState, setImageScanResultState] = useState<'idle' | 'scanning' | 'success' | 'empty' | 'error'>('idle');
+  const [imageScanSuccessCount, setImageScanSuccessCount] = useState<number | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const handleRenegotiate = async () => {
     if (tasks.length === 0) {
       alert("No tasks to renegotiate — you're all clear!");
@@ -755,6 +765,148 @@ export default function App() {
     } finally {
       setEscapeHatchLoadingTaskId(null);
     }
+  };
+
+  const handleImageChange = (file: File) => {
+    setImageScanError(null);
+    setImageScanResultState('idle');
+    setImageScanSuccessCount(null);
+
+    // Validate type
+    if (!file.type.startsWith('image/')) {
+      setImageScanError("Please upload a PNG, JPG, or WEBP image.");
+      setImageFile(null);
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    // Validate size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setImageScanError("File too large — please use an image under 10MB.");
+      setImageFile(null);
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setImagePreviewUrl(reader.result as string);
+    };
+  };
+
+  const handleScanImage = async () => {
+    if (!imageFile || !imagePreviewUrl) return;
+
+    setIsImageScanning(true);
+    setImageScanResultState('scanning');
+    setImageScanError(null);
+
+    try {
+      const base64 = imagePreviewUrl.split(',')[1];
+      const response = await fetchWithTimeout(
+        '/api/scan-image',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageBase64: base64, mimeType: imageFile.type }),
+        },
+        30000 // 30s timeout for vision
+      );
+
+      if (!response.ok) {
+        throw new Error('Image scan response not OK');
+      }
+
+      const data: any = await response.json();
+      if (data && Array.isArray(data.tasks)) {
+        if (data.tasks.length === 0) {
+          setImageScanResultState('empty');
+        } else {
+          const newTasks: Task[] = data.tasks.map((t: any, idx: number) => ({
+            id: `task-image-${Date.now()}-${idx}`,
+            title: t.title,
+            pillText: t.deadline || 'No deadline mentioned',
+            urgency: (t.urgency === 'high' || t.urgency === 'medium' || t.urgency === 'low') ? t.urgency : 'low',
+            context: `Found in image scan — ${imageFile.name}`,
+            primaryAction: 'Handle it now',
+            secondaryAction: 'Snooze',
+            createdAt: Date.now(),
+            subtasks: [],
+            decomposing: false,
+            decomposed: false,
+            subtasksCollapsed: false
+          }));
+
+          setTasks(prev => [...prev, ...newTasks]);
+          setImageScanSuccessCount(newTasks.length);
+          setImageScanResultState('success');
+        }
+      } else {
+        throw new Error('Invalid scan result format');
+      }
+    } catch (error) {
+      console.warn('Image scan failed, using fallback:', error);
+      setImageScanResultState('error');
+      setImageScanError("Couldn't scan this image — try again.");
+    } finally {
+      setIsImageScanning(false);
+    }
+  };
+
+  const handleTryDemoExample = () => {
+    setImageScanError(null);
+    setImageScanSuccessCount(null);
+    setImageScanResultState('scanning');
+    setIsImageScanning(true);
+    setImagePreviewUrl('example.png');
+
+    const runSim = () => {
+      const simulatedTasks = [
+        { title: "Book hotel for trip", deadline: "by Thursday", urgency: "high" },
+        { title: "Pay entry fee", deadline: "before Friday", urgency: "high" },
+        { title: "Meet at train station", deadline: "Saturday at 3 PM", urgency: "medium" },
+        { title: "Confirm headcount for dinner", deadline: "No deadline mentioned", urgency: "low" }
+      ];
+
+      const newTasks: Task[] = simulatedTasks.map((t, idx) => ({
+        id: `task-image-example-${Date.now()}-${idx}`,
+        title: t.title,
+        pillText: t.deadline,
+        urgency: t.urgency as any,
+        context: "Found in image scan — example",
+        primaryAction: 'Handle it now',
+        secondaryAction: 'Snooze',
+        createdAt: Date.now(),
+        subtasks: [],
+        decomposing: false,
+        decomposed: false,
+        subtasksCollapsed: false
+      }));
+
+      setTasks(prev => [...prev, ...newTasks]);
+      setImageScanSuccessCount(newTasks.length);
+      setImageScanResultState('success');
+      setIsImageScanning(false);
+    };
+
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+      runSim();
+    } else {
+      setTimeout(runSim, 1000);
+    }
+  };
+
+  const handleResetImageScan = () => {
+    setImageFile(null);
+    setImagePreviewUrl(null);
+    setImageScanError(null);
+    setImageScanResultState('idle');
+    setImageScanSuccessCount(null);
+    setIsDragOver(false);
   };
 
   const handleDecomposeTask = async (task: Task) => {
@@ -1956,338 +2108,564 @@ export default function App() {
         )}
 
         {activeTab === 'inbox' && (
-          /* INBOX TAB PANEL (Pixel-perfect Gmail clone) */
-          <div id="polaris-inbox-container" className="w-full flex bg-white min-h-[calc(100vh-180px)]">
+          /* INBOX TAB PANEL (Pixel-perfect Gmail clone with image scan toggle) */
+          <div id="polaris-inbox-container" className="w-full flex flex-col bg-white min-h-[calc(100vh-180px)] p-6">
             
-            {/* LEFT SIDEBAR */}
-            <aside className="w-[256px] shrink-0 border-r border-[#E5E5E5] bg-white pt-2 flex flex-col select-none">
-              {/* Compose Button */}
+            {/* Toggle Row */}
+            <div className="flex justify-center gap-2 select-none mb-6">
               <button
+                id="toggle-inbox-emails"
                 type="button"
-                className="m-2 py-4 px-6 rounded-[24px] bg-white border-0 shadow-[0_1px_3px_rgba(0,0,0,0.2)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.15)] flex items-center gap-3 cursor-pointer transition-all duration-150 self-start"
+                onClick={() => setInboxSubTab('emails')}
+                className={`px-5 py-2 rounded-[20px] font-sans font-medium text-[13px] transition-all cursor-pointer ${
+                  inboxSubTab === 'emails'
+                    ? 'bg-[#0E1B2A] text-white border-0 font-sans'
+                    : 'bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.2)] hover:bg-[rgba(14,27,42,0.03)] font-sans'
+                }`}
               >
-                <span className="material-icons text-[#444746] text-[20px]">edit</span>
-                <span className="font-googlesans font-medium text-[14px] text-[#202124]">Compose</span>
+                📧 Emails
               </button>
+              <button
+                id="toggle-inbox-scan"
+                type="button"
+                onClick={() => setInboxSubTab('scan')}
+                className={`px-5 py-2 rounded-[20px] font-sans font-medium text-[13px] transition-all cursor-pointer ${
+                  inboxSubTab === 'scan'
+                    ? 'bg-[#0E1B2A] text-white border-0 font-sans'
+                    : 'bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.2)] hover:bg-[rgba(14,27,42,0.03)] font-sans'
+                }`}
+              >
+                📸 Scan Image
+              </button>
+            </div>
 
-              {/* Sidebar items */}
-              <div className="flex flex-col pr-4 mt-2">
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] bg-[#D3E3FD] text-[#001D35] font-googlesans font-bold text-[14px] cursor-pointer">
-                  <span className="material-icons mr-4 text-[20px]">inbox</span>
-                  <span>Inbox</span>
-                  <span className="ml-auto font-bold text-[13px]">8</span>
-                </div>
-
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
-                  <span className="material-icons mr-4 text-[#444746] text-[20px]">star_border</span>
-                  <span>Starred</span>
-                </div>
-
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
-                  <span className="material-icons mr-4 text-[#444746] text-[20px]">access_time</span>
-                  <span>Snoozed</span>
-                </div>
-
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
-                  <span className="material-icons mr-4 text-[#444746] text-[20px]">label_important</span>
-                  <span>Important</span>
-                </div>
-
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
-                  <span className="material-icons mr-4 text-[#444746] text-[20px]">send</span>
-                  <span>Sent</span>
-                </div>
-
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
-                  <span className="material-icons mr-4 text-[#444746] text-[20px]">description</span>
-                  <span>Drafts</span>
-                  <span className="ml-auto font-bold text-[13px]">3</span>
-                </div>
-
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
-                  <span className="material-icons mr-4 text-[#444746] text-[20px]">expand_more</span>
-                  <span>Categories</span>
-                </div>
-
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
-                  <span className="material-icons mr-4 text-[#444746] text-[20px]">note</span>
-                  <span>Notes</span>
-                </div>
-
-                <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
-                  <span className="material-icons mr-4 text-[#444746] text-[20px]">expand_more</span>
-                  <span>More</span>
-                </div>
-              </div>
-            </aside>
-
-            {/* EMAIL LIST AREA or READING VIEW */}
-            <div className="flex-1 min-w-0 bg-white flex flex-col">
-              {currentEmail ? (
-                /* READING VIEW */
-                <div id="email-detail-view" className="w-full bg-white py-[24px] px-[40px] flex flex-col">
-                  {/* Back button */}
+            {inboxSubTab === 'emails' ? (
+              /* Existing Gmail-style inbox */
+              <div className="w-full flex border border-[#E5E5E5] rounded-[12px] overflow-hidden flex-1 min-h-[500px]">
+                {/* LEFT SIDEBAR */}
+                <aside className="w-[256px] shrink-0 border-r border-[#E5E5E5] bg-white pt-2 flex flex-col select-none">
+                  {/* Compose Button */}
                   <button
-                    id="email-back-btn"
                     type="button"
-                    onClick={() => {
-                      setSelectedEmailId(null);
-                      setScanResult({ status: null });
-                    }}
-                    className="flex items-center gap-2 font-sans text-[14px] text-[#444746] hover:text-[#202124] transition-colors cursor-pointer bg-transparent border-none mb-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 self-start"
+                    className="m-2 py-4 px-6 rounded-[24px] bg-white border-0 shadow-[0_1px_3px_rgba(0,0,0,0.2)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.15)] flex items-center gap-3 cursor-pointer transition-all duration-150 self-start"
                   >
-                    <span className="text-lg">←</span>
-                    <span>Back to Inbox</span>
+                    <span className="material-icons text-[#444746] text-[20px]">edit</span>
+                    <span className="font-googlesans font-medium text-[14px] text-[#202124]">Compose</span>
                   </button>
 
-                  {/* Subject heading + Scan for deadlines button */}
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <h2 id="email-detail-subject" className="font-googlesans font-normal text-[22px] text-[#202124] leading-tight">
-                      {currentEmail.subject}
-                    </h2>
+                  {/* Sidebar items */}
+                  <div className="flex flex-col pr-4 mt-2">
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] bg-[#D3E3FD] text-[#001D35] font-googlesans font-bold text-[14px] cursor-pointer">
+                      <span className="material-icons mr-4 text-[20px]">inbox</span>
+                      <span>Inbox</span>
+                      <span className="ml-auto font-bold text-[13px]">8</span>
+                    </div>
 
-                    {/* Scan for deadlines section */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
+                      <span className="material-icons mr-4 text-[#444746] text-[20px]">star_border</span>
+                      <span>Starred</span>
+                    </div>
+
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
+                      <span className="material-icons mr-4 text-[#444746] text-[20px]">access_time</span>
+                      <span>Snoozed</span>
+                    </div>
+
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
+                      <span className="material-icons mr-4 text-[#444746] text-[20px]">label_important</span>
+                      <span>Important</span>
+                    </div>
+
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
+                      <span className="material-icons mr-4 text-[#444746] text-[20px]">send</span>
+                      <span>Sent</span>
+                    </div>
+
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
+                      <span className="material-icons mr-4 text-[#444746] text-[20px]">description</span>
+                      <span>Drafts</span>
+                      <span className="ml-auto font-bold text-[13px]">3</span>
+                    </div>
+
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
+                      <span className="material-icons mr-4 text-[#444746] text-[20px]">expand_more</span>
+                      <span>Categories</span>
+                    </div>
+
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
+                      <span className="material-icons mr-4 text-[#444746] text-[20px]">note</span>
+                      <span>Notes</span>
+                    </div>
+
+                    <div className="flex items-center h-8 px-4 rounded-r-[16px] text-[#202124] hover:bg-[#E2E8F0] font-googlesans font-normal text-[14px] cursor-pointer mt-0.5 transition-colors duration-100">
+                      <span className="material-icons mr-4 text-[#444746] text-[20px]">expand_more</span>
+                      <span>More</span>
+                    </div>
+                  </div>
+                </aside>
+
+                {/* EMAIL LIST AREA or READING VIEW */}
+                <div className="flex-1 min-w-0 bg-white flex flex-col">
+                  {currentEmail ? (
+                    /* READING VIEW */
+                    <div id="email-detail-view" className="w-full bg-white py-[24px] px-[40px] flex flex-col">
+                      {/* Back button */}
                       <button
-                        id="scan-deadlines-btn"
+                        id="email-back-btn"
                         type="button"
-                        disabled={isScanning}
-                        onClick={handleScanForDeadlines}
-                        className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0E1B2A] hover:bg-[#1a2e42] disabled:bg-[#0E1B2A]/70 text-white font-sans font-medium text-[14px] rounded-[8px] cursor-pointer disabled:cursor-not-allowed transition-colors border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E1B2A]/30 whitespace-nowrap"
+                        onClick={() => {
+                          setSelectedEmailId(null);
+                          setScanResult({ status: null });
+                        }}
+                        className="flex items-center gap-2 font-sans text-[14px] text-[#444746] hover:text-[#202124] transition-colors cursor-pointer bg-transparent border-none mb-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 self-start"
                       >
-                        {isScanning ? (
-                          <>
-                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                            <span>Scanning…</span>
-                          </>
-                        ) : (
-                          <>
-                            <Search size={16} className="shrink-0" />
-                            <span>Scan for deadlines</span>
-                          </>
-                        )}
+                        <span className="text-lg">←</span>
+                        <span>Back to Inbox</span>
                       </button>
 
-                      {scanResult.status === 'success' && (
-                        <p id="scan-result-success" className="font-sans text-[13px] text-[#0F9D58] font-normal whitespace-nowrap">
-                          ✓ Found {scanResult.count} deadline(s) — added to your Tasks.
-                        </p>
-                      )}
-                      {scanResult.status === 'none' && (
-                        <p id="scan-result-none" className="font-sans text-[13px] text-[#5B6B7B] font-normal whitespace-nowrap">
-                          No deadlines found in this email.
-                        </p>
-                      )}
-                      {scanResult.status === 'error' && (
-                        <p id="scan-result-error" className="font-sans text-[13px] text-[#B23A2E] font-normal whitespace-nowrap">
-                          Couldn't scan right now — try again.
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                      {/* Subject heading + Scan for deadlines button */}
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <h2 id="email-detail-subject" className="font-googlesans font-normal text-[22px] text-[#202124] leading-tight">
+                          {currentEmail.subject}
+                        </h2>
 
-                  {/* Sender Row */}
-                  <div className="flex items-center gap-3 w-full">
-                    {/* Avatar */}
-                    <div
-                      style={{ backgroundColor: currentEmail.avatarColor }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-[13px] ${
-                        currentEmail.textColor === 'white' ? 'text-white' : 'text-[#202124]'
-                      } shrink-0`}
-                    >
-                      {currentEmail.avatarLetter}
-                    </div>
-                    {/* Sender name + to me */}
-                    <div className="flex items-baseline gap-1.5 min-w-0">
-                      <span className="font-sans font-medium text-[14px] text-[#202124] truncate">
-                        {currentEmail.from}
-                      </span>
-                      <span className="font-sans font-normal text-[13px] text-[#5F6368] shrink-0">
-                        to me
-                      </span>
-                    </div>
-                    {/* Timestamp right aligned */}
-                    <span className="ml-auto font-sans font-normal text-[13px] text-[#5F6368] shrink-0">
-                      {currentEmail.time}
-                    </span>
-                  </div>
+                        {/* Scan for deadlines section */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          <button
+                            id="scan-deadlines-btn"
+                            type="button"
+                            disabled={isScanning}
+                            onClick={handleScanForDeadlines}
+                            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0E1B2A] hover:bg-[#1a2e42] disabled:bg-[#0E1B2A]/70 text-white font-sans font-medium text-[14px] rounded-[8px] cursor-pointer disabled:cursor-not-allowed transition-colors border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E1B2A]/30 whitespace-nowrap"
+                          >
+                            {isScanning ? (
+                              <>
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                                <span>Scanning…</span>
+                              </>
+                            ) : (
+                              <>
+                                <Search size={16} className="shrink-0" />
+                                <span>Scan for deadlines</span>
+                              </>
+                            )}
+                          </button>
 
-                  {/* Divider */}
-                  <div className="border-b border-[#E5E5E5] my-4 w-full" />
-
-                  {/* Email Body */}
-                  <div id="email-detail-body" className="font-sans font-normal text-[14px] text-[#202124] leading-[1.6] whitespace-pre-wrap">
-                    {currentEmail.body}
-                  </div>
-                </div>
-              ) : (
-                /* EMAIL LIST */
-                <div className="flex-1 flex flex-col">
-                  
-                  {/* TOP TOOLBAR ROW */}
-                  <div className="flex items-center p-2 border-b border-[#E5E5E5] gap-1 select-none">
-                    <input
-                      type="checkbox"
-                      className="w-3.5 h-3.5 mx-2 accent-[#001D35] cursor-pointer shrink-0"
-                    />
-                    <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full">
-                      arrow_drop_down
-                    </span>
-                    <span
-                      onClick={() => setEmails(INITIAL_EMAILS)}
-                      title="Reset email states"
-                      className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full"
-                    >
-                      refresh
-                    </span>
-                    <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full">
-                      more_vert
-                    </span>
-
-                    <div className="flex-1" />
-
-                    <span className="text-[13px] text-[#444746] font-sans mr-2">1–25 of 299</span>
-                    <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full">
-                      chevron_left
-                    </span>
-                    <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full">
-                      chevron_right
-                    </span>
-                    <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full ml-1 mr-2">
-                      settings
-                    </span>
-                  </div>
-
-                  {/* CATEGORY TABS ROW */}
-                  <div className="flex border-b border-[#E5E5E5] select-none">
-                    {/* Primary tab */}
-                    <div className="flex items-center gap-3 p-3 px-4 border-b-3 border-[#D93025] text-[#D93025] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
-                      <span className="material-icons text-[20px]">inbox</span>
-                      <span>Primary</span>
-                    </div>
-
-                    {/* Promotions tab */}
-                    <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
-                      <span className="material-icons text-[20px]">local_offer</span>
-                      <span>Promotions</span>
-                      <span className="bg-[#0F9D58] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-[4px] shrink-0">
-                        3 new
-                      </span>
-                    </div>
-
-                    {/* Updates tab */}
-                    <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
-                      <span className="material-icons text-[20px]">info</span>
-                      <span>Updates</span>
-                      <span className="w-2 h-2 rounded-full bg-[#FC8019] shrink-0" />
-                    </div>
-
-                    {/* Forums tab */}
-                    <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
-                      <span className="material-icons text-[20px]">forum</span>
-                      <span>Forums</span>
-                    </div>
-                  </div>
-
-                  {/* EMAIL ROWS LIST */}
-                  <div className="flex flex-col bg-white">
-                    {emails.map((email) => {
-                      return (
-                        <div
-                          key={email.id}
-                          id={`email-row-${email.id}`}
-                          onClick={() => handleOpenEmail(email.id)}
-                          className="flex items-center h-[50px] border-b border-[#F1F3F4] cursor-pointer bg-white hover:shadow-[0_4px_4px_-2px_rgba(0,0,0,0.2)] hover:bg-[#F2F6FC] transition-all duration-150 select-none px-4 gap-2"
-                        >
-                          {/* Unread indicator red dot or empty spacer */}
-                          {email.unread ? (
-                            <div className="w-[8px] h-[8px] rounded-full bg-[#D93025] mx-[8px] shrink-0" />
-                          ) : (
-                            <div className="w-[8px] mx-[8px] shrink-0" />
+                          {scanResult.status === 'success' && (
+                            <p id="scan-result-success" className="font-sans text-[13px] text-[#0F9D58] font-normal whitespace-nowrap">
+                              ✓ Found {scanResult.count} deadline(s) — added to your Tasks.
+                            </p>
                           )}
-
-                          {/* Checkbox */}
-                          <input
-                            type="checkbox"
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-3.5 h-3.5 accent-[#001D35] cursor-pointer shrink-0"
-                          />
-
-                          {/* Star Icon */}
-                          <span
-                            onClick={(e) => toggleStar(email.id, e)}
-                            className={`material-icons text-[20px] select-none shrink-0 cursor-pointer transition-colors ${
-                              email.starred ? 'text-[#F4B400]' : 'text-[#5F6368] hover:text-gray-600'
-                            }`}
-                          >
-                            {email.starred ? 'star' : 'star_border'}
-                          </span>
-
-                          {/* Important Indicator */}
-                          <span
-                            onClick={(e) => toggleImportant(email.id, e)}
-                            className={`material-icons text-[20px] select-none shrink-0 cursor-pointer transition-colors ${
-                              email.important ? 'text-[#F4B400]' : 'text-[#5F6368] hover:text-gray-600'
-                            }`}
-                          >
-                            {email.important ? 'label_important' : 'label_important_outline'}
-                          </span>
-
-                          {/* Avatar */}
-                          <div
-                            style={{ backgroundColor: email.avatarColor }}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-[13px] ${
-                              email.textColor === 'white' ? 'text-white' : 'text-[#202124]'
-                            } my-0 mx-[10px] shrink-0`}
-                          >
-                            {email.avatarLetter}
-                          </div>
-
-                          {/* Sender Name */}
-                          <div
-                            className={`w-[160px] shrink-0 text-[13px] font-googlesans whitespace-nowrap overflow-hidden text-ellipsis pr-2 ${
-                              email.unread ? 'font-bold text-[#202124]' : 'font-normal text-[#202124]'
-                            }`}
-                          >
-                            {email.from}
-                          </div>
-
-                          {/* Subject & Preview */}
-                          <div className="flex-1 min-w-0 flex items-baseline text-[13px] overflow-hidden whitespace-nowrap text-ellipsis mr-2">
-                            <span className={`${email.unread ? 'font-bold text-[#202124]' : 'font-normal text-[#202124]'}`}>
-                              {email.subject}
-                            </span>
-                            <span className="text-[#5F6368] font-normal mx-1">—</span>
-                            <span className="text-[#5F6368] font-normal truncate">
-                              {email.body.replace(/\s+/g, ' ').trim()}
-                            </span>
-                          </div>
-
-                          {/* Category pill if any */}
-                          {email.pillText && (
-                            <span
-                              style={{
-                                backgroundColor: email.pillBg,
-                                color: email.pillColor,
-                              }}
-                              className="shrink-0 text-[11px] font-medium px-1.5 py-0.5 rounded-[4px] font-sans"
-                            >
-                              {email.pillText}
-                            </span>
+                          {scanResult.status === 'none' && (
+                            <p id="scan-result-none" className="font-sans text-[13px] text-[#5B6B7B] font-normal whitespace-nowrap">
+                              No deadlines found in this email.
+                            </p>
                           )}
-
-                          {/* Timestamp */}
-                          <div className="w-[80px] text-right text-[12px] text-[#5F6368] flex-shrink-0 font-normal">
-                            {email.time}
-                          </div>
+                          {scanResult.status === 'error' && (
+                            <p id="scan-result-error" className="font-sans text-[13px] text-[#B23A2E] font-normal whitespace-nowrap">
+                              Couldn't scan right now — try again.
+                            </p>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
 
+                      {/* Sender Row */}
+                      <div className="flex items-center gap-3 w-full">
+                        {/* Avatar */}
+                        <div
+                          style={{ backgroundColor: currentEmail.avatarColor }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-[13px] ${
+                            currentEmail.textColor === 'white' ? 'text-white' : 'text-[#202124]'
+                          } shrink-0`}
+                        >
+                          {currentEmail.avatarLetter}
+                        </div>
+                        {/* Sender name + to me */}
+                        <div className="flex items-baseline gap-1.5 min-w-0">
+                          <span className="font-sans font-medium text-[14px] text-[#202124] truncate">
+                            {currentEmail.from}
+                          </span>
+                          <span className="font-sans font-normal text-[13px] text-[#5F6368] shrink-0">
+                            to me
+                          </span>
+                        </div>
+                        {/* Timestamp right aligned */}
+                        <span className="ml-auto font-sans font-normal text-[13px] text-[#5F6368] shrink-0">
+                          {currentEmail.time}
+                        </span>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="border-b border-[#E5E5E5] my-4 w-full" />
+
+                      {/* Email Body */}
+                      <div id="email-detail-body" className="font-sans font-normal text-[14px] text-[#202124] leading-[1.6] whitespace-pre-wrap">
+                        {currentEmail.body}
+                      </div>
+                    </div>
+                  ) : (
+                    /* EMAIL LIST */
+                    <div className="flex-1 flex flex-col">
+                      
+                      {/* TOP TOOLBAR ROW */}
+                      <div className="flex items-center p-2 border-b border-[#E5E5E5] gap-1 select-none">
+                        <input
+                          type="checkbox"
+                          className="w-3.5 h-3.5 mx-2 accent-[#001D35] cursor-pointer shrink-0"
+                        />
+                        <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full">
+                          arrow_drop_down
+                        </span>
+                        <span
+                          onClick={() => setEmails(INITIAL_EMAILS)}
+                          title="Reset email states"
+                          className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full"
+                        >
+                          refresh
+                        </span>
+                        <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full">
+                          more_vert
+                        </span>
+
+                        <div className="flex-1" />
+
+                        <span className="text-[13px] text-[#444746] font-sans mr-2">1–25 of 299</span>
+                        <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full">
+                          chevron_left
+                        </span>
+                        <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full">
+                          chevron_right
+                        </span>
+                        <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full ml-1 mr-2">
+                          settings
+                        </span>
+                      </div>
+
+                      {/* CATEGORY TABS ROW */}
+                      <div className="flex border-b border-[#E5E5E5] select-none">
+                        {/* Primary tab */}
+                        <div className="flex items-center gap-3 p-3 px-4 border-b-3 border-[#D93025] text-[#D93025] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
+                          <span className="material-icons text-[20px]">inbox</span>
+                          <span>Primary</span>
+                        </div>
+
+                        {/* Promotions tab */}
+                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
+                          <span className="material-icons text-[20px]">local_offer</span>
+                          <span>Promotions</span>
+                          <span className="bg-[#0F9D58] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-[4px] shrink-0">
+                            3 new
+                          </span>
+                        </div>
+
+                        {/* Updates tab */}
+                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
+                          <span className="material-icons text-[20px]">info</span>
+                          <span>Updates</span>
+                          <span className="w-2 h-2 rounded-full bg-[#FC8019] shrink-0" />
+                        </div>
+
+                        {/* Forums tab */}
+                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
+                          <span className="material-icons text-[20px]">forum</span>
+                          <span>Forums</span>
+                        </div>
+                      </div>
+
+                      {/* EMAIL ROWS LIST */}
+                      <div className="flex flex-col bg-white">
+                        {emails.map((email) => {
+                          return (
+                            <div
+                              key={email.id}
+                              id={`email-row-${email.id}`}
+                              onClick={() => handleOpenEmail(email.id)}
+                              className="flex items-center h-[50px] border-b border-[#F1F3F4] cursor-pointer bg-white hover:shadow-[0_4px_4px_-2px_rgba(0,0,0,0.2)] hover:bg-[#F2F6FC] transition-all duration-150 select-none px-4 gap-2"
+                            >
+                              {/* Unread indicator red dot or empty spacer */}
+                              {email.unread ? (
+                                <div className="w-[8px] h-[8px] rounded-full bg-[#D93025] mx-[8px] shrink-0" />
+                              ) : (
+                                <div className="w-[8px] mx-[8px] shrink-0" />
+                              )}
+
+                              {/* Checkbox */}
+                              <input
+                                type="checkbox"
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-3.5 h-3.5 accent-[#001D35] cursor-pointer shrink-0"
+                              />
+
+                              {/* Star Icon */}
+                              <span
+                                onClick={(e) => toggleStar(email.id, e)}
+                                className={`material-icons text-[20px] select-none shrink-0 cursor-pointer transition-colors ${
+                                  email.starred ? 'text-[#F4B400]' : 'text-[#5F6368] hover:text-gray-600'
+                                }`}
+                              >
+                                {email.starred ? 'star' : 'star_border'}
+                              </span>
+
+                              {/* Important Indicator */}
+                              <span
+                                onClick={(e) => toggleImportant(email.id, e)}
+                                className={`material-icons text-[20px] select-none shrink-0 cursor-pointer transition-colors ${
+                                  email.important ? 'text-[#F4B400]' : 'text-[#5F6368] hover:text-gray-600'
+                                }`}
+                              >
+                                {email.important ? 'label_important' : 'label_important_outline'}
+                              </span>
+
+                              {/* Avatar */}
+                              <div
+                                style={{ backgroundColor: email.avatarColor }}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-[13px] ${
+                                  email.textColor === 'white' ? 'text-white' : 'text-[#202124]'
+                                } my-0 mx-[10px] shrink-0`}
+                              >
+                                {email.avatarLetter}
+                              </div>
+
+                              {/* Sender Name */}
+                              <div
+                                className={`w-[160px] shrink-0 text-[13px] font-googlesans whitespace-nowrap overflow-hidden text-ellipsis pr-2 ${
+                                  email.unread ? 'font-bold text-[#202124]' : 'font-normal text-[#202124]'
+                                }`}
+                              >
+                                {email.from}
+                              </div>
+
+                              {/* Subject & Preview */}
+                              <div className="flex-1 min-w-0 flex items-baseline text-[13px] overflow-hidden whitespace-nowrap text-ellipsis mr-2">
+                                <span className={`${email.unread ? 'font-bold text-[#202124]' : 'font-normal text-[#202124]'}`}>
+                                  {email.subject}
+                                </span>
+                                <span className="text-[#5F6368] font-normal mx-1">—</span>
+                                <span className="text-[#5F6368] font-normal truncate">
+                                  {email.body.replace(/\s+/g, ' ').trim()}
+                                </span>
+                              </div>
+
+                              {/* Category pill if any */}
+                              {email.pillText && (
+                                <span
+                                  style={{
+                                    backgroundColor: email.pillBg,
+                                    color: email.pillColor,
+                                  }}
+                                  className="shrink-0 text-[11px] font-medium px-1.5 py-0.5 rounded-[4px] font-sans"
+                                >
+                                  {email.pillText}
+                                </span>
+                              )}
+
+                              {/* Timestamp */}
+                              <div className="w-[80px] text-right text-[12px] text-[#5F6368] flex-shrink-0 font-normal">
+                                {email.time}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              /* SCAN IMAGE VIEW */
+              <div className="w-full flex-1 flex flex-col items-center">
+                {!imagePreviewUrl ? (
+                  /* Upload Zone */
+                  <div className="w-full flex flex-col items-center">
+                    <div 
+                      id="image-upload-zone"
+                      onClick={() => document.getElementById('image-file-input')?.click()}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragOver(true);
+                      }}
+                      onDragLeave={() => setIsDragOver(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragOver(false);
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                          handleImageChange(e.dataTransfer.files[0]);
+                        }
+                      }}
+                      className={`w-full max-w-[500px] border-2 border-dashed rounded-[16px] p-12 px-6 text-center bg-white cursor-pointer transition-all ${
+                        isDragOver 
+                          ? 'border-[#C8893B] bg-[rgba(200,137,59,0.04)] shadow-sm' 
+                          : 'border-[rgba(14,27,42,0.2)] hover:border-[#0E1B2A] hover:bg-[rgba(14,27,42,0.02)]'
+                      }`}
+                    >
+                      {/* Icon */}
+                      <div className="text-[48px] text-[#5B6B7B] select-none">📷</div>
+                      
+                      {/* Primary Text */}
+                      <p className="font-sans font-medium text-[16px] text-[#0E1B2A] mt-4">
+                        Drop a screenshot here
+                      </p>
+
+                      {/* Secondary Text */}
+                      <p className="font-sans text-[13px] text-[#5B6B7B] mt-2 leading-relaxed">
+                        WhatsApp chats, whiteboard photos, handwritten notes, syllabuses
+                      </p>
+
+                      {/* Browse Files Button */}
+                      <button
+                        type="button"
+                        className="mt-4 px-5 py-2 border border-[rgba(14,27,42,0.2)] rounded-[8px] bg-transparent text-[#0E1B2A] font-sans font-medium text-[13px] hover:bg-[rgba(14,27,42,0.03)] cursor-pointer focus:outline-none transition-all"
+                      >
+                        Browse files
+                      </button>
+
+                      {/* Supported Formats */}
+                      <p className="font-sans text-[12px] text-[#5B6B7B] mt-3">
+                        Supports PNG, JPG, WEBP — max 10MB
+                      </p>
+                    </div>
+
+                    {/* Validation Error */}
+                    {imageScanError && (
+                      <p id="image-scan-error" className="font-sans text-[13px] text-[#B23A2E] mt-3 max-w-[500px] text-center font-normal">
+                        {imageScanError}
+                      </p>
+                    )}
+
+                    {/* Try Demo Example Link */}
+                    <div className="mt-4">
+                      <button
+                        id="btn-try-demo"
+                        type="button"
+                        onClick={handleTryDemoExample}
+                        className="font-sans text-[13px] text-[#C8893B] hover:underline bg-transparent border-0 cursor-pointer focus:outline-none"
+                      >
+                        ✨ Try an example →
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Preview State & Result States */
+                  <div className="w-full max-w-[500px] flex flex-col items-center gap-4">
+                    <div className="relative border border-[rgba(14,27,42,0.1)] rounded-[12px] p-2 bg-white flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={imagePreviewUrl} 
+                        alt="Selected preview" 
+                        className="max-h-[300px] object-contain rounded-[8px] w-full"
+                      />
+                    </div>
+
+                    <p className="font-sans text-[13px] text-[#5B6B7B] truncate max-w-full">
+                      {imageFile ? imageFile.name : 'example.png'}
+                    </p>
+
+                    {imageScanResultState === 'idle' && (
+                      <div className="flex flex-col items-center gap-3 w-full">
+                        <button
+                          id="btn-scan-image-tasks"
+                          type="button"
+                          onClick={handleScanImage}
+                          className="w-full bg-[#0E1B2A] text-white font-sans font-medium text-[14px] py-3 px-7 rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer border-0"
+                        >
+                          Scan for tasks
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetImageScan}
+                          className="font-sans text-[13px] text-[#5B6B7B] hover:underline bg-transparent border-0 cursor-pointer focus:outline-none"
+                        >
+                          Choose different image
+                        </button>
+                      </div>
+                    )}
+
+                    {imageScanResultState === 'scanning' && (
+                      <div className="flex flex-col items-center gap-2.5 mt-2">
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full bg-[#0E1B2A]/70 text-white font-sans font-medium text-[14px] py-3 px-7 rounded-[8px] flex items-center justify-center gap-2 border-0 select-none"
+                        >
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                          <span>Scanning image...</span>
+                        </button>
+                        <p className="font-sans text-[13px] text-[#5B6B7B]">
+                          Gemini is reading your image...
+                        </p>
+                      </div>
+                    )}
+
+                    {imageScanResultState === 'success' && (
+                      <div className="flex flex-col items-center gap-3 w-full">
+                        <p className="font-sans text-[13px] text-[#0F9D58] font-medium text-center">
+                          ✓ Found {imageScanSuccessCount} task(s) — added to your Tasks.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleResetImageScan}
+                          className="px-5 py-2.5 bg-transparent border border-[rgba(14,27,42,0.2)] rounded-[8px] text-[#0E1B2A] font-sans font-medium text-[13px] hover:bg-[rgba(14,27,42,0.03)] cursor-pointer transition-all"
+                        >
+                          Scan another image
+                        </button>
+                      </div>
+                    )}
+
+                    {imageScanResultState === 'empty' && (
+                      <div className="flex flex-col items-center gap-3 w-full">
+                        <p className="font-sans text-[13px] text-[#5B6B7B] text-center font-medium">
+                          No tasks or deadlines found in this image.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleResetImageScan}
+                          className="px-5 py-2.5 bg-transparent border border-[rgba(14,27,42,0.2)] rounded-[8px] text-[#0E1B2A] font-sans font-medium text-[13px] hover:bg-[rgba(14,27,42,0.03)] cursor-pointer transition-all"
+                        >
+                          Scan another image
+                        </button>
+                      </div>
+                    )}
+
+                    {imageScanResultState === 'error' && (
+                      <div className="flex flex-col items-center gap-3 w-full">
+                        <p className="font-sans text-[13px] text-[#B23A2E] text-center font-medium">
+                          {imageScanError || "Couldn't scan this image — try again."}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleScanImage}
+                          className="w-full bg-[#0E1B2A] text-white font-sans font-medium text-[14px] py-3 px-7 rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer border-0"
+                        >
+                          Try again
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetImageScan}
+                          className="font-sans text-[13px] text-[#5B6B7B] hover:underline bg-transparent border-0 cursor-pointer focus:outline-none"
+                        >
+                          Choose different image
+                        </button>
+                      </div>
+                    )}
+
+                  </div>
+                )}
+                
+                {/* Hidden File Input */}
+                <input 
+                  id="image-file-input"
+                  data-testid="image-file-input"
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleImageChange(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </div>
+            )}
 
           </div>
         )}

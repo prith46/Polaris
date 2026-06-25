@@ -252,6 +252,70 @@ async function startServer() {
     }
   });
 
+  // Scan image endpoint (multimodal)
+  app.post("/api/scan-image", async (req, res) => {
+    try {
+      const { imageBase64, mimeType } = req.body;
+      if (!imageBase64 || !mimeType) {
+        return res.status(400).json({ error: "Missing imageBase64 or mimeType" });
+      }
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "GEMINI_API_KEY environment variable is not configured on the server" });
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            "User-Agent": "aistudio-build",
+          },
+        },
+      });
+
+      const response = await retryWithDelay(async () => {
+        return await ai.models.generateContent({
+          model: "gemini-2.5-flash-lite",
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: mimeType,
+                    data: imageBase64
+                  }
+                },
+                {
+                  text: "Extract all tasks, commitments, and deadlines from this image. Return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences. Each item must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the deadline phrase as mentioned, or 'No deadline mentioned' if none), urgency (string: must be exactly 'high', 'medium', or 'low' — high means due within 48 hours or overdue, medium means due within a week, low means due later). If you find no tasks, return an empty array []. Never return anything except the JSON array."
+                }
+              ]
+            }
+          ]
+        });
+      });
+
+      const rawText = response.text || "[]";
+      let cleanText = rawText.trim();
+      if (cleanText.startsWith('```json')) {
+        cleanText = cleanText.substring(7);
+      } else if (cleanText.startsWith('```')) {
+        cleanText = cleanText.substring(3);
+      }
+      if (cleanText.endsWith('```')) {
+        cleanText = cleanText.substring(0, cleanText.length - 3);
+      }
+      cleanText = cleanText.trim();
+      
+      let parsed = JSON.parse(cleanText);
+      res.json({ tasks: parsed });
+    } catch (err: any) {
+      console.error("Error in /api/scan-image:", err);
+      res.status(500).json({ error: "fallback" });
+    }
+  });
+
   // Vite middleware for development or serving built static files in production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
