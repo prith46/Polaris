@@ -25,7 +25,8 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '20mb' }));
+  app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
   // Server-side API route for scanning emails using Gemini
   app.post("/api/scan-email", async (req, res) => {
