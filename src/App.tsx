@@ -545,8 +545,12 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>(() => {
     return INITIAL_TASKS.map(t => ({
       ...t,
-      createdAt: Date.now()
-    } as any));
+      createdAt: Date.now(),
+      subtasks: [],
+      decomposing: false,
+      decomposed: false,
+      subtasksCollapsed: false
+    }));
   });
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
@@ -654,6 +658,77 @@ export default function App() {
     } finally {
       setEscapeHatchLoadingTaskId(null);
     }
+  };
+
+  const handleDecomposeTask = async (task: Task) => {
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, decomposing: true } : t));
+    try {
+      const response = await fetchWithTimeout(
+        '/api/decompose',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ taskTitle: task.title, taskContext: task.context }),
+        },
+        10000
+      );
+
+      if (!response.ok) {
+        throw new Error('Decompose response not OK');
+      }
+
+      const data = await response.json();
+      if (data && Array.isArray(data.subtasks)) {
+        const subtasksWithCompleted = data.subtasks.map((st: any) => ({
+          step: st.step,
+          minutes: st.minutes,
+          completed: false
+        }));
+        setTasks(prev => prev.map(t => t.id === task.id ? {
+          ...t,
+          subtasks: subtasksWithCompleted,
+          decomposed: true,
+          decomposing: false,
+          subtasksCollapsed: false
+        } : t));
+      } else {
+        throw new Error('Invalid subtasks format');
+      }
+    } catch (err) {
+      console.warn('Decomposition API failed, using fallback:', err);
+      const fallbackSubtasks = [
+        { step: "Review what needs to be done", minutes: 10, completed: false },
+        { step: "Gather required materials", minutes: 15, completed: false },
+        { step: "Complete the main work", minutes: 45, completed: false },
+        { step: "Review and check for errors", minutes: 15, completed: false },
+        { step: "Submit or deliver the result", minutes: 5, completed: false }
+      ];
+      setTasks(prev => prev.map(t => t.id === task.id ? {
+        ...t,
+        subtasks: fallbackSubtasks,
+        decomposed: true,
+        decomposing: false,
+        subtasksCollapsed: false
+      } : t));
+    }
+  };
+
+  const toggleSubtask = (taskId: string, subtaskIndex: number) => {
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId || !t.subtasks) return t;
+      const updatedSubtasks = t.subtasks.map((st, idx) => 
+        idx === subtaskIndex ? { ...st, completed: !st.completed } : st
+      );
+      return { ...t, subtasks: updatedSubtasks };
+    }));
+  };
+
+  const toggleSubtasksCollapse = (taskId: string) => {
+    setTasks(prev => prev.map(t => 
+      t.id === taskId ? { ...t, subtasksCollapsed: !t.subtasksCollapsed } : t
+    ));
   };
 
   useEffect(() => {
@@ -914,8 +989,12 @@ export default function App() {
           context: `Found in your inbox — ${currentEmail.from}`,
           primaryAction: 'Handle it now',
           secondaryAction: 'Snooze',
-          createdAt: Date.now()
-        } as any));
+          createdAt: Date.now(),
+          subtasks: [],
+          decomposing: false,
+          decomposed: false,
+          subtasksCollapsed: false
+        }));
 
         setTasks((prevTasks) => [...prevTasks, ...newTasks]);
         setScanResult({ status: 'success', count: validatedTasks.length });
@@ -942,8 +1021,12 @@ export default function App() {
       context: 'Newly added. Details can be set later.',
       primaryAction: 'Handle it now',
       secondaryAction: 'Snooze',
-      createdAt: Date.now()
-    } as any;
+      createdAt: Date.now(),
+      subtasks: [],
+      decomposing: false,
+      decomposed: false,
+      subtasksCollapsed: false
+    };
 
     setTasks((prevTasks) => [...prevTasks, newTask]);
     setNewTaskTitle('');
@@ -1140,139 +1223,227 @@ export default function App() {
               {tasks
                 .filter((task) => !isFocusMode || task.title === focusedTaskTitle)
                 .map((task) => {
-                let pillClass = '';
-                if (task.urgency === 'high') {
-                  pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
-                } else if (task.urgency === 'medium') {
-                  pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
-                } else {
-                  pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
-                }
+                  let pillClass = '';
+                  if (task.urgency === 'high') {
+                    pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
+                  } else if (task.urgency === 'medium') {
+                    pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
+                  } else {
+                    pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
+                  }
+                  
+                  const allStepsCompleted = !!(task.decomposed && task.subtasks && task.subtasks.length > 0 && task.subtasks.every(st => st.completed));
 
-                return (
-                  <div
-                    key={task.id}
-                    id={`task-card-${task.id}`}
-                    className="bg-white border border-polaris-border rounded-[14px] p-[18px] flex flex-col items-start"
-                  >
-                    {/* Top Row: Urgency Pill + Done button */}
-                    <div className="w-full flex justify-between items-center mb-3">
-                      <div className={`px-2.5 py-1 rounded-[6px] text-[12px] font-medium leading-none ${pillClass}`}>
-                        {task.pillText}
+                  return (
+                    <div
+                      key={task.id}
+                      id={`task-card-${task.id}`}
+                      className="bg-white border border-polaris-border rounded-[14px] p-[18px] flex flex-col items-start transition-all w-full"
+                      style={allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : undefined}
+                    >
+                      {/* Top Row: Urgency Pill + Done button */}
+                      <div className="w-full flex justify-between items-center mb-3">
+                        <div className={`px-2.5 py-1 rounded-[6px] text-[12px] font-medium leading-none ${pillClass}`}>
+                          {task.pillText}
+                        </div>
+                        <button
+                          id={`done-btn-${task.id}`}
+                          type="button"
+                          onClick={() => handleRemoveTask(task.id)}
+                          style={allStepsCompleted ? { color: '#0F9D58' } : undefined}
+                          className="flex items-center gap-1.5 px-[10px] py-[6px] rounded-[8px] bg-transparent text-polaris-secondary hover:bg-[rgba(91,107,123,0.10)] hover:text-polaris-primary font-sans font-medium text-[13px] transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30"
+                        >
+                          <Check size={14} strokeWidth={2} className="shrink-0" />
+                          <span>Done</span>
+                        </button>
                       </div>
-                      <button
-                        id={`done-btn-${task.id}`}
-                        type="button"
-                        onClick={() => handleRemoveTask(task.id)}
-                        className="flex items-center gap-1.5 px-[10px] py-[6px] rounded-[8px] bg-transparent text-polaris-secondary hover:bg-[rgba(91,107,123,0.10)] hover:text-polaris-primary font-sans font-medium text-[13px] transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30"
-                      >
-                        <Check size={14} strokeWidth={2} className="shrink-0" />
-                        <span>Done</span>
-                      </button>
-                    </div>
 
-                    {/* Task Title */}
-                    <h2 className="font-serif font-medium text-[18px] text-polaris-primary mb-1.5 leading-snug">
-                      {task.title}
-                    </h2>
+                      {/* Task Title */}
+                      <h2 className="font-serif font-medium text-[18px] text-polaris-primary mb-1.5 leading-snug">
+                        {task.title}
+                      </h2>
 
-                    {/* Context */}
-                    <p className="font-sans font-normal text-[14px] text-polaris-secondary mb-[18px] leading-relaxed">
-                      {task.context}
-                    </p>
+                      {/* Context */}
+                      <p className="font-sans font-normal text-[14px] text-polaris-secondary mb-[18px] leading-relaxed">
+                        {task.context}
+                      </p>
 
-                    {/* Urgency/Countdown Bar */}
-                    {(() => {
-                      const dl = parseDeadline(task.pillText, task.id);
-                      if (!dl) return null;
-                      
-                      const duration = getTaskDurationMinutes(task.title);
-                      const ponr = new Date(dl.getTime() - duration * 60 * 1000);
-                      const now = new Date();
-                      
-                      let percent = 0;
-                      let barColor = '#0F9D58';
-                      let textColorClass = 'text-[#0F9D58]';
-                      let countdownText = '';
-                      
-                      const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime();
-                      const remaining = ponr.getTime() - now.getTime();
-                      
-                      if (remaining <= 0) {
-                        percent = 0;
-                        barColor = '#B23A2E';
-                        textColorClass = 'text-[#B23A2E]';
-                        countdownText = '🔴 Point of no return passed — act now.';
-                      } else {
-                        percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
-                        if (percent > 50) {
-                          barColor = '#0F9D58';
-                          textColorClass = 'text-[#0F9D58]';
-                        } else if (percent >= 25) {
-                          barColor = '#C8893B';
-                          textColorClass = 'text-[#C8893B]';
-                        } else {
+                      {/* Subtasks Divider & Checklist */}
+                      {task.decomposed && task.subtasks && task.subtasks.length > 0 && (
+                        <div className="w-full border-t border-[rgba(14,27,42,0.08)] pt-3.5 mb-[18px]">
+                          {/* Header Row */}
+                          <div 
+                            onClick={() => toggleSubtasksCollapse(task.id)}
+                            className="flex items-center justify-between cursor-pointer select-none mb-2"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-[#5B6B7B] w-3 text-center">
+                                {task.subtasksCollapsed ? '▶' : '▼'}
+                              </span>
+                              <span className="font-sans font-medium text-[12px] text-[#5B6B7B] uppercase tracking-[0.05em]">
+                                Subtasks
+                              </span>
+                            </div>
+                            <span className="font-sans text-[12px] text-[#5B6B7B]">
+                              ({task.subtasks.reduce((sum, st) => sum + st.minutes, 0)} min total)
+                            </span>
+                          </div>
+
+                          {/* Subtask Rows Container */}
+                          <div 
+                            className="overflow-hidden transition-all duration-300"
+                            style={{
+                              height: task.subtasksCollapsed ? '0px' : 'auto',
+                              opacity: task.subtasksCollapsed ? 0 : 1,
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              {task.subtasks.map((sub, idx) => (
+                                <div 
+                                  key={idx} 
+                                  onClick={() => toggleSubtask(task.id, idx)}
+                                  className="py-1.5 flex items-center gap-2.5 cursor-pointer select-none"
+                                >
+                                  {/* Custom Checkbox */}
+                                  <div 
+                                    className={`w-4 h-4 rounded-[4px] border border-[rgba(14,27,42,0.2)] flex items-center justify-center transition-all shrink-0 ${
+                                      sub.completed ? 'bg-[#0E1B2A] border-[#0E1B2A]' : 'bg-white'
+                                    }`}
+                                    style={{ borderWidth: '1.5px' }}
+                                  >
+                                    {sub.completed && (
+                                      <span className="text-white text-[10px] font-bold select-none leading-none">✓</span>
+                                    )}
+                                  </div>
+
+                                  {/* Step text */}
+                                  <span 
+                                    className={`font-sans text-[13px] transition-all truncate ${
+                                      sub.completed ? 'text-[#5B6B7B] line-through' : 'text-[#0E1B2A]'
+                                    }`}
+                                  >
+                                    {sub.step}
+                                  </span>
+
+                                  {/* Time estimate */}
+                                  <span className={`font-sans text-[12px] text-[#5B6B7B] ml-auto shrink-0`}>
+                                    {sub.minutes}m
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* All steps done Banner */}
+                          {task.subtasks.every(st => st.completed) && (
+                            <div className="w-full bg-[rgba(15,157,88,0.08)] rounded-[6px] p-2.5 px-3 mt-3 text-[13px] font-sans font-normal text-[#0F9D58] flex items-center gap-1.5">
+                              <span>✓ All steps done — ready to mark complete?</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Urgency/Countdown Bar */}
+                      {(() => {
+                        const dl = parseDeadline(task.pillText, task.id);
+                        if (!dl) return null;
+                        
+                        const duration = getTaskDurationMinutes(task.title);
+                        const ponr = new Date(dl.getTime() - duration * 60 * 1000);
+                        const now = new Date();
+                        
+                        let percent = 0;
+                        let barColor = '#0F9D58';
+                        let textColorClass = 'text-[#0F9D58]';
+                        let countdownText = '';
+                        
+                        const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime();
+                        const remaining = ponr.getTime() - now.getTime();
+                        
+                        if (remaining <= 0) {
+                          percent = 0;
                           barColor = '#B23A2E';
                           textColorClass = 'text-[#B23A2E]';
-                        }
-                        
-                        const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        const isTodayVal = ponr.toDateString() === now.toDateString();
-                        const tomorrow = new Date(now);
-                        tomorrow.setDate(tomorrow.getDate() + 1);
-                        const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
-                        
-                        let dayString = '';
-                        if (isTodayVal) {
-                          dayString = 'today';
-                        } else if (isTomorrowVal) {
-                          dayString = 'tomorrow';
+                          countdownText = '🔴 Point of no return passed — act now.';
                         } else {
-                          dayString = ponr.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                          percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
+                          if (percent > 50) {
+                            barColor = '#0F9D58';
+                            textColorClass = 'text-[#0F9D58]';
+                          } else if (percent >= 25) {
+                            barColor = '#C8893B';
+                            textColorClass = 'text-[#C8893B]';
+                          } else {
+                            barColor = '#B23A2E';
+                            textColorClass = 'text-[#B23A2E]';
+                          }
+                          
+                          const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                          const isTodayVal = ponr.toDateString() === now.toDateString();
+                          const tomorrow = new Date(now);
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
+                          
+                          let dayString = '';
+                          if (isTodayVal) {
+                            dayString = 'today';
+                          } else if (isTomorrowVal) {
+                            dayString = 'tomorrow';
+                          } else {
+                            dayString = ponr.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                          }
+                          
+                          countdownText = `⚠ Start by ${dayString} at ${timeString} or you'll miss this.`;
                         }
                         
-                        countdownText = `⚠ Start by ${dayString} at ${timeString} or you'll miss this.`;
-                      }
-                      
-                      return (
-                        <div className="w-full mb-[18px]">
-                          <div className="w-full bg-[rgba(14,27,42,0.08)] h-[3px] rounded-[2px] overflow-hidden">
-                            <div 
-                              className="h-full rounded-[2px] transition-all duration-500" 
-                              style={{ width: `${percent}%`, backgroundColor: barColor }}
-                            />
+                        return (
+                          <div className="w-full mb-[18px]">
+                            <div className="w-full bg-[rgba(14,27,42,0.08)] h-[3px] rounded-[2px] overflow-hidden">
+                              <div 
+                                className="h-full rounded-[2px] transition-all duration-500" 
+                                style={{ width: `${percent}%`, backgroundColor: barColor }}
+                              />
+                            </div>
+                            <div className={`mt-1.5 font-sans font-normal text-[12px] ${textColorClass}`}>
+                              {countdownText}
+                            </div>
                           </div>
-                          <div className={`mt-1.5 font-sans font-normal text-[12px] ${textColorClass}`}>
-                            {countdownText}
-                          </div>
-                        </div>
-                      );
-                    })()}
+                        );
+                      })()}
 
-                    {/* Buttons */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (task.primaryAction === 'Draft a reply') {
-                            handleEscapeHatch(task);
+                      {/* Buttons */}
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (task.primaryAction === 'Draft a reply') {
+                              handleEscapeHatch(task);
+                            } else if (task.primaryAction === 'Break it down') {
+                              handleDecomposeTask(task);
+                            }
+                          }}
+                          disabled={
+                            (task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id) ||
+                            (task.primaryAction === 'Break it down' && task.decomposing)
                           }
-                        }}
-                        disabled={task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id}
-                        className="px-4 py-[9px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-80"
-                      >
-                        {task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id ? 'Drafting...' : task.primaryAction}
-                      </button>
-                      <button
-                        type="button"
-                        className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
-                      >
-                        {task.secondaryAction}
-                      </button>
+                          className="px-4 py-[9px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-80"
+                        >
+                          {task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id 
+                            ? 'Drafting...' 
+                            : task.primaryAction === 'Break it down' && task.decomposing 
+                            ? 'Breaking down...' 
+                            : task.primaryAction}
+                        </button>
+                        <button
+                          type="button"
+                          className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
+                        >
+                          {task.secondaryAction}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
 
             {isFocusMode && (

@@ -6,6 +6,11 @@ export interface Task {
   context: string;
   primaryAction: string;
   secondaryAction: string;
+  subtasks?: Array<{ step: string; minutes: number; completed: boolean }>;
+  decomposing?: boolean;
+  decomposed?: boolean;
+  subtasksCollapsed?: boolean;
+  createdAt?: number;
 }
 
 export interface Email {

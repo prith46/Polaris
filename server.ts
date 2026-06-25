@@ -159,6 +159,52 @@ async function startServer() {
     }
   });
 
+  // Decompose task endpoint
+  app.post("/api/decompose", async (req, res) => {
+    try {
+      const { taskTitle, taskContext } = req.body;
+      if (!taskTitle) {
+        return res.status(400).json({ error: "No taskTitle provided" });
+      }
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "GEMINI_API_KEY environment variable is not configured on the server" });
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            "User-Agent": "aistudio-build",
+          },
+        },
+      });
+
+      const systemInstruction = "You are a task decomposition engine. Your ONLY job is to break a given task into 3 to 6 clear, ordered, actionable subtasks. Each subtask must be something a person can physically do. Return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences. Each item must have exactly two fields: step (string: the subtask description, max 10 words) and minutes (number: realistic time estimate in minutes, between 5 and 120). Example: [{\"step\":\"Write the outline\",\"minutes\":20},{\"step\":\"Draft the main content\",\"minutes\":45}]. Never return anything except the JSON array.";
+
+      const contents = `Break this task into subtasks: ${taskTitle}. Context: ${taskContext}`;
+
+      const response = await retryWithDelay(async () => {
+        return await ai.models.generateContent({
+          model: "gemini-2.5-flash-lite",
+          contents,
+          config: {
+            systemInstruction,
+            responseMimeType: "application/json",
+          },
+        });
+      });
+
+      const rawText = response.text || "[]";
+      let parsed = JSON.parse(rawText.trim());
+      res.json({ subtasks: parsed });
+    } catch (err: any) {
+      console.error("Error in /api/decompose:", err);
+      res.status(500).json({ error: "fallback" });
+    }
+  });
+
   // Vite middleware for development or serving built static files in production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
