@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, FormEvent, MouseEvent } from 'react';
+import { useState, FormEvent, MouseEvent, useEffect } from 'react';
 import { Check, Search } from 'lucide-react';
 import { Task, Email } from './types';
 
@@ -541,9 +541,179 @@ Mom`,
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'tasks' | 'inbox'>('tasks');
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'dashboard' | 'inbox'>('tasks');
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    return INITIAL_TASKS.map(t => ({
+      ...t,
+      createdAt: Date.now()
+    } as any));
+  });
   const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  // Custom states for new features
+  const [completedCount, setCompletedCount] = useState(0);
+  const [scannedCount, setScannedCount] = useState(0);
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => new Date());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
+  const [, setTimeTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeTick((prev) => prev + 1);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Helper to parse deadline string into Date
+  const parseDeadline = (pillText: string, taskId?: string): Date | null => {
+    if (taskId === 'task-1') {
+      const d = new Date();
+      d.setHours(23, 59, 0, 0);
+      return d;
+    }
+    if (taskId === 'task-2') {
+      const d = new Date();
+      d.setDate(d.getDate() - 2);
+      d.setHours(23, 59, 0, 0);
+      return d;
+    }
+    if (taskId === 'task-3') {
+      const d = new Date();
+      d.setDate(d.getDate() + 2);
+      d.setHours(23, 59, 0, 0);
+      return d;
+    }
+    if (taskId === 'task-4') {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      d.setHours(23, 59, 0, 0);
+      return d;
+    }
+
+    if (!pillText || pillText === 'No deadline set' || pillText === 'No deadline mentioned') {
+      return null;
+    }
+
+    const lower = pillText.toLowerCase();
+    const now = new Date();
+
+    if (lower.includes('today')) {
+      const d = new Date();
+      d.setHours(23, 59, 0, 0);
+      return d;
+    }
+    if (lower.includes('tomorrow')) {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(23, 59, 0, 0);
+      return d;
+    }
+
+    // Try parsing weekday names
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    for (let i = 0; i < 7; i++) {
+      if (lower.includes(daysOfWeek[i])) {
+        const d = new Date();
+        const currentDay = d.getDay();
+        const targetDay = i;
+        let diff = targetDay - currentDay;
+        if (diff <= 0) diff += 7;
+        d.setDate(d.getDate() + diff);
+
+        if (lower.includes('4:00 pm') || lower.includes('4 pm')) {
+          d.setHours(16, 0, 0, 0);
+        } else {
+          d.setHours(23, 59, 0, 0);
+        }
+        return d;
+      }
+    }
+
+    // Check if there is a day of month number (e.g. "27th")
+    const match = lower.match(/\b(\d+)(st|nd|rd|th)?\b/);
+    if (match) {
+      const dayNum = parseInt(match[1], 10);
+      if (dayNum >= 1 && dayNum <= 31) {
+        const d = new Date();
+        d.setDate(dayNum);
+        d.setHours(23, 59, 0, 0);
+        return d;
+      }
+    }
+
+    return null;
+  };
+
+  const getTaskDurationMinutes = (title: string): number => {
+    const lower = title.toLowerCase();
+    if (/\b(pay|bill|payment|submit|form|confirm)\b/.test(lower)) {
+      return 20;
+    }
+    if (/\b(email|reply|message|send|draft)\b/.test(lower)) {
+      return 45;
+    }
+    if (/\b(letter|write|report|essay|proposal)\b/.test(lower)) {
+      return 120;
+    }
+    if (/\b(meeting|call|sync|attend)\b/.test(lower)) {
+      return 60;
+    }
+    return 30;
+  };
+
+  const getTaskBaseTime = (task: Task, deadline: Date): Date => {
+    if ((task as any).createdAt) {
+      return new Date((task as any).createdAt);
+    }
+    return new Date(deadline.getTime() - 24 * 60 * 60 * 1000);
+  };
+
+  const getCalendarCells = (monthDate: Date) => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDayOfWeek = firstDay.getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const prevMonthTotalDays = new Date(year, month, 0).getDate();
+    
+    const cells: { date: Date; isCurrentMonth: boolean }[] = [];
+    
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      cells.push({
+        date: new Date(year, month - 1, prevMonthTotalDays - i),
+        isCurrentMonth: false
+      });
+    }
+    
+    for (let i = 1; i <= totalDays; i++) {
+      cells.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true
+      });
+    }
+    
+    const remaining = 42 - cells.length;
+    for (let i = 1; i <= remaining; i++) {
+      cells.push({
+        date: new Date(year, month + 1, i),
+        isCurrentMonth: false
+      });
+    }
+    
+    return cells;
+  };
+
+  const getTasksForDate = (date: Date) => {
+    return tasks.filter((task) => {
+      const deadline = parseDeadline(task.pillText, task.id);
+      if (!deadline) return false;
+      return (
+        deadline.getFullYear() === date.getFullYear() &&
+        deadline.getMonth() === date.getMonth() &&
+        deadline.getDate() === date.getDate()
+      );
+    });
+  };
 
   // Email States
   const [emails, setEmails] = useState<Email[]>(INITIAL_EMAILS);
@@ -645,10 +815,12 @@ export default function App() {
           context: `Found in your inbox — ${currentEmail.from}`,
           primaryAction: 'Handle it now',
           secondaryAction: 'Snooze',
-        }));
+          createdAt: Date.now()
+        } as any));
 
         setTasks((prevTasks) => [...prevTasks, ...newTasks]);
         setScanResult({ status: 'success', count: validatedTasks.length });
+        setScannedCount((prev) => prev + validatedTasks.length);
       }
     } catch (error) {
       console.error('Scan error:', error);
@@ -671,7 +843,8 @@ export default function App() {
       context: 'Newly added. Details can be set later.',
       primaryAction: 'Handle it now',
       secondaryAction: 'Snooze',
-    };
+      createdAt: Date.now()
+    } as any;
 
     setTasks((prevTasks) => [...prevTasks, newTask]);
     setNewTaskTitle('');
@@ -679,6 +852,7 @@ export default function App() {
 
   const handleRemoveTask = (taskId: string) => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    setCompletedCount((prev) => prev + 1);
   };
 
   const handleOpenEmail = (emailId: string) => {
@@ -753,6 +927,34 @@ export default function App() {
           Tasks
         </button>
         <button
+          id="tab-calendar"
+          type="button"
+          onClick={() => {
+            setActiveTab('calendar');
+          }}
+          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 ${
+            activeTab === 'calendar'
+              ? 'border-polaris-primary text-polaris-primary'
+              : 'border-transparent text-polaris-secondary hover:text-polaris-primary'
+          }`}
+        >
+          Calendar
+        </button>
+        <button
+          id="tab-dashboard"
+          type="button"
+          onClick={() => {
+            setActiveTab('dashboard');
+          }}
+          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 ${
+            activeTab === 'dashboard'
+              ? 'border-polaris-primary text-polaris-primary'
+              : 'border-transparent text-polaris-secondary hover:text-polaris-primary'
+          }`}
+        >
+          Dashboard
+        </button>
+        <button
           id="tab-inbox"
           type="button"
           onClick={() => {
@@ -772,10 +974,10 @@ export default function App() {
       <main
         id="polaris-content"
         className={`flex-1 flex flex-col items-center ${
-          isInbox ? 'w-full pt-0 pb-0 px-0' : 'pt-10 pb-16 px-6'
+          activeTab === 'inbox' ? 'w-full pt-0 pb-0 px-0' : 'pt-10 pb-16 px-6'
         }`}
       >
-        {activeTab === 'tasks' ? (
+        {activeTab === 'tasks' && (
           /* TASKS TAB PANEL */
           <div id="polaris-tasks-container" className="w-full max-w-[640px] flex flex-col gap-4">
             {/* Add Task Input Row */}
@@ -841,6 +1043,74 @@ export default function App() {
                       {task.context}
                     </p>
 
+                    {/* Urgency/Countdown Bar */}
+                    {(() => {
+                      const dl = parseDeadline(task.pillText, task.id);
+                      if (!dl) return null;
+                      
+                      const duration = getTaskDurationMinutes(task.title);
+                      const ponr = new Date(dl.getTime() - duration * 60 * 1000);
+                      const now = new Date();
+                      
+                      let percent = 0;
+                      let barColor = '#0F9D58';
+                      let textColorClass = 'text-[#0F9D58]';
+                      let countdownText = '';
+                      
+                      const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime();
+                      const remaining = ponr.getTime() - now.getTime();
+                      
+                      if (remaining <= 0) {
+                        percent = 0;
+                        barColor = '#B23A2E';
+                        textColorClass = 'text-[#B23A2E]';
+                        countdownText = '🔴 Point of no return passed — act now.';
+                      } else {
+                        percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
+                        if (percent > 50) {
+                          barColor = '#0F9D58';
+                          textColorClass = 'text-[#0F9D58]';
+                        } else if (percent >= 25) {
+                          barColor = '#C8893B';
+                          textColorClass = 'text-[#C8893B]';
+                        } else {
+                          barColor = '#B23A2E';
+                          textColorClass = 'text-[#B23A2E]';
+                        }
+                        
+                        const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        const isTodayVal = ponr.toDateString() === now.toDateString();
+                        const tomorrow = new Date(now);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
+                        
+                        let dayString = '';
+                        if (isTodayVal) {
+                          dayString = 'today';
+                        } else if (isTomorrowVal) {
+                          dayString = 'tomorrow';
+                        } else {
+                          dayString = ponr.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                        }
+                        
+                        countdownText = `⚠ Start by ${dayString} at ${timeString} or you'll miss this.`;
+                      }
+                      
+                      return (
+                        <div className="w-full mb-[18px]">
+                          <div className="w-full bg-[rgba(14,27,42,0.08)] h-[3px] rounded-[2px] overflow-hidden">
+                            <div 
+                              className="h-full rounded-[2px] transition-all duration-500" 
+                              style={{ width: `${percent}%`, backgroundColor: barColor }}
+                            />
+                          </div>
+                          <div className={`mt-1.5 font-sans font-normal text-[12px] ${textColorClass}`}>
+                            {countdownText}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Buttons */}
                     <div className="flex items-center gap-3">
                       <button
@@ -861,7 +1131,393 @@ export default function App() {
               })}
             </div>
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'calendar' && (
+          /* CALENDAR TAB PANEL */
+          <div id="polaris-calendar-container" className="w-full max-w-[800px] flex flex-col gap-6 pt-10 pb-16 px-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif font-medium text-[20px] text-polaris-primary">Calendar View</h2>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextMonth = new Date(currentCalendarMonth);
+                    nextMonth.setMonth(nextMonth.getMonth() - 1);
+                    setCurrentCalendarMonth(nextMonth);
+                    setSelectedCalendarDate(null);
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[rgba(14,27,42,0.05)] cursor-pointer text-polaris-primary font-bold text-[18px] border-0 bg-transparent"
+                >
+                  ‹
+                </button>
+                <span className="font-sans font-medium text-[16px] text-polaris-primary min-w-[120px] text-center">
+                  {currentCalendarMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextMonth = new Date(currentCalendarMonth);
+                    nextMonth.setMonth(nextMonth.getMonth() + 1);
+                    setCurrentCalendarMonth(nextMonth);
+                    setSelectedCalendarDate(null);
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[rgba(14,27,42,0.05)] cursor-pointer text-polaris-primary font-bold text-[18px] border-0 bg-transparent"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white border border-polaris-border rounded-[14px] p-6 shadow-sm relative">
+              <div className="grid grid-cols-7 gap-2 mb-4 text-center">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <div key={day} className="font-sans font-medium text-[13px] text-[#5B6B7B] py-1">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-2">
+                {getCalendarCells(currentCalendarMonth).map((cell, idx) => {
+                  const dayTasks = getTasksForDate(cell.date);
+                  const isToday = cell.date.toDateString() === new Date().toDateString();
+                  
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        if (dayTasks.length > 0) {
+                          setSelectedCalendarDate(cell.date);
+                        } else {
+                          setSelectedCalendarDate(null);
+                        }
+                      }}
+                      className={`min-h-[90px] border border-[rgba(14,27,42,0.04)] rounded-[8px] p-2 flex flex-col items-start justify-between cursor-pointer transition-all duration-150 ${
+                        cell.isCurrentMonth ? 'bg-white' : 'bg-transparent text-[#C4C4C4]'
+                      } ${dayTasks.length > 0 ? 'hover:border-polaris-primary/20 hover:shadow-sm' : ''}`}
+                    >
+                      <div className="w-full flex items-start justify-between">
+                        {isToday ? (
+                          <div className="w-6 h-6 rounded-full bg-[#0E1B2A] text-white flex items-center justify-center font-sans font-medium text-[13px]">
+                            {cell.date.getDate()}
+                          </div>
+                        ) : (
+                          <span className={`font-sans font-medium text-[13px] ${cell.isCurrentMonth ? 'text-polaris-primary' : 'text-[#C4C4C4]'}`}>
+                            {cell.date.getDate()}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="w-full flex flex-col gap-1 mt-2 overflow-hidden">
+                        {dayTasks.slice(0, 2).map((task) => {
+                          let dotColor = '#5B6B7B';
+                          if (task.urgency === 'high') dotColor = '#B23A2E';
+                          else if (task.urgency === 'medium') dotColor = '#C8893B';
+                          
+                          return (
+                            <div key={task.id} className="flex items-center gap-1.5 w-full">
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
+                              <span className="font-sans font-normal text-[11px] text-polaris-primary truncate leading-none">
+                                {task.title}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {dayTasks.length > 2 && (
+                          <div className="font-sans font-normal text-[10px] text-polaris-secondary pl-3">
+                            +{dayTasks.length - 2} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {selectedCalendarDate && (
+                <div 
+                  className="absolute z-10 bg-white border border-polaris-border rounded-[12px] p-4 shadow-lg max-w-[280px] w-full"
+                  style={{
+                    bottom: '24px',
+                    right: '24px',
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3 border-b border-[rgba(14,27,42,0.06)] pb-1.5">
+                    <span className="font-sans font-bold text-[13px] text-polaris-primary">
+                      {selectedCalendarDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCalendarDate(null);
+                      }}
+                      className="text-polaris-secondary hover:text-polaris-primary text-[14px] border-0 bg-transparent cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto">
+                    {getTasksForDate(selectedCalendarDate).map((task) => {
+                      let pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
+                      if (task.urgency === 'high') pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
+                      else if (task.urgency === 'medium') pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
+                      
+                      return (
+                        <div key={task.id} className="flex flex-col gap-0.5">
+                          <span className="font-sans font-medium text-[13px] text-polaris-primary leading-tight">
+                            {task.title}
+                          </span>
+                          <span className={`self-start px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium ${pillClass}`}>
+                            {task.urgency}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'dashboard' && (
+          /* DASHBOARD TAB PANEL */
+          <div id="polaris-dashboard-container" className="w-full max-w-[900px] flex flex-col gap-6 pt-10 pb-16 px-6">
+            <h2 className="font-serif font-medium text-[20px] text-polaris-primary mb-2">Dashboard</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+              {/* CARD 1: Task Overview */}
+              <div className="bg-white border border-polaris-border rounded-[14px] p-6 shadow-sm">
+                <h3 className="font-serif font-medium text-[16px] text-[#0E1B2A] mb-4">Task Overview</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col">
+                    <span className="font-sans font-medium text-[32px] text-[#0E1B2A] leading-none">
+                      {tasks.length}
+                    </span>
+                    <span className="font-sans text-[12px] text-polaris-secondary mt-1">Total tasks</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-sans font-medium text-[32px] text-[#0E1B2A] leading-none">
+                      {tasks.filter(t => t.urgency === 'high').length}
+                    </span>
+                    <span className="font-sans text-[12px] text-polaris-secondary mt-1">High urgency</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-sans font-medium text-[32px] text-[#0E1B2A] leading-none">
+                      {tasks.filter(t => {
+                        const dl = parseDeadline(t.pillText, t.id);
+                        if (!dl) return false;
+                        return dl.toDateString() === new Date().toDateString();
+                      }).length}
+                    </span>
+                    <span className="font-sans text-[12px] text-polaris-secondary mt-1">Due today</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-sans font-medium text-[32px] text-[#0E1B2A] leading-none">
+                      {completedCount}
+                    </span>
+                    <span className="font-sans text-[12px] text-polaris-secondary mt-1">Completed</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 2: Urgency Breakdown */}
+              <div className="bg-white border border-polaris-border rounded-[14px] p-6 shadow-sm">
+                <h3 className="font-serif font-medium text-[16px] text-[#0E1B2A] mb-4">Urgency Breakdown</h3>
+                <div className="flex flex-col gap-4">
+                  {/* High Urgency */}
+                  {(() => {
+                    const highCount = tasks.filter(t => t.urgency === 'high').length;
+                    const pct = tasks.length > 0 ? (highCount / tasks.length) * 100 : 0;
+                    return (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="font-sans text-[13px] text-polaris-primary w-16 shrink-0 font-medium">High</span>
+                        <div className="flex-1 bg-[rgba(14,27,42,0.05)] h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-[#B23A2E] h-full rounded-full transition-all duration-1000 ease-out" 
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="font-sans font-bold text-[13px] text-polaris-primary w-6 text-right shrink-0">{highCount}</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Medium Urgency */}
+                  {(() => {
+                    const medCount = tasks.filter(t => t.urgency === 'medium').length;
+                    const pct = tasks.length > 0 ? (medCount / tasks.length) * 100 : 0;
+                    return (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="font-sans text-[13px] text-polaris-primary w-16 shrink-0 font-medium">Medium</span>
+                        <div className="flex-1 bg-[rgba(14,27,42,0.05)] h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-[#C8893B] h-full rounded-full transition-all duration-1000 ease-out" 
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="font-sans font-bold text-[13px] text-polaris-primary w-6 text-right shrink-0">{medCount}</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Low Urgency */}
+                  {(() => {
+                    const lowCount = tasks.filter(t => t.urgency === 'low').length;
+                    const pct = tasks.length > 0 ? (lowCount / tasks.length) * 100 : 0;
+                    return (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="font-sans text-[13px] text-polaris-primary w-16 shrink-0 font-medium">Low</span>
+                        <div className="flex-1 bg-[rgba(14,27,42,0.05)] h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-[#5B6B7B] h-full rounded-full transition-all duration-1000 ease-out" 
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="font-sans font-bold text-[13px] text-polaris-primary w-6 text-right shrink-0">{lowCount}</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* CARD 3: Deadlines This Week */}
+              <div className="bg-white border border-polaris-border rounded-[14px] p-6 shadow-sm">
+                <h3 className="font-serif font-medium text-[16px] text-[#0E1B2A] mb-4">Deadlines This Week</h3>
+                {(() => {
+                  const now = new Date();
+                  const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                  
+                  const weekTasks = tasks
+                    .map(t => ({ task: t, dl: parseDeadline(t.pillText, t.id) }))
+                    .filter(item => item.dl !== null && item.dl >= now && item.dl <= weekEnd)
+                    .sort((a, b) => a.dl!.getTime() - b.dl!.getTime());
+                    
+                  if (weekTasks.length === 0) {
+                    return (
+                      <div className="flex items-center justify-center py-6 text-polaris-secondary font-sans text-[14px]">
+                        You're clear for the week 🎉
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="flex flex-col gap-3">
+                      {weekTasks.map(({ task, dl }) => {
+                        let dotColor = '#5B6B7B';
+                        if (task.urgency === 'high') dotColor = '#B23A2E';
+                        else if (task.urgency === 'medium') dotColor = '#C8893B';
+                        
+                        const diffDays = Math.ceil((dl!.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+                        let daysAwayText = `In ${diffDays} days`;
+                        if (dl!.toDateString() === now.toDateString()) {
+                          daysAwayText = 'Today';
+                        } else {
+                          const tomorrow = new Date(now);
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          if (dl!.toDateString() === tomorrow.toDateString()) {
+                            daysAwayText = 'Tomorrow';
+                          }
+                        }
+                        
+                        return (
+                          <div key={task.id} className="flex items-center gap-3 border-b border-[rgba(14,27,42,0.04)] pb-2 last:border-0 last:pb-0">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
+                            <span className="font-sans text-[13px] text-polaris-primary truncate flex-1">{task.title}</span>
+                            <span className="font-sans text-[12px] text-polaris-secondary shrink-0">{daysAwayText}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* CARD 4: Polaris Impact */}
+              <div className="bg-white border border-polaris-border rounded-[14px] p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                  <h3 className="font-serif font-medium text-[16px] text-[#0E1B2A] mb-4">Polaris Impact</h3>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-sans text-[13px] text-polaris-secondary">Deadlines found via inbox scan</span>
+                      <span className="font-sans font-bold text-[16px] text-polaris-primary">{scannedCount}</span>
+                    </div>
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-sans text-[13px] text-polaris-secondary">Tasks completed this session</span>
+                      <span className="font-sans font-bold text-[16px] text-[#0F9D58]">{completedCount}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="border-t border-[rgba(14,27,42,0.08)] pt-4 mt-4 text-center">
+                  <p className="font-serif italic text-[14px] text-polaris-primary">
+                    "Polaris found what you almost missed."
+                  </p>
+                </div>
+              </div>
+
+              {/* CARD 5: Point-of-No-Return Alerts */}
+              <div className="bg-white border border-polaris-border rounded-[14px] p-6 shadow-sm md:col-span-2">
+                <h3 className="font-serif font-medium text-[16px] text-[#0E1B2A] mb-4">Point-of-No-Return Alerts</h3>
+                {(() => {
+                  const now = new Date();
+                  const alertTasks = tasks
+                    .map(t => {
+                      const dl = parseDeadline(t.pillText, t.id);
+                      const duration = getTaskDurationMinutes(t.title);
+                      const ponr = dl ? new Date(dl.getTime() - duration * 60 * 1000) : null;
+                      return { task: t, ponr };
+                    })
+                    .filter(item => {
+                      if (!item.ponr) return false;
+                      const diffMinutes = (item.ponr.getTime() - now.getTime()) / (60 * 1000);
+                      return diffMinutes <= 120;
+                    });
+                    
+                  if (alertTasks.length === 0) {
+                    return (
+                      <div className="flex items-center justify-center py-4 text-[#0F9D58] font-sans font-medium text-[14px]">
+                        All clear — no immediate alerts.
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="flex flex-col gap-3">
+                      {alertTasks.map(({ task, ponr }) => {
+                        const diffMinutes = Math.round((ponr!.getTime() - now.getTime()) / (60 * 1000));
+                        let timeText = '';
+                        if (diffMinutes <= 0) {
+                          timeText = 'Passed';
+                        } else if (diffMinutes < 60) {
+                          timeText = `${diffMinutes} mins remaining`;
+                        } else {
+                          const hrs = Math.floor(diffMinutes / 60);
+                          const mins = diffMinutes % 60;
+                          timeText = `${hrs}h ${mins}m remaining`;
+                        }
+                        
+                        return (
+                          <div key={task.id} className="flex items-center justify-between gap-4 border-b border-[rgba(14,27,42,0.04)] pb-2 last:border-0 last:pb-0">
+                            <span className="font-sans text-[13px] text-polaris-primary font-medium truncate flex-1">
+                              {task.title}
+                            </span>
+                            <span className="font-sans font-bold text-[13px] text-[#B23A2E] shrink-0">
+                              {timeText}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'inbox' && (
           /* INBOX TAB PANEL (Pixel-perfect Gmail clone) */
           <div id="polaris-inbox-container" className="w-full flex bg-white min-h-[calc(100vh-180px)]">
             
