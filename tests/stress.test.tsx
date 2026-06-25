@@ -48,7 +48,7 @@ describe('Stress Tests', () => {
     fireEvent.click(inboxTab);
 
     // Open email
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -85,7 +85,7 @@ describe('Stress Tests', () => {
     // Scan first
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
     fireEvent.click(scanBtn);

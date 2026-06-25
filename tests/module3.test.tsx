@@ -159,4 +159,80 @@ describe('Module 3: Add & Manage Tasks', () => {
 
     expect(screen.queryAllByRole('heading', { level: 2 })).toHaveLength(0);
   });
+
+  test('Adding 50 tasks in sequence — all appear, no duplicates', () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Add a new task…');
+    const addButton = screen.getByRole('button', { name: /Add task/i });
+
+    const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
+
+    for (let i = 0; i < 50; i++) {
+      fireEvent.change(input, { target: { value: `Sequenced Task ${i}` } });
+      fireEvent.click(addButton);
+    }
+
+    const headings = screen.getAllByRole('heading', { level: 2 });
+    expect(headings).toHaveLength(initialCount + 50);
+
+    // Verify all 50 unique tasks are present
+    for (let i = 0; i < 50; i++) {
+      expect(screen.getByText(`Sequenced Task ${i}`)).toBeInTheDocument();
+    }
+  });
+
+  test('Done button removes exactly the right card by index when titles are identical', () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Add a new task…');
+    const addButton = screen.getByRole('button', { name: /Add task/i });
+
+    // Add three identical tasks with distinct internal or date identifiers if any, or just check the text/DOM list
+    // Wait, let's add three tasks: "Duplicate Task", "Duplicate Task", "Duplicate Task"
+    fireEvent.change(input, { target: { value: 'Duplicate Task' } });
+    fireEvent.click(addButton);
+    fireEvent.change(input, { target: { value: 'Duplicate Task' } });
+    fireEvent.click(addButton);
+    fireEvent.change(input, { target: { value: 'Duplicate Task' } });
+    fireEvent.click(addButton);
+
+    // Let's check card contexts or headings list
+    const headingsBefore = screen.getAllByRole('heading', { level: 2 });
+    const countBefore = headingsBefore.length;
+
+    // Find the Done buttons specifically for "Duplicate Task"
+    // Since we know the index: they are added at the end
+    const doneButtons = screen.getAllByRole('button', { name: /Done/i });
+    
+    // Click Done on the second "Duplicate Task" (which is index doneButtons.length - 2)
+    fireEvent.click(doneButtons[doneButtons.length - 2]);
+
+    const headingsAfter = screen.getAllByRole('heading', { level: 2 });
+    expect(headingsAfter).toHaveLength(countBefore - 1);
+    
+    const matched = headingsAfter.filter(h => h.textContent === 'Duplicate Task');
+    expect(matched).toHaveLength(2);
+  });
+
+  test('After removing all tasks, adding a new one works correctly', () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Add a new task…');
+    const addButton = screen.getByRole('button', { name: /Add task/i });
+
+    // Remove all tasks first
+    let doneButtons = screen.queryAllByRole('button', { name: /Done/i });
+    while (doneButtons.length > 0) {
+      fireEvent.click(doneButtons[0]);
+      doneButtons = screen.queryAllByRole('button', { name: /Done/i });
+    }
+
+    expect(screen.queryAllByRole('heading', { level: 2 })).toHaveLength(0);
+
+    // Add a new task
+    fireEvent.change(input, { target: { value: 'Post-Empty Task' } });
+    fireEvent.click(addButton);
+
+    const headings = screen.getAllByRole('heading', { level: 2 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveTextContent('Post-Empty Task');
+  });
 });

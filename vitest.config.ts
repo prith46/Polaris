@@ -4,9 +4,33 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/main.tsx'],
+    },
     globals: true,
-    setupFiles: './tests/setup.ts',
-    testTimeout: 40000, // 40 seconds timeout
+    testTimeout: 40000,
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          setupFiles: './tests/setup.ts',
+          include: ['tests/**/*.test.{ts,tsx}'],
+          exclude: ['tests/backend.test.ts'],
+        }
+      },
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['tests/backend.test.ts'],
+        }
+      }
+    ]
   },
 });

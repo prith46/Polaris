@@ -20,7 +20,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     expect(screen.queryByRole('button', { name: /Scan for deadlines/i })).not.toBeInTheDocument();
 
     // Click on an email to open reading view
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     // Visible in reading view
@@ -35,7 +35,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -62,7 +62,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -82,7 +82,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
 
     expect(screen.getByText('Pay electricity bill')).toBeInTheDocument();
     expect(screen.getByText('Friday the 27th')).toBeInTheDocument();
-    expect(screen.getByText('Found in your inbox — Blaine, me')).toBeInTheDocument();
+    expect(screen.getByText('Found in your inbox — City Power & Utilities')).toBeInTheDocument();
   });
 
   test('Mock response returning empty array []', async () => {
@@ -95,7 +95,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -113,7 +113,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -136,7 +136,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -160,7 +160,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -184,7 +184,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -213,7 +213,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -227,7 +227,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     fireEvent.click(backBtn);
 
     // Open again
-    fireEvent.click(screen.getByText('Recent project updates'));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
     
     // Result message should be gone
     expect(screen.queryByText('No deadlines found in this email.')).not.toBeInTheDocument();
@@ -246,7 +246,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const emailRow = screen.getByText('Recent project updates');
+    const emailRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(emailRow);
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
@@ -266,5 +266,43 @@ describe('Module 5: Email Scanner (mocked)', () => {
     // Go back to Tasks
     fireEvent.click(tasksTab);
     expect(screen.getByText('Persisted Scan Task')).toBeInTheDocument();
+  });
+
+  test('Multiple sequential scans work correctly (mock)', async () => {
+    let mockResponse = { result: JSON.stringify([{ title: 'First Sequential Task', deadline: 'Soon', urgency: 'medium' }]) };
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(() => Promise.resolve({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response));
+
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    // Open first email
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
+    });
+
+    // Go back and open another email
+    fireEvent.click(screen.getByRole('button', { name: /Back to Inbox/i }));
+    
+    // Change mock response for second scan
+    mockResponse = { result: JSON.stringify([{ title: 'Second Sequential Task', deadline: 'Later', urgency: 'low' }]) };
+
+    fireEvent.click(screen.getByText('Following up on the recommendation letter'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
+    });
+
+    // Check Tasks tab
+    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
+    expect(screen.getByText('First Sequential Task')).toBeInTheDocument();
+    expect(screen.getByText('Second Sequential Task')).toBeInTheDocument();
   });
 });

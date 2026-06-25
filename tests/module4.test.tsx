@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../src/App';
 
 describe('Module 4: Gmail Inbox', () => {
@@ -32,13 +32,14 @@ describe('Module 4: Gmail Inbox', () => {
     fireEvent.click(inboxTab);
 
     const sendersToCheck = [
-      'Blaine, me',
-      'Mom',
-      'Google',
-      'Vercel',
-      'Rahul Mehta',
-      'Prof. Anjali Sharma',
       'City Power & Utilities',
+      'Prof. Anjali Sharma',
+      'Scholarship Office',
+      'Rahul Mehta',
+      'HDFC Bank',
+      'Medium Daily',
+      'Microsoft Azure',
+      'GitHub',
     ];
 
     sendersToCheck.forEach((sender) => {
@@ -46,7 +47,7 @@ describe('Module 4: Gmail Inbox', () => {
     });
 
     const emailRows = screen.getAllByRole('checkbox').filter(cb => cb.closest('[id^="email-row-"]'));
-    expect(emailRows.length).toBe(25);
+    expect(emailRows.length).toBe(50);
   });
 
   test('Unread emails show bold styling', () => {
@@ -54,10 +55,10 @@ describe('Module 4: Gmail Inbox', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const blaineSender = screen.getByText('Blaine, me');
+    const blaineSender = screen.getByText('City Power & Utilities');
     expect(blaineSender).toHaveClass('font-bold');
 
-    const hiltonSender = screen.getByText('Hilton Honors');
+    const hiltonSender = screen.getByText('Rahul Mehta');
     expect(hiltonSender).toHaveClass('font-normal');
   });
 
@@ -77,12 +78,12 @@ describe('Module 4: Gmail Inbox', () => {
     expect(screen.getByText('Sent')).toBeInTheDocument();
   });
 
-  test('Toolbar shows "1–25 of 299"', () => {
+  test('Toolbar shows "1–50 of 847"', () => {
     render(<App />);
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    expect(screen.getByText('1–25 of 299')).toBeInTheDocument();
+    expect(screen.getByText('1–50 of 847')).toBeInTheDocument();
   });
 
   test('Clicking email row opens reading view, back button returns', () => {
@@ -90,51 +91,76 @@ describe('Module 4: Gmail Inbox', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
-    const blaineRow = screen.getByText('Recent project updates');
+    const blaineRow = screen.getByText('Your electricity bill is due soon');
     fireEvent.click(blaineRow);
 
-    expect(screen.getByRole('heading', { name: 'Recent project updates' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your electricity bill is due soon' })).toBeInTheDocument();
 
     const backBtn = screen.getByRole('button', { name: /Back to Inbox/i });
     expect(backBtn).toBeInTheDocument();
 
     fireEvent.click(backBtn);
 
-    expect(screen.getByText('1–25 of 299')).toBeInTheDocument();
+    expect(screen.getByText('1–50 of 847')).toBeInTheDocument();
   });
 
-  test('All 25 emails clickable without crash', () => {
+  test('All 50 emails clickable without crash', () => {
     render(<App />);
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     fireEvent.click(inboxTab);
 
     const subjects = [
-      'Recent project updates',
-      'RSVP for team lunch and bike ride!',
-      'Tickets: Ticket request #610007 has been approved!',
-      'Thank you for your inquiry',
-      'Your Upcoming Reservation #20983746',
-      'Confirmation for Flight VA2345 SFO to NYC',
-      "FW: What 'the future of innovation' Looks Like",
-      'Photos from my road trip',
-      'Product Strategy classes',
-      'Business trip',
-      'Book you recommended',
-      'Security alert: New sign-in on Chrome',
-      'Pull request merged: feat/dashboard-v2',
-      'Project sync — Thursday 4 PM',
-      'Following up on the recommendation letter',
-      'Your electricity bill is due soon',
-      'Welcome packet and a few next steps',
-      'You appeared in 14 searches this week',
-      'Your order has been delivered!',
-      "Long time! How've you been?",
-      'This week in web development 🚀',
-      'Your order has shipped',
-      'Weekly digest: 3 updates in your workspace',
-      'Deployment successful: polaris-app',
-      "Call me when you're free ❤️",
-    ];
+      "Your electricity bill is due soon",
+      "Following up on the recommendation letter",
+      "Enrollment confirmation required",
+      "Project sync — Thursday 4 PM",
+      "Credit card payment due",
+      "5 design principles for clean user interfaces",
+      "Action Required: Subscription renewal",
+      "Action Required: Update SSH keys",
+      "Rent transfer reminder",
+      "Verify your Aadhaar linkage",
+      "Weekend trip planning",
+      "Feedback on code contribution",
+      "The future of autonomous flight startup raises $50M",
+      "Complete your course enrollment",
+      "Invoice for billing period May",
+      "Relive your memories from 3 years ago",
+      "Graduation certificate ready!",
+      "Submit your research draft",
+      "Your package has been delivered",
+      "Confirm your account registration",
+      "Review draft of the design spec",
+      "Introducing next-generation image optimization",
+      "Meeting request: Thesis progress sync",
+      "Show HN: A lightweight calendar component",
+      "Receipt for your ride on Monday",
+      "Update your payment details",
+      "Weekly algorithm challenge",
+      "Your Apple Care invoice",
+      "You starred a new repository!",
+      "Physiotherapy appointment schedule",
+      "Keep your daily streak alive!",
+      "Verify your email address",
+      "Hostel room allotment form",
+      "Birthday gift contribution for Raj",
+      "Group project assignment task list",
+      "Your order has been picked up",
+      "Feedback on mock interview",
+      "Weekly schedule overview",
+      "Review slides for client meeting",
+      "New specialization in Generative AI",
+      "Verify new device login",
+      "Review requested: Marketing brochure",
+      "Book your class slot for tomorrow",
+      "Receipt for your purchase",
+      "Package out for delivery",
+      "Appointment slot confirmation",
+      "Book tickets for music concert",
+      "Dental check-up confirmation",
+      "Welcome to the sponsor community",
+      "Gift contribution for boss"
+];
 
     for (const subject of subjects) {
       const emailRow = screen.getByText(subject);
@@ -156,9 +182,9 @@ describe('Module 4: Gmail Inbox', () => {
       { subject: 'Your electricity bill is due soon', expected: '₹2,340' },
       { subject: 'Following up on the recommendation letter', expected: 'recommendation letter' },
       { subject: 'Project sync — Thursday 4 PM', expected: 'Thursday at 4:00 PM' },
-      { subject: 'Welcome packet and a few next steps', expected: 'enrollment confirmation form' },
-      { subject: 'This week in web development 🚀', expected: 'DevWeekly' },
-      { subject: "Long time! How've you been?", expected: 'Hey stranger' },
+      { subject: 'Enrollment confirmation required', expected: 'enrollment confirmation form' },
+      { subject: '5 design principles for clean user interfaces', expected: 'whitespace' },
+      { subject: 'The future of autonomous flight startup raises $50M', expected: 'Silicon valley' },
     ];
 
     for (const story of stories) {
@@ -172,5 +198,115 @@ describe('Module 4: Gmail Inbox', () => {
       const backBtn = screen.getByRole('button', { name: /Back to Inbox/i });
       fireEvent.click(backBtn);
     }
+  });
+
+  test('Inbox tab shows toggle row with "Emails" and "Scan Image" options', () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    expect(screen.getByRole('button', { name: /Emails/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Scan Image/i })).toBeInTheDocument();
+  });
+
+  test('"Emails" toggle shows email list', () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    // Default should show emails
+    expect(screen.getByText('Your electricity bill is due soon')).toBeInTheDocument();
+
+    // Click Scan Image
+    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    expect(screen.queryByText('Your electricity bill is due soon')).not.toBeInTheDocument();
+
+    // Click Emails back
+    fireEvent.click(screen.getByRole('button', { name: /Emails/i }));
+    expect(screen.getByText('Your electricity bill is due soon')).toBeInTheDocument();
+  });
+
+  test('"Scan Image" toggle shows upload zone', () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    expect(screen.getByText('Drop a screenshot here')).toBeInTheDocument();
+  });
+
+  test('Upload zone shows drag-drop text and browse button', () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    expect(screen.getByText(/WhatsApp chats, whiteboard photos/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Browse files' })).toBeInTheDocument();
+  });
+
+  test('"Try an example" link exists in scan image view', () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    expect(screen.getByText('✨ Try an example →')).toBeInTheDocument();
+  });
+
+  test('Clicking "Try an example" adds exactly 4 tasks to Tasks list', async () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    
+    const initialTasksCount = 4; // default seed tasks
+    
+    const tryBtn = screen.getByText('✨ Try an example →');
+    fireEvent.click(tryBtn);
+
+    // Wait for tasks to be added
+    await screen.findByText(/✓ Found 4 task\(s\) — added to your Tasks\./i);
+
+    // Check tasks list
+    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
+    const headings = screen.getAllByRole('heading', { level: 2 });
+    expect(headings.length).toBe(initialTasksCount + 4);
+  });
+
+  test('Wrong file type shows error message', async () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+
+    const file = new File(['dummy content'], 'document.pdf', { type: 'application/pdf' });
+    const fileInput = screen.getByTestId('image-file-input');
+    
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Please upload a PNG, JPG, or WEBP image.')).toBeInTheDocument();
+    });
+  });
+
+  test('Reading view shows "Scan for deadlines" button', () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    expect(screen.getByRole('button', { name: /Scan for deadlines/i })).toBeInTheDocument();
+  });
+
+  test('Back button text is present in reading view', () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    expect(screen.getByText('Back to Inbox')).toBeInTheDocument();
   });
 });
