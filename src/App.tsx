@@ -574,6 +574,103 @@ export default function App() {
   const [escapeDraftText, setEscapeDraftText] = useState('');
   const [copyButtonText, setCopyButtonText] = useState('Copy to clipboard');
 
+  // States for Renegotiation Agent
+  const [isRenegotiateLoading, setIsRenegotiateLoading] = useState(false);
+  const [isRenegotiateModalOpen, setIsRenegotiateModalOpen] = useState(false);
+  const [renegotiatePlan, setRenegotiatePlan] = useState<{
+    protect: Array<{ title: string; reason: string }>;
+    extend: Array<{ title: string; reason: string; draft: string }>;
+    drop: Array<{ title: string; reason: string; draft: string }>;
+  } | null>(null);
+  const [copiedDrafts, setCopiedDrafts] = useState<Record<string, boolean>>({});
+
+  const handleRenegotiate = async () => {
+    if (tasks.length === 0) {
+      alert("No tasks to renegotiate — you're all clear!");
+      return;
+    }
+    setIsRenegotiateLoading(true);
+    try {
+      const taskList = tasks.map(t => ({
+        title: t.title,
+        urgency: t.urgency,
+        deadline: t.pillText || 'No deadline set',
+        context: t.context || ''
+      }));
+
+      const response = await fetchWithTimeout(
+        '/api/renegotiate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ tasks: taskList }),
+        },
+        10000
+      );
+
+      if (!response.ok) {
+        throw new Error('Renegotiate response not OK');
+      }
+
+      const data = await response.json();
+      if (data && (Array.isArray(data.protect) || Array.isArray(data.extend) || Array.isArray(data.drop))) {
+        setRenegotiatePlan({
+          protect: data.protect || [],
+          extend: data.extend || [],
+          drop: data.drop || []
+        });
+        setIsRenegotiateModalOpen(true);
+      } else {
+        throw new Error('Invalid renegotiation response structure');
+      }
+    } catch (error) {
+      console.warn('Renegotiation API failed, using fallback:', error);
+      
+      const protect: any[] = [];
+      const extend: any[] = [];
+      const drop: any[] = [];
+
+      const highUrgencyTask = tasks.find(t => t.urgency === 'high');
+      const mediumUrgencyTask = tasks.find(t => t.urgency === 'medium');
+
+      tasks.forEach(t => {
+        if (highUrgencyTask && t.id === highUrgencyTask.id) {
+          protect.push({
+            title: t.title,
+            reason: "Highest urgency — cannot be deferred"
+          });
+        } else if (mediumUrgencyTask && t.id === mediumUrgencyTask.id) {
+          extend.push({
+            title: t.title,
+            reason: "Important but has some flexibility",
+            draft: `Hi, I wanted to reach out about ${t.title}. I'm currently at capacity with some urgent matters. Would it be possible to get a short extension? I can have this completed within the next few days. Thank you for understanding.`
+          });
+        } else {
+          drop.push({
+            title: t.title,
+            reason: "Lower priority — can be safely deferred",
+            draft: `Hi, I need to be upfront — I won't be able to get to ${t.title} right now. I'll revisit this when my current workload clears. Apologies for any inconvenience.`
+          });
+        }
+      });
+
+      setRenegotiatePlan({ protect, extend, drop });
+      setIsRenegotiateModalOpen(true);
+    } finally {
+      setIsRenegotiateLoading(false);
+    }
+  };
+
+  const copyDraftToClipboard = (taskTitle: string, draftText: string) => {
+    navigator.clipboard.writeText(draftText);
+    setCopiedDrafts(prev => ({ ...prev, [taskTitle]: true }));
+    setTimeout(() => {
+      setCopiedDrafts(prev => ({ ...prev, [taskTitle]: false }));
+    }, 2000);
+  };
+
   const handlePanic = async () => {
     if (tasks.length === 0) return;
     setIsPanicLoading(true);
@@ -1198,6 +1295,17 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Renegotiation Agent Button */}
+            <button
+              id="renegotiate-btn"
+              type="button"
+              onClick={handleRenegotiate}
+              disabled={isRenegotiateLoading}
+              className="w-full rounded-[12px] py-3 px-5 bg-transparent border-[1.5px] border-[rgba(14,27,42,0.15)] text-[#5B6B7B] font-sans font-medium text-[14px] hover:bg-[rgba(14,27,42,0.04)] hover:border-[rgba(14,27,42,0.3)] hover:text-[#0E1B2A] transition-all disabled:opacity-80 cursor-pointer"
+            >
+              {isRenegotiateLoading ? "Analyzing your tasks..." : "🏳 I can't do all of this — help me decide"}
+            </button>
 
             {/* Add Task Input Row */}
             <form id="polaris-add-form" onSubmit={handleAddTask} className="w-full flex gap-3 mb-6">
@@ -2242,6 +2350,145 @@ export default function App() {
                 {copyButtonText}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Renegotiation Modal Overlay */}
+      {isRenegotiateModalOpen && renegotiatePlan && (
+        <div 
+          id="renegotiate-modal-backdrop"
+          onClick={() => setIsRenegotiateModalOpen(false)}
+          className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white max-w-[600px] w-full max-h-[80vh] overflow-y-auto rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-6"
+          >
+            {/* Close Button top-right */}
+            <button
+              id="close-renegotiate-modal"
+              type="button"
+              onClick={() => setIsRenegotiateModalOpen(false)}
+              className="absolute top-5 right-5 text-polaris-secondary hover:text-polaris-primary text-[20px] border-0 bg-transparent cursor-pointer font-sans"
+            >
+              ✕
+            </button>
+
+            {/* Title & Subtitle */}
+            <div>
+              <h2 className="font-serif font-medium text-[22px] text-[#0E1B2A] mb-1.5">
+                Renegotiation Plan
+              </h2>
+              <p className="font-sans font-normal text-[13px] text-[#5B6B7B]">
+                Here's what Polaris recommends given your current load.
+              </p>
+            </div>
+
+            {/* Section 1: Protect */}
+            {renegotiatePlan.protect && renegotiatePlan.protect.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <h3 className="font-sans font-medium text-[13px] uppercase tracking-[0.05em] text-[#0F9D58]">
+                  ✓ Protect these
+                </h3>
+                {renegotiatePlan.protect.map((t, idx) => (
+                  <div 
+                    key={idx} 
+                    style={{ borderLeft: '3px solid #0F9D58' }}
+                    className="bg-[rgba(15,157,88,0.04)] rounded-[8px] p-3 px-4 flex flex-col gap-1"
+                  >
+                    <div className="font-sans font-medium text-[14px] text-[#0E1B2A]">
+                      {t.title}
+                    </div>
+                    <div className="font-sans text-[13px] text-[#5B6B7B]">
+                      {t.reason}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Section 2: Request Extension */}
+            {renegotiatePlan.extend && renegotiatePlan.extend.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <h3 className="font-sans font-medium text-[13px] uppercase tracking-[0.05em] text-[#C8893B]">
+                  ⏳ Request an extension
+                </h3>
+                {renegotiatePlan.extend.map((t, idx) => (
+                  <div 
+                    key={idx} 
+                    style={{ borderLeft: '3px solid #C8893B' }}
+                    className="bg-[rgba(200,137,59,0.06)] rounded-[8px] p-3 px-4 flex flex-col gap-2"
+                  >
+                    <div>
+                      <div className="font-sans font-medium text-[14px] text-[#0E1B2A]">
+                        {t.title}
+                      </div>
+                      <div className="font-sans text-[13px] text-[#5B6B7B] mt-0.5">
+                        {t.reason}
+                      </div>
+                    </div>
+                    {t.draft && (
+                      <div className="flex flex-col gap-2">
+                        <div className="bg-[#F7F5F0] rounded-[6px] p-2.5 px-3 text-[13px] text-[#0E1B2A] font-sans leading-relaxed">
+                          {t.draft}
+                        </div>
+                        <div className="flex justify-start">
+                          <button
+                            type="button"
+                            onClick={() => copyDraftToClipboard(t.title, t.draft)}
+                            className="px-3 py-1.5 bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[12px] rounded-[6px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
+                          >
+                            {copiedDrafts[t.title] ? '✓ Copied!' : 'Copy draft'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Section 3: Drop or Defer */}
+            {renegotiatePlan.drop && renegotiatePlan.drop.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <h3 className="font-sans font-medium text-[13px] uppercase tracking-[0.05em] text-[#5B6B7B]">
+                  ✗ Drop or defer
+                </h3>
+                {renegotiatePlan.drop.map((t, idx) => (
+                  <div 
+                    key={idx} 
+                    style={{ borderLeft: '3px solid #5B6B7B' }}
+                    className="bg-[rgba(91,107,123,0.06)] rounded-[8px] p-3 px-4 flex flex-col gap-2"
+                  >
+                    <div>
+                      <div className="font-sans font-medium text-[14px] text-[#0E1B2A]">
+                        {t.title}
+                      </div>
+                      <div className="font-sans text-[13px] text-[#5B6B7B] mt-0.5">
+                        {t.reason}
+                      </div>
+                    </div>
+                    {t.draft && (
+                      <div className="flex flex-col gap-2">
+                        <div className="bg-[#F7F5F0] rounded-[6px] p-2.5 px-3 text-[13px] text-[#0E1B2A] font-sans leading-relaxed">
+                          {t.draft}
+                        </div>
+                        <div className="flex justify-start">
+                          <button
+                            type="button"
+                            onClick={() => copyDraftToClipboard(t.title, t.draft)}
+                            className="px-3 py-1.5 bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[12px] rounded-[6px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
+                          >
+                            {copiedDrafts[t.title] ? '✓ Copied!' : 'Copy draft'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

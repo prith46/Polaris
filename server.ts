@@ -205,6 +205,53 @@ async function startServer() {
     }
   });
 
+  // Renegotiate tasks endpoint
+  app.post("/api/renegotiate", async (req, res) => {
+    try {
+      const { tasks } = req.body;
+      if (!tasks || !Array.isArray(tasks)) {
+        return res.status(400).json({ error: "No tasks list provided" });
+      }
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "GEMINI_API_KEY environment variable is not configured on the server" });
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            "User-Agent": "aistudio-build",
+          },
+        },
+      });
+
+      const systemInstruction = "You are a ruthless but compassionate productivity advisor. You will be given a list of tasks. Your job is to help the user decide what to protect, what to request an extension on, and what to drop or defer. Be direct and honest. Return ONLY a valid JSON object with exactly this structure: { protect: Array<{title: string, reason: string (max 15 words)}>, extend: Array<{title: string, reason: string (max 15 words), draft: string (a short human-sounding message requesting an extension, under 80 words)}>, drop: Array<{title: string, reason: string (max 15 words), draft: string (a short human-sounding message declining or deferring, under 80 words)}) }. Rules: protect array should have 1-2 tasks maximum. extend array should have 0-2 tasks. drop array gets everything else. Never return anything except this JSON object.";
+
+      const taskListStr = tasks.map((t: any) => `${t.title} | ${t.urgency} | ${t.deadline} | ${t.context}`).join("\n");
+      const contents = `Here are my tasks:\n${taskListStr}\n\nHelp me decide what to protect, extend, and drop.`;
+
+      const response = await retryWithDelay(async () => {
+        return await ai.models.generateContent({
+          model: "gemini-2.5-flash-lite",
+          contents,
+          config: {
+            systemInstruction,
+            responseMimeType: "application/json",
+          },
+        });
+      });
+
+      const rawText = response.text || "{}";
+      const result = JSON.parse(rawText.trim());
+      res.json(result);
+    } catch (err: any) {
+      console.error("Error in /api/renegotiate:", err);
+      res.status(500).json({ error: "fallback" });
+    }
+  });
+
   // Vite middleware for development or serving built static files in production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
