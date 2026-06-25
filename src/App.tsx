@@ -557,6 +557,105 @@ export default function App() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
   const [, setTimeTick] = useState(0);
 
+  // States for Panic Mode & Focus Mode
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [focusedTaskTitle, setFocusedTaskTitle] = useState('');
+  const [focusedReason, setFocusedReason] = useState('');
+  const [focusedAction, setFocusedAction] = useState('');
+  const [isPanicLoading, setIsPanicLoading] = useState(false);
+
+  // States for Escape Hatch
+  const [escapeHatchLoadingTaskId, setEscapeHatchLoadingTaskId] = useState<string | null>(null);
+  const [isEscapeModalOpen, setIsEscapeModalOpen] = useState(false);
+  const [escapeDraftText, setEscapeDraftText] = useState('');
+  const [copyButtonText, setCopyButtonText] = useState('Copy to clipboard');
+
+  const handlePanic = async () => {
+    if (tasks.length === 0) return;
+    setIsPanicLoading(true);
+    try {
+      const taskList = tasks.map(t => ({
+        title: t.title,
+        urgency: t.urgency,
+        deadline: t.pillText
+      }));
+
+      const response = await fetchWithTimeout(
+        '/api/panic',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ tasks: taskList }),
+        },
+        10000
+      );
+
+      if (!response.ok) {
+        throw new Error('Panic response not OK');
+      }
+
+      const data = await response.json();
+      if (data && data.taskTitle) {
+        setIsFocusMode(true);
+        setFocusedTaskTitle(data.taskTitle);
+        setFocusedReason(data.reason || 'Highest priority task');
+        setFocusedAction(data.action || 'Focus on this right now');
+      } else {
+        throw new Error('Invalid panic data');
+      }
+    } catch (error) {
+      console.warn('Panic API failed, falling back locally:', error);
+      let fallbackTask = tasks.find(t => t.urgency === 'high') || tasks[0];
+      if (fallbackTask) {
+        setIsFocusMode(true);
+        setFocusedTaskTitle(fallbackTask.title);
+        setFocusedReason('Highest urgency task');
+        setFocusedAction('Start working on this immediately.');
+      }
+    } finally {
+      setIsPanicLoading(false);
+    }
+  };
+
+  const handleEscapeHatch = async (task: Task) => {
+    setEscapeHatchLoadingTaskId(task.id);
+    try {
+      const response = await fetchWithTimeout(
+        '/api/escape-hatch',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ taskTitle: task.title, taskContext: task.context }),
+        },
+        10000
+      );
+
+      if (!response.ok) {
+        throw new Error('Escape hatch response not OK');
+      }
+
+      const data = await response.json();
+      if (data && typeof data.draft === 'string') {
+        setEscapeDraftText(data.draft);
+        setIsEscapeModalOpen(true);
+      } else {
+        throw new Error('Invalid escape hatch data');
+      }
+    } catch (error) {
+      console.warn('Escape hatch API failed, falling back locally:', error);
+      setEscapeDraftText(
+        "Hi, I sincerely apologize for the delay on this. I got caught up with some urgent matters and lost track of time. I'll have this to you by tomorrow — thank you so much for your patience."
+      );
+      setIsEscapeModalOpen(true);
+    } finally {
+      setEscapeHatchLoadingTaskId(null);
+    }
+  };
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeTick((prev) => prev + 1);
@@ -980,6 +1079,43 @@ export default function App() {
         {activeTab === 'tasks' && (
           /* TASKS TAB PANEL */
           <div id="polaris-tasks-container" className="w-full max-w-[640px] flex flex-col gap-4">
+            {/* Panic Button Bar */}
+            <div 
+              className="w-full bg-[#B23A2E] rounded-[12px] p-[14px] px-5 flex items-center justify-between transition-all duration-200 hover:bg-[#9e2f24] mb-2"
+            >
+              <div className="flex items-center gap-2 text-white">
+                <span className="text-[18px]">⚡</span>
+                <span className="font-sans font-medium text-[15px]">
+                  {isFocusMode 
+                    ? `Focus mode active — seeing 1 of ${tasks.length} tasks` 
+                    : "I'm overwhelmed — what do I do RIGHT NOW?"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handlePanic}
+                disabled={isPanicLoading}
+                className="bg-white text-[#B23A2E] font-sans font-medium text-[13px] rounded-[8px] px-4 py-2 hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-85"
+              >
+                {isPanicLoading ? "Thinking..." : "Focus me"}
+              </button>
+            </div>
+
+            {/* Focus Mode Banner */}
+            {isFocusMode && (
+              <div className="w-full bg-white border-l-4 border-[#B23A2E] rounded-[8px] p-4 mb-3 shadow-sm flex flex-col gap-2">
+                <div className="font-sans font-medium text-[14px] text-[#B23A2E] flex items-center gap-1.5">
+                  <span>⚡ Focus mode</span>
+                </div>
+                <div className="font-sans text-[14px] text-[#0E1B2A] leading-relaxed">
+                  {focusedReason}
+                </div>
+                <div className="font-sans font-medium text-[14px] text-[#C8893B] leading-relaxed">
+                  → {focusedAction}
+                </div>
+              </div>
+            )}
+
             {/* Add Task Input Row */}
             <form id="polaris-add-form" onSubmit={handleAddTask} className="w-full flex gap-3 mb-6">
               <input
@@ -1001,7 +1137,9 @@ export default function App() {
 
             {/* Task List */}
             <div id="polaris-tasks-list" className="flex flex-col gap-4">
-              {tasks.map((task) => {
+              {tasks
+                .filter((task) => !isFocusMode || task.title === focusedTaskTitle)
+                .map((task) => {
                 let pillClass = '';
                 if (task.urgency === 'high') {
                   pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
@@ -1115,9 +1253,15 @@ export default function App() {
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        className="px-4 py-[9px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer"
+                        onClick={() => {
+                          if (task.primaryAction === 'Draft a reply') {
+                            handleEscapeHatch(task);
+                          }
+                        }}
+                        disabled={task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id}
+                        className="px-4 py-[9px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-80"
                       >
-                        {task.primaryAction}
+                        {task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id ? 'Drafting...' : task.primaryAction}
                       </button>
                       <button
                         type="button"
@@ -1130,6 +1274,21 @@ export default function App() {
                 );
               })}
             </div>
+
+            {isFocusMode && (
+              <div className="text-center mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFocusMode(false);
+                    setFocusedTaskTitle('');
+                  }}
+                  className="font-sans text-[13px] text-[#5B6B7B] hover:text-polaris-primary hover:underline bg-transparent border-0 cursor-pointer focus:outline-none"
+                >
+                  Show all tasks
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1854,6 +2013,67 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Escape Hatch Draft Modal Overlay */}
+      {isEscapeModalOpen && (
+        <div 
+          onClick={() => setIsEscapeModalOpen(false)}
+          className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white max-w-[520px] w-full rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-4"
+          >
+            {/* Close Button top-right */}
+            <button
+              type="button"
+              onClick={() => setIsEscapeModalOpen(false)}
+              className="absolute top-5 right-5 text-polaris-secondary hover:text-polaris-primary text-[20px] border-0 bg-transparent cursor-pointer font-sans"
+            >
+              ✕
+            </button>
+
+            {/* Title & Subtitle */}
+            <div>
+              <h2 className="font-serif font-medium text-[20px] text-[#0E1B2A] mb-1.5">
+                Escape Hatch Draft
+              </h2>
+              <p className="font-sans font-normal text-[13px] text-[#5B6B7B]">
+                Review and copy this message before sending.
+              </p>
+            </div>
+
+            {/* Draft Box */}
+            <div className="bg-[#F7F5F0] rounded-[8px] p-4 text-[14px] text-[#0E1B2A] font-sans leading-relaxed border border-[rgba(14,27,42,0.06)] max-h-[220px] overflow-y-auto">
+              {escapeDraftText}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 mt-2">
+              <button
+                type="button"
+                onClick={() => setIsEscapeModalOpen(false)}
+                className="px-4 py-2 bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(escapeDraftText);
+                  setCopyButtonText('✓ Copied!');
+                  setTimeout(() => {
+                    setCopyButtonText('Copy to clipboard');
+                  }, 2000);
+                }}
+                className="px-4 py-2 bg-[#0E1B2A] text-white font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer"
+              >
+                {copyButtonText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
