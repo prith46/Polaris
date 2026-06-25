@@ -23,10 +23,13 @@ import { GoogleGenAI } from "@google/genai";
 
 async function startServer() {
   const app = express();
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
+  app.use((req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    next();
+  });
   const PORT = 3000;
-
-  app.use(express.json({ limit: '20mb' }));
-  app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
   // Server-side API route for scanning emails using Gemini
   app.post("/api/scan-email", async (req, res) => {
