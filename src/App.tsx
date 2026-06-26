@@ -1252,20 +1252,55 @@ const INITIAL_EMAILS: Email[] = [
 export default function App() {
   const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'dashboard' | 'inbox'>('tasks');
   const [tasks, setTasks] = useState<Task[]>(() => {
-    return INITIAL_TASKS.map(t => ({
-      ...t,
-      createdAt: Date.now(),
-      subtasks: [],
-      decomposing: false,
-      decomposed: false,
-      subtasksCollapsed: false
-    }));
+    const isValidTask = (t: unknown): boolean => {
+      if (!t || typeof t !== 'object') return false;
+      const task = t as Record<string, unknown>;
+      return (
+        typeof task.id === 'string' &&
+        typeof task.title === 'string' &&
+        typeof task.urgency === 'string' &&
+        typeof task.pillText === 'string' &&
+        typeof task.context === 'string' &&
+        typeof task.primaryAction === 'string' &&
+        typeof task.secondaryAction === 'string'
+      );
+    };
+    const loadInitialTasks = (): Task[] => {
+      try {
+        const saved = localStorage.getItem('polaris-tasks');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(isValidTask)) {
+            return parsed as Task[];
+          }
+        }
+      } catch (e) {
+        // ignore parse errors, fall through to seed data
+      }
+      return INITIAL_TASKS.map(t => ({
+        ...t,
+        createdAt: Date.now(),
+        subtasks: [],
+        decomposing: false,
+        decomposed: false,
+        subtasksCollapsed: false
+      }));
+    };
+    return loadInitialTasks();
   });
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
   // Custom states for new features
-  const [completedCount, setCompletedCount] = useState(0);
-  const [scannedCount, setScannedCount] = useState(0);
+  const loadCount = (key: string): number => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved !== null) return JSON.parse(saved) as number;
+    } catch (e) {}
+    return 0;
+  };
+  const [completedCount, setCompletedCount] = useState<number>(() => loadCount('polaris-completed'));
+  const [scannedCount, setScannedCount] = useState<number>(() => loadCount('polaris-scanned'));
+  const [demoResetToast, setDemoResetToast] = useState(false);
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => new Date());
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
   const [, setTimeTick] = useState(0);
@@ -1688,6 +1723,17 @@ export default function App() {
       t.id === taskId ? { ...t, subtasksCollapsed: !t.subtasksCollapsed } : t
     ));
   };
+
+  // Persist tasks and counts to localStorage on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem('polaris-tasks', JSON.stringify(tasks));
+      localStorage.setItem('polaris-completed', JSON.stringify(completedCount));
+      localStorage.setItem('polaris-scanned', JSON.stringify(scannedCount));
+    } catch (e) {
+      // storage full or unavailable — fail silently, never crash
+    }
+  }, [tasks, completedCount, scannedCount]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -3577,6 +3623,87 @@ export default function App() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Hidden demo reset link — bottom-right corner, visible only on hover */}
+      <div
+        id="demo-reset-corner"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          right: 0,
+          width: '80px',
+          height: '40px',
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'flex-end',
+          padding: '8px',
+          zIndex: 9999,
+          cursor: 'default',
+        }}
+        className="group"
+      >
+        <button
+          type="button"
+          id="demo-reset-btn"
+          onClick={() => {
+            try {
+              localStorage.removeItem('polaris-tasks');
+              localStorage.removeItem('polaris-completed');
+              localStorage.removeItem('polaris-scanned');
+            } catch (e) {}
+            setTasks(INITIAL_TASKS.map(t => ({
+              ...t,
+              createdAt: Date.now(),
+              subtasks: [],
+              decomposing: false,
+              decomposed: false,
+              subtasksCollapsed: false
+            })));
+            setCompletedCount(0);
+            setScannedCount(0);
+            setDemoResetToast(true);
+            setTimeout(() => setDemoResetToast(false), 2000);
+          }}
+          style={{
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '11px',
+            color: '#C4C4C4',
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            opacity: 0,
+            transition: 'opacity 0.2s',
+            whiteSpace: 'nowrap',
+          }}
+          className="group-hover:!opacity-100"
+        >
+          Reset demo
+        </button>
+      </div>
+
+      {/* Demo reset toast */}
+      {demoResetToast && (
+        <div
+          id="demo-reset-toast"
+          style={{
+            position: 'fixed',
+            bottom: '32px',
+            right: '16px',
+            background: '#0E1B2A',
+            color: '#FFFFFF',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '13px',
+            padding: '10px 16px',
+            borderRadius: '8px',
+            zIndex: 10000,
+            pointerEvents: 'none',
+            opacity: 1,
+          }}
+        >
+          Demo reset — showing seed data
         </div>
       )}
     </div>
