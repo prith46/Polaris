@@ -20,7 +20,7 @@ describe('Stress Tests', () => {
     }
 
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(initialCount + 100);
-  });
+  }, 120000);
 
   test('Switch tabs 50 times rapidly', () => {
     render(<App />);

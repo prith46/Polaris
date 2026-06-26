@@ -12,6 +12,8 @@ export interface Task {
   subtasksCollapsed?: boolean;
   createdAt?: number;
   pointOfNoReturnPassed?: boolean;
+  inProgress?: boolean;
+  snoozed?: boolean;
 }
 
 export interface Email {

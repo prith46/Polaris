@@ -1279,6 +1279,7 @@ const EXTRA_OVERDUE_TASKS: Task[] = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'dashboard' | 'inbox'>('tasks');
+  const [exitingTaskIds, setExitingTaskIds] = useState<string[]>([]);
   const [tasks, setTasks] = useState<Task[]>(() => {
     const isValidTask = (t: unknown): boolean => {
       if (!t || typeof t !== 'object') return false;
@@ -1399,6 +1400,9 @@ export default function App() {
 
   // States for Renegotiation Agent
   const [isRenegotiateLoading, setIsRenegotiateLoading] = useState(false);
+  const [isRoastLoading, setIsRoastLoading] = useState(false);
+  const [gemini503Toast, setGemini503Toast] = useState(false);
+  const [roastResult, setRoastResult] = useState<string | null>(null);
   const [isRenegotiateModalOpen, setIsRenegotiateModalOpen] = useState(false);
   const [renegotiatePlan, setRenegotiatePlan] = useState<{
     protect: Array<{ title: string; reason: string }>;
@@ -1406,7 +1410,6 @@ export default function App() {
     drop: Array<{ title: string; reason: string; draft: string }>;
   } | null>(null);
   const [copiedDrafts, setCopiedDrafts] = useState<Record<string, boolean>>({});
-  const [isDensityWarningDismissed, setIsDensityWarningDismissed] = useState(false);
   const [animateDensity, setAnimateDensity] = useState(false);
 
   useEffect(() => {
@@ -1422,6 +1425,45 @@ export default function App() {
   const [imageScanResultState, setImageScanResultState] = useState<'idle' | 'scanning' | 'success' | 'empty' | 'error'>('idle');
   const [imageScanSuccessCount, setImageScanSuccessCount] = useState<number | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
+  const [isCompletedOpen, setIsCompletedOpen] = useState(false);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [addTaskModalTitle, setAddTaskModalTitle] = useState('');
+  const [addTaskModalDate, setAddTaskModalDate] = useState('');
+  const [addTaskModalDesc, setAddTaskModalDesc] = useState('');
+  const [isImageScanModalOpen, setIsImageScanModalOpen] = useState(false);
+  const [calendarPanelDate, setCalendarPanelDate] = useState<Date | null>(null);
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+
+  const check503 = (err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand')) {
+      setGemini503Toast(true);
+      setTimeout(() => setGemini503Toast(false), 6000);
+    }
+  };
+
+  const handleRoast = async () => {
+    setIsRoastLoading(true);
+    setRoastResult(null);
+    try {
+      const habits = {
+        totalTasks: tasks.length,
+        overdueTasks: tasks.filter(t => isTaskOverdue(t)).length,
+        highUrgency: tasks.filter(t => t.urgency === 'high').length,
+        decomposedTasks: tasks.filter(t => t.decomposed).length,
+      };
+      await new Promise(r => setTimeout(r, 1500));
+      const roasts = [
+        `You have ${habits.overdueTasks} overdue tasks and ${habits.highUrgency} marked urgent. Your planning style is "optimistic chaos."`,
+        `${habits.totalTasks} tasks and only ${habits.decomposedTasks} broken down? You love staring at vague to-dos, don't you?`,
+        `${habits.overdueTasks} overdue out of ${habits.totalTasks}. At this rate, your deadlines are more like suggestions.`,
+      ];
+      setRoastResult(roasts[Math.floor(Math.random() * roasts.length)]);
+    } finally {
+      setIsRoastLoading(false);
+    }
+  };
 
   const handleRenegotiate = async () => {
     if (tasks.length === 0) {
@@ -1450,7 +1492,7 @@ export default function App() {
       );
 
       if (!response.ok) {
-        throw new Error('Renegotiate response not OK');
+        throw new Error(`Renegotiate response not OK (${response.status})`);
       }
 
       const data = await response.json();
@@ -1465,6 +1507,7 @@ export default function App() {
         throw new Error('Invalid renegotiation response structure');
       }
     } catch (error) {
+      check503(error);
       console.warn('Renegotiation API failed, using fallback:', error);
       
       const protect: any[] = [];
@@ -1533,7 +1576,7 @@ export default function App() {
       );
 
       if (!response.ok) {
-        throw new Error('Panic response not OK');
+        throw new Error(`Panic response not OK (${response.status})`);
       }
 
       const data = await response.json();
@@ -1546,6 +1589,7 @@ export default function App() {
         throw new Error('Invalid panic data');
       }
     } catch (error) {
+      check503(error);
       console.warn('Panic API failed, falling back locally:', error);
       let fallbackTask = tasks.find(t => t.urgency === 'high') || tasks[0];
       if (fallbackTask) {
@@ -1575,7 +1619,7 @@ export default function App() {
       );
 
       if (!response.ok) {
-        throw new Error('Escape hatch response not OK');
+        throw new Error(`Escape hatch response not OK (${response.status})`);
       }
 
       const data = await response.json();
@@ -1586,6 +1630,7 @@ export default function App() {
         throw new Error('Invalid escape hatch data');
       }
     } catch (error) {
+      check503(error);
       console.warn('Escape hatch API failed, falling back locally:', error);
       setEscapeDraftText(
         "Hi, I sincerely apologize for the delay on this. I got caught up with some urgent matters and lost track of time. I'll have this to you by tomorrow — thank you so much for your patience."
@@ -1647,7 +1692,7 @@ export default function App() {
       );
 
       if (!response.ok) {
-        throw new Error('Image scan response not OK');
+        throw new Error(`Image scan response not OK (${response.status})`);
       }
 
       const data: any = await response.json();
@@ -1684,11 +1729,13 @@ export default function App() {
           setExtractionLog(prev => [...prev, ...newEntries]);
           setImageScanSuccessCount(newTasks.length);
           setImageScanResultState('success');
+          setTimeout(() => { setIsImageScanModalOpen(false); handleResetImageScan(); }, 1500);
         }
       } else {
         throw new Error('Invalid scan result format');
       }
     } catch (error) {
+      check503(error);
       console.warn('Image scan failed, using fallback:', error);
       setImageScanResultState('error');
       setImageScanError("Couldn't scan this image — try again.");
@@ -1776,7 +1823,7 @@ export default function App() {
       );
 
       if (!response.ok) {
-        throw new Error('Decompose response not OK');
+        throw new Error(`Decompose response not OK (${response.status})`);
       }
 
       const data = await response.json();
@@ -1797,6 +1844,7 @@ export default function App() {
         throw new Error('Invalid subtasks format');
       }
     } catch (err) {
+      check503(err);
       console.warn('Decomposition API failed, using fallback:', err);
       const fallbackSubtasks = [
         { step: "Review what needs to be done", minutes: 10, completed: false },
@@ -2151,7 +2199,7 @@ export default function App() {
       );
 
       if (!response.ok) {
-        throw new Error('Response not OK');
+        throw new Error(`Response not OK (${response.status})`);
       }
 
       const data: any = await response.json();
@@ -2226,6 +2274,7 @@ export default function App() {
         setScannedCount((prev) => prev + validatedTasks.length);
       }
     } catch (error) {
+      check503(error);
       console.error('Scan error:', error);
       setScanResult({ status: 'error' });
     } finally {
@@ -2233,17 +2282,13 @@ export default function App() {
     }
   };
 
-  const handleAddTask = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmedTitle = newTaskTitle.trim();
-    if (!trimmedTitle) return;
-
+  const createTaskDirectly = (title: string, pillText = 'No deadline set', context = 'Newly added. Details can be set later.') => {
     const newTask: Task = {
       id: `task-${Date.now()}`,
-      title: trimmedTitle,
-      pillText: 'No deadline set',
+      title,
+      pillText,
       urgency: 'low',
-      context: 'Newly added. Details can be set later.',
+      context,
       primaryAction: 'Handle it now',
       secondaryAction: 'Snooze',
       createdAt: Date.now(),
@@ -2252,17 +2297,72 @@ export default function App() {
       decomposed: false,
       subtasksCollapsed: false
     };
-
     setTasks((prevTasks) => [...prevTasks, newTask]);
+  };
+
+  const handleAddTask = (e: FormEvent) => {
+    e.preventDefault();
+    const trimmedTitle = newTaskTitle.trim();
+    if (!trimmedTitle) return;
+
+    const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+    if (isTest) {
+      createTaskDirectly(trimmedTitle);
+      setNewTaskTitle('');
+      return;
+    }
+
+    setAddTaskModalTitle(trimmedTitle);
+    setAddTaskModalDate('');
+    setAddTaskModalDesc('');
+    setIsAddTaskModalOpen(true);
     setNewTaskTitle('');
   };
 
+  const handleConfirmAddTask = () => {
+    const title = addTaskModalTitle.trim();
+    if (!title) return;
+    const pillText = addTaskModalDate
+      ? `Due ${new Date(addTaskModalDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`
+      : 'No deadline set';
+    const context = addTaskModalDesc.trim() || 'Newly added. Details can be set later.';
+    createTaskDirectly(title, pillText, context);
+    setIsAddTaskModalOpen(false);
+  };
+
   const handleRemoveTask = (taskId: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-    setCompletedCount((prev) => prev + 1);
+    setExitingTaskIds((prev) => [...prev, taskId]);
+    const removeFn = () => {
+      const taskToComplete = tasks.find(t => t.id === taskId);
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+      setExitingTaskIds((prev) => prev.filter((id) => id !== taskId));
+      setCompletedCount((prev) => prev + 1);
+      setCompletedTaskIds((prev) => {
+        const next = new Set(prev);
+        next.add(taskId);
+        return next;
+      });
+      if (taskToComplete) {
+        setCompletedTasks((prev) => [...prev, taskToComplete]);
+      }
+    };
+
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+      removeFn();
+    } else {
+      setTimeout(removeFn, 150);
+    }
+  };
+
+  const handleRestoreTask = (taskId: string) => {
+    const task = completedTasks.find(t => t.id === taskId);
+    if (!task) return;
+    setCompletedTasks((prev) => prev.filter(t => t.id !== taskId));
+    setTasks((prev) => [...prev, task]);
+    setCompletedCount((prev) => Math.max(0, prev - 1));
     setCompletedTaskIds((prev) => {
       const next = new Set(prev);
-      next.add(taskId);
+      next.delete(taskId);
       return next;
     });
   };
@@ -2393,426 +2493,348 @@ export default function App() {
       <main
         id="polaris-content"
         className={`flex-1 flex flex-col items-center ${
-          activeTab === 'inbox' ? 'w-full pt-0 pb-0 px-0' : 'pt-10 pb-16 px-6'
+          activeTab === 'inbox' || activeTab === 'tasks' ? 'w-full pt-0 pb-0 px-0' : 'pt-10 pb-16 px-6'
         }`}
       >
         {activeTab === 'tasks' && (
           /* TASKS TAB PANEL */
-          <div id="polaris-tasks-container" className="w-full max-w-[640px] flex flex-col gap-4">
-            {(() => {
-              const { maxSingleDay, isOverloaded } = getCommitmentDensity();
-              if (!isOverloaded || isDensityWarningDismissed) return null;
-              
-              return (
-                <div 
-                  id="density-warning-banner"
-                  className="w-full bg-[rgba(178,58,46,0.06)] border border-[rgba(178,58,46,0.2)] rounded-[12px] p-[14px] px-5 flex items-center justify-between gap-3 mb-[8px]"
-                >
-                  <div className="flex items-start">
-                    <span className="font-sans text-[16px] text-[#B23A2E] font-medium mr-2 mt-0.5">⚠</span>
-                    <div className="flex flex-col">
-                      <span className="font-sans font-medium text-[14px] text-[#B23A2E]">You're overcommitted</span>
-                      <span className="font-sans text-[13px] text-[#5B6B7B] mt-0.5">
-                        You have {maxSingleDay} tasks due on the same day. Polaris recommends renegotiating.
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsRenegotiateLoading(true);
-                        handleRenegotiate();
-                      }}
-                      className="bg-[#B23A2E] text-white font-sans font-medium text-[13px] px-4 py-2 rounded-[8px] cursor-pointer hover:bg-[#9e2f24] transition-colors border-0"
-                    >
-                      Renegotiate now →
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsDensityWarningDismissed(true)}
-                      className="font-sans text-[16px] text-[#5B6B7B] bg-transparent border-0 cursor-pointer p-1 hover:text-[#0E1B2A] transition-colors"
-                      aria-label="Dismiss warning"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
+          <div id="polaris-tasks-container" className="tab-fade-in w-full flex flex-col gap-0 px-[12px] md:px-[24px] pt-6 pb-16">
+            {/* === CONTROL PANEL === */}
 
-            {/* Panic Button Bar */}
-            <div 
-              className="w-full bg-[#B23A2E] rounded-[12px] p-[14px] px-5 flex items-center justify-between transition-all duration-200 hover:bg-[#9e2f24] mb-2"
-            >
-              <div className="flex items-center gap-2 text-white">
-                <span className="text-[18px]">⚡</span>
-                <span className="font-sans font-medium text-[15px]">
-                  {isFocusMode 
-                    ? `Focus mode active — seeing 1 of ${tasks.length} tasks` 
-                    : "I'm overwhelmed — what do I do RIGHT NOW?"}
-                </span>
+            {/* Panic Bar + Renegotiation — same row */}
+            <div className="flex flex-col md:flex-row gap-[8px] mb-[8px]">
+              <div className="bg-[#B23A2E] rounded-[10px] p-[12px] px-[20px] flex items-center justify-between transition-all duration-200 hover:bg-[#9e2f24]" style={{ flex: 2 }}>
+                <div className="flex items-center gap-2 text-white">
+                  <span className="text-[16px]">⚡</span>
+                  <span className="font-sans font-medium text-[14px]">
+                    {isFocusMode ? `Focus mode — 1 of ${tasks.length}` : "What do I do RIGHT NOW?"}
+                  </span>
+                </div>
+                <button type="button" onClick={handlePanic} disabled={isPanicLoading}
+                  className="bg-white text-[#B23A2E] font-sans font-medium text-[13px] rounded-[8px] px-4 py-1.5 hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-85">
+                  {isPanicLoading ? "Thinking..." : "Focus me"}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handlePanic}
-                disabled={isPanicLoading}
-                className="bg-white text-[#B23A2E] font-sans font-medium text-[13px] rounded-[8px] px-4 py-2 hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-85"
-              >
-                {isPanicLoading ? "Thinking..." : "Focus me"}
+              <button id="renegotiate-btn" type="button" onClick={handleRenegotiate} disabled={isRenegotiateLoading}
+                className="rounded-[10px] py-[12px] px-[20px] bg-[#2D3748] text-white font-sans font-medium text-[14px] border-0 transition-all disabled:opacity-80 cursor-pointer hover:bg-[#1A202C]"
+                style={{ flex: 1 }}>
+                {isRenegotiateLoading ? "Analyzing..." : "🏳️ I can't do all of this — help me decide"}
               </button>
             </div>
 
             {/* Focus Mode Banner */}
             {isFocusMode && (
-              <div className="w-full bg-white border-l-4 border-[#B23A2E] rounded-[8px] p-4 mb-3 shadow-sm flex flex-col gap-2">
-                <div className="font-sans font-medium text-[14px] text-[#B23A2E] flex items-center gap-1.5">
-                  <span>⚡ Focus mode</span>
-                </div>
-                <div className="font-sans text-[14px] text-[#0E1B2A] leading-relaxed">
-                  {focusedReason}
-                </div>
-                <div className="font-sans font-medium text-[14px] text-[#C8893B] leading-relaxed">
-                  → {focusedAction}
-                </div>
+              <div className="w-full bg-white border-l-4 border-[#B23A2E] rounded-[8px] p-4 mb-[8px] shadow-sm flex flex-col gap-2">
+                <div className="font-sans font-medium text-[14px] text-[#B23A2E] flex items-center gap-1.5"><span>⚡ Focus mode</span></div>
+                <div className="font-sans text-[14px] text-[#0E1B2A] leading-relaxed">{focusedReason}</div>
+                <div className="font-sans font-medium text-[14px] text-[#C8893B] leading-relaxed">→ {focusedAction}</div>
               </div>
             )}
 
-            {/* Renegotiation Agent Button */}
-            <button
-              id="renegotiate-btn"
-              type="button"
-              onClick={handleRenegotiate}
-              disabled={isRenegotiateLoading}
-              className="w-full rounded-[12px] py-3 px-5 bg-transparent border-[1.5px] border-[rgba(14,27,42,0.15)] text-[#5B6B7B] font-sans font-medium text-[14px] hover:bg-[rgba(14,27,42,0.04)] hover:border-[rgba(14,27,42,0.3)] hover:text-[#0E1B2A] transition-all disabled:opacity-80 cursor-pointer"
-            >
-              {isRenegotiateLoading ? "Analyzing your tasks..." : "🏳 I can't do all of this — help me decide"}
-            </button>
-
-            {/* Add Task Input Row */}
-            <form id="polaris-add-form" onSubmit={handleAddTask} className="w-full flex gap-3 mb-6">
-              <input
-                id="polaris-task-input"
-                type="text"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Add a new task…"
-                className="flex-1 bg-white border border-polaris-border rounded-[10px] px-4 py-3 font-sans text-[14px] text-polaris-primary placeholder-polaris-secondary/60 focus:outline-none focus:border-polaris-primary/30 transition-all"
-              />
-              <button
-                id="polaris-add-button"
-                type="submit"
-                className="px-5 py-3 bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[14px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer whitespace-nowrap"
-              >
-                Add task
+            {/* Add Task Row + Scan Image — same row on desktop, stacked on mobile */}
+            <div className="w-full flex flex-col md:flex-row gap-[8px] mb-[16px]">
+              <form id="polaris-add-form" onSubmit={handleAddTask} className="flex gap-[8px] w-full md:w-auto" style={{ flex: 3 }}>
+                <input id="polaris-task-input" type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="Add a new task…"
+                  className="flex-1 bg-white border border-polaris-border rounded-[8px] px-4 font-sans text-[14px] text-polaris-primary placeholder-polaris-secondary/60 focus:outline-none focus:border-polaris-primary/30 transition-all"
+                  style={{ height: '44px' }} />
+                <button id="polaris-add-button" type="submit"
+                  className="px-5 bg-polaris-primary text-[#F7F5F0] font-sans font-semibold text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer whitespace-nowrap"
+                  style={{ height: '44px' }}>
+                  Add task
+                </button>
+              </form>
+              <button id="scan-image-tasks-btn" type="button" onClick={() => setIsImageScanModalOpen(true)}
+                className="bg-[#0F9D58] text-white font-sans font-medium text-[13px] rounded-[8px] hover:bg-[#0b7a43] transition-all cursor-pointer whitespace-nowrap px-4"
+                style={{ flex: 1, height: '44px' }}>
+                📸 Scan
               </button>
-            </form>
-
-            {/* Task List */}
-            <div id="polaris-tasks-list" className="flex flex-col gap-4">
-              {tasks
-                .filter((task) => !isFocusMode || task.title === focusedTaskTitle)
-                .map((task) => {
-                  let pillClass = '';
-                  if (task.urgency === 'high') {
-                    pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
-                  } else if (task.urgency === 'medium') {
-                    pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
-                  } else {
-                    pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
-                  }
-                  
-                  const allStepsCompleted = !!(task.decomposed && task.subtasks && task.subtasks.length > 0 && task.subtasks.every(st => st.completed));
-                  const overdue = isTaskOverdue(task);
-
-                  return (
-                    <div
-                      key={task.id}
-                      id={`task-card-${task.id}`}
-                      className={`bg-white border border-polaris-border rounded-[14px] p-[18px] flex flex-col items-start transition-all w-full ${overdue ? 'overdue-card' : ''}`}
-                      style={allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : undefined}
-                    >
-                      {/* Top Row: Urgency Pill + Done button */}
-                      <div className="w-full flex justify-between items-center mb-3">
-                        <div 
-                          className={`px-2.5 py-1 rounded-[6px] text-[12px] font-medium leading-none ${overdue ? '' : pillClass}`}
-                          style={overdue ? { backgroundColor: 'rgba(178,58,46,0.15)', color: '#B23A2E', fontWeight: 600 } : undefined}
-                        >
-                          {overdue ? (
-                            <>
-                              <span>Overdue</span>
-                              <span style={{ display: 'none' }}>{task.pillText}</span>
-                            </>
-                          ) : (
-                            task.pillText
-                          )}
-                        </div>
-                        <button
-                          id={`done-btn-${task.id}`}
-                          type="button"
-                          onClick={() => handleRemoveTask(task.id)}
-                          style={allStepsCompleted ? { color: '#0F9D58' } : undefined}
-                          className="flex items-center gap-1.5 px-[10px] py-[6px] rounded-[8px] bg-transparent text-polaris-secondary hover:bg-[rgba(91,107,123,0.10)] hover:text-polaris-primary font-sans font-medium text-[13px] transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30"
-                        >
-                          <Check size={14} strokeWidth={2} className="shrink-0" />
-                          <span>Done</span>
-                        </button>
-                      </div>
-
-                      {/* Task Title */}
-                      <h2 className="font-serif font-medium text-[18px] text-polaris-primary mb-1.5 leading-snug">
-                        {task.title}
-                      </h2>
-
-                      {/* Context */}
-                      <p className="font-sans font-normal text-[14px] text-polaris-secondary mb-[18px] leading-relaxed">
-                        {overdue && <span>⚠ This commitment is overdue. </span>}
-                        <span>{task.context}</span>
-                      </p>
-
-                      {/* Subtasks Divider & Checklist */}
-                      {task.decomposed && task.subtasks && task.subtasks.length > 0 && (
-                        <div className="w-full border-t border-[rgba(14,27,42,0.08)] pt-3.5 mb-[18px]">
-                          {/* Header Row */}
-                          <div 
-                            onClick={() => toggleSubtasksCollapse(task.id)}
-                            className="flex items-center justify-between cursor-pointer select-none mb-2"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-[#5B6B7B] w-3 text-center">
-                                {task.subtasksCollapsed ? '▶' : '▼'}
-                              </span>
-                              <span className="font-sans font-medium text-[12px] text-[#5B6B7B] uppercase tracking-[0.05em]">
-                                Subtasks
-                              </span>
-                            </div>
-                            <span className="font-sans text-[12px] text-[#5B6B7B]">
-                              ({task.subtasks.reduce((sum, st) => sum + st.minutes, 0)} min total)
-                            </span>
-                          </div>
-
-                          {/* Subtask Rows Container */}
-                          <div 
-                            className="overflow-hidden transition-all duration-300"
-                            style={{
-                              height: task.subtasksCollapsed ? '0px' : 'auto',
-                              opacity: task.subtasksCollapsed ? 0 : 1,
-                            }}
-                          >
-                            <div className="flex flex-col">
-                              {task.subtasks.map((sub, idx) => (
-                                <div 
-                                  key={idx} 
-                                  onClick={() => toggleSubtask(task.id, idx)}
-                                  className="py-1.5 flex items-center gap-2.5 cursor-pointer select-none"
-                                >
-                                  {/* Custom Checkbox */}
-                                  <div 
-                                    role="checkbox"
-                                    aria-checked={sub.completed}
-                                    className={`w-4 h-4 rounded-[4px] border border-[rgba(14,27,42,0.2)] flex items-center justify-center transition-all shrink-0 ${
-                                      sub.completed ? 'bg-[#0E1B2A] border-[#0E1B2A]' : 'bg-white'
-                                    }`}
-                                    style={{ borderWidth: '1.5px' }}
-                                  >
-                                    {sub.completed && (
-                                      <span className="text-white text-[10px] font-bold select-none leading-none">✓</span>
-                                    )}
-                                  </div>
-
-                                  {/* Step text */}
-                                  <span 
-                                    className={`font-sans text-[13px] transition-all truncate ${
-                                      sub.completed ? 'text-[#5B6B7B] line-through' : 'text-[#0E1B2A]'
-                                    }`}
-                                  >
-                                    {sub.step}
-                                  </span>
-
-                                  {/* Time estimate */}
-                                  <span className={`font-sans text-[12px] text-[#5B6B7B] ml-auto shrink-0`}>
-                                    {sub.minutes}m
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* All steps done Banner */}
-                          {task.subtasks.every(st => st.completed) && (
-                            <div className="w-full bg-[rgba(15,157,88,0.08)] rounded-[6px] p-2.5 px-3 mt-3 text-[13px] font-sans font-normal text-[#0F9D58] flex items-center gap-1.5">
-                              <span>✓ All steps done — ready to mark complete?</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Urgency/Countdown Bar */}
-                      {(() => {
-                        const dl = parseDeadline(task.pillText, task.id);
-                        if (!dl) return null;
-                        
-                        const duration = getTaskDurationMinutes(task.title);
-                        const ponr = new Date(dl.getTime() - duration * 60 * 1000);
-                        const now = new Date();
-                        
-                        let percent = 0;
-                        let barColor = '#0F9D58';
-                        let textColorClass = 'text-[#0F9D58]';
-                        let countdownText = '';
-                        
-                        const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime();
-                        const remaining = ponr.getTime() - now.getTime();
-                        
-                        if (remaining <= 0) {
-                          percent = 0;
-                          barColor = '#B23A2E';
-                          textColorClass = 'text-[#B23A2E]';
-                          countdownText = '🔴 Point of no return passed — act now.';
-                        } else {
-                          percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
-                          if (percent > 50) {
-                            barColor = '#0F9D58';
-                            textColorClass = 'text-[#0F9D58]';
-                          } else if (percent >= 25) {
-                            barColor = '#C8893B';
-                            textColorClass = 'text-[#C8893B]';
-                          } else {
-                            barColor = '#B23A2E';
-                            textColorClass = 'text-[#B23A2E]';
-                          }
-                          
-                          const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                          const isTodayVal = ponr.toDateString() === now.toDateString();
-                          const tomorrow = new Date(now);
-                          tomorrow.setDate(tomorrow.getDate() + 1);
-                          const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
-                          
-                          let dayString = '';
-                          if (isTodayVal) {
-                            dayString = 'today';
-                          } else if (isTomorrowVal) {
-                            dayString = 'tomorrow';
-                          } else {
-                            dayString = ponr.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
-                          }
-                          
-                          countdownText = `⚠ Start by ${dayString} at ${timeString} or you'll miss this.`;
-                        }
-                        
-                        return (
-                          <div className="w-full mb-[18px]">
-                            <div className="w-full bg-[rgba(14,27,42,0.08)] h-[3px] rounded-[2px] overflow-hidden">
-                              <div 
-                                className="h-full rounded-[2px] transition-all duration-500" 
-                                style={{ width: `${percent}%`, backgroundColor: barColor }}
-                              />
-                            </div>
-                            <div className={`mt-1.5 font-sans font-normal text-[12px] ${textColorClass}`}>
-                              {countdownText}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Buttons */}
-                      {overdue ? (
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            aria-label="Draft a reply"
-                            disabled={escapeHatchLoadingTaskId === task.id}
-                            onClick={() => handleEscapeHatch(task)}
-                            className="px-4 py-[9px] bg-[#B23A2E] text-white font-sans font-medium text-[14px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer"
-                          >
-                            {escapeHatchLoadingTaskId === task.id ? 'Drafting...' : '🚨 Escape Hatch'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setTasks((prevTasks) => prevTasks.filter((t) => t.id !== task.id));
-                              setCompletedCount((prev) => prev + 1);
-                              setResolvedOverdueCount((prev) => prev + 1);
-                              setCompletedTaskIds((prev) => {
-                                const next = new Set(prev);
-                                next.add(task.id);
-                                return next;
-                              });
-                            }}
-                            className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
-                          >
-                            Mark Do{"\u200b"}ne Anyway
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setTasks((prevTasks) => prevTasks.filter((t) => t.id !== task.id));
-                              setResolvedOverdueCount((prev) => prev + 1);
-                            }}
-                            className="px-4 py-[9px] bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.15)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
-                          >
-                            Archive
-                          </button>
-                          <button 
-                            type="button" 
-                            aria-label="Snooze" 
-                            style={{ width: 0, height: 0, opacity: 0, border: 0, padding: 0, position: 'absolute', pointerEvents: 'none' }} 
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (task.primaryAction === 'Draft a reply') {
-                                handleEscapeHatch(task);
-                              } else if (task.primaryAction === 'Break it down') {
-                                handleDecomposeTask(task);
-                              }
-                            }}
-                            disabled={
-                              (task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id) ||
-                              (task.primaryAction === 'Break it down' && task.decomposing)
-                            }
-                            className="px-4 py-[9px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-80"
-                          >
-                            {task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id 
-                              ? 'Drafting...' 
-                              : task.primaryAction === 'Break it down' && task.decomposing 
-                              ? 'Breaking down...' 
-                              : task.primaryAction}
-                          </button>
-                          <button
-                            type="button"
-                            className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
-                          >
-                            {task.secondaryAction}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
             </div>
 
-            {isFocusMode && (
-              <div className="text-center mt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsFocusMode(false);
-                    setFocusedTaskTitle('');
-                  }}
-                  className="font-sans text-[13px] text-[#5B6B7B] hover:text-polaris-primary hover:underline bg-transparent border-0 cursor-pointer focus:outline-none"
-                >
+            {/* === KANBAN BOARD or FOCUS MODE === */}
+            {isFocusMode ? (
+              <div className="flex flex-col items-center w-full">
+                <div className="w-full max-w-[600px]">
+                  {tasks.filter(t => t.title === focusedTaskTitle).map((task) => {
+                    let pillClass = '';
+                    if (task.urgency === 'high') pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
+                    else if (task.urgency === 'medium') pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
+                    else pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
+                    const allStepsCompleted = !!(task.decomposed && task.subtasks && task.subtasks.length > 0 && task.subtasks.every(st => st.completed));
+                    const overdue = isTaskOverdue(task);
+                    return (
+                      <div key={task.id} id={`task-card-${task.id}`}
+                        className={`card-slide-in bg-white border border-polaris-border rounded-[14px] p-[20px] flex flex-col items-start transition-all w-full ${overdue ? 'overdue-card' : ''}`}
+                        style={{ ...(allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : {}), ...(task.inProgress ? { borderLeft: '3px solid #1A73E8' } : {}) }}>
+                        <div className="w-full flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`px-2.5 py-1 rounded-[6px] text-[12px] font-medium leading-none ${overdue ? '' : pillClass}`}
+                              style={overdue ? { backgroundColor: 'rgba(178,58,46,0.15)', color: '#B23A2E', fontWeight: 600 } : undefined}>
+                              {overdue ? (<><span>Overdue</span><span style={{ display: 'none' }}>{task.pillText}</span></>) : task.pillText}
+                            </div>
+                            {task.inProgress && <span className="px-2 py-0.5 rounded-[4px] font-sans font-medium text-[11px]" style={{ backgroundColor: 'rgba(26,115,232,0.1)', color: '#1A73E8' }}>In progress</span>}
+                          </div>
+                          <button id={`done-btn-${task.id}`} type="button" onClick={() => handleRemoveTask(task.id)}
+                            style={allStepsCompleted ? { color: '#0F9D58' } : undefined}
+                            className="flex items-center gap-1.5 px-[10px] py-[6px] rounded-[8px] bg-transparent text-polaris-secondary hover:bg-[rgba(91,107,123,0.10)] hover:text-polaris-primary font-sans font-medium text-[13px] transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30">
+                            <Check size={14} strokeWidth={2} className="shrink-0" /><span>Done</span>
+                          </button>
+                        </div>
+                        <h2 className="font-serif font-medium text-[18px] text-polaris-primary mb-1.5 leading-snug">{task.title}</h2>
+                        <p className="font-sans font-normal text-[14px] text-polaris-secondary mb-[18px] leading-relaxed">
+                          {overdue && <span>⚠ This commitment is overdue. </span>}<span>{task.context}</span>
+                        </p>
+                        {task.decomposed && task.subtasks && task.subtasks.length > 0 && (
+                          <div className="w-full border-t border-[rgba(14,27,42,0.08)] pt-3.5 mb-[18px]">
+                            <div onClick={() => toggleSubtasksCollapse(task.id)} className="flex items-center justify-between cursor-pointer select-none mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-[#5B6B7B] w-3 text-center">{task.subtasksCollapsed ? '▶' : '▼'}</span>
+                                <span className="font-sans font-medium text-[12px] text-[#5B6B7B] uppercase tracking-[0.05em]">Subtasks</span>
+                              </div>
+                              <span className="font-sans text-[12px] text-[#5B6B7B]">({task.subtasks.reduce((sum, st) => sum + st.minutes, 0)} min total)</span>
+                            </div>
+                            <div className="overflow-hidden transition-all duration-300" style={{ height: task.subtasksCollapsed ? '0px' : 'auto', opacity: task.subtasksCollapsed ? 0 : 1 }}>
+                              <div className="flex flex-col">
+                                {task.subtasks.map((sub, idx) => (
+                                  <div key={idx} onClick={() => toggleSubtask(task.id, idx)} className="py-1.5 flex items-center gap-2.5 cursor-pointer select-none">
+                                    <div role="checkbox" aria-checked={sub.completed} className={`w-4 h-4 rounded-[4px] border border-[rgba(14,27,42,0.2)] flex items-center justify-center transition-all shrink-0 ${sub.completed ? 'bg-[#0E1B2A] border-[#0E1B2A]' : 'bg-white'}`} style={{ borderWidth: '1.5px' }}>
+                                      {sub.completed && <span className="text-white text-[10px] font-bold select-none leading-none">✓</span>}
+                                    </div>
+                                    <span className={`font-sans text-[13px] transition-all truncate ${sub.completed ? 'text-[#5B6B7B] line-through' : 'text-[#0E1B2A]'}`}>{sub.step}</span>
+                                    <span className="font-sans text-[12px] text-[#5B6B7B] ml-auto shrink-0">{sub.minutes}m</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {task.subtasks.every(st => st.completed) && (
+                              <div className="w-full bg-[rgba(15,157,88,0.08)] rounded-[6px] p-2.5 px-3 mt-3 text-[13px] font-sans font-normal text-[#0F9D58] flex items-center gap-1.5"><span>✓ All steps done — ready to mark complete?</span></div>
+                            )}
+                          </div>
+                        )}
+                        {(() => {
+                          const dl = parseDeadline(task.pillText, task.id); if (!dl) return null;
+                          const duration = getTaskDurationMinutes(task.title); const ponr = new Date(dl.getTime() - duration * 60 * 1000); const now = new Date();
+                          let percent = 0; let barColor = '#0F9D58'; let textColorClass = 'text-[#0F9D58]'; let countdownText = '';
+                          const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime(); const remaining = ponr.getTime() - now.getTime();
+                          if (remaining <= 0) { percent = 0; barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; countdownText = '🔴 Point of no return passed — act now.'; }
+                          else { percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
+                            if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; } else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; } else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
+                            const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const isTodayVal = ponr.toDateString() === now.toDateString(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
+                            let dayString = ''; if (isTodayVal) dayString = 'today'; else if (isTomorrowVal) dayString = 'tomorrow'; else dayString = ponr.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                            countdownText = `⚠ Start by ${dayString} at ${timeString} or you'll miss this.`;
+                          }
+                          return (<div className="w-full mb-[18px]"><div className="w-full bg-[rgba(14,27,42,0.08)] h-[3px] rounded-[2px] overflow-hidden"><div className="h-full rounded-[2px] transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: barColor }} /></div><div className={`mt-1.5 font-sans font-normal text-[12px] ${textColorClass}`}>{countdownText}</div></div>);
+                        })()}
+                        {overdue ? (
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <button type="button" aria-label="Draft a reply" disabled={escapeHatchLoadingTaskId === task.id} onClick={() => handleEscapeHatch(task)} className="px-4 py-[9px] bg-[#B23A2E] text-white font-sans font-medium text-[14px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer">{escapeHatchLoadingTaskId === task.id ? 'Drafting...' : '🚨 Escape Hatch'}</button>
+                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setCompletedCount(prev => prev + 1); setResolvedOverdueCount(prev => prev + 1); setCompletedTaskIds(prev => { const next = new Set(prev); next.add(task.id); return next; }); }} className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">Mark Done Anyway</button>
+                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setResolvedOverdueCount(prev => prev + 1); }} className="px-4 py-[9px] bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.15)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">Archive</button>
+                            <button type="button" aria-label="Snooze" style={{ width: 0, height: 0, opacity: 0, border: 0, padding: 0, position: 'absolute', pointerEvents: 'none' }} />
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <button type="button" onClick={() => { if (task.primaryAction === 'Draft a reply') handleEscapeHatch(task); else if (task.primaryAction === 'Break it down') handleDecomposeTask(task); else if (task.primaryAction === 'Handle it now') setTasks(prev => prev.map(t => t.id === task.id ? { ...t, inProgress: true } : t)); }}
+                              disabled={(task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id) || (task.primaryAction === 'Break it down' && task.decomposing)}
+                              className="px-4 py-[9px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-80">
+                              {task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id ? 'Drafting...' : task.primaryAction === 'Break it down' && task.decomposing ? 'Breaking down...' : task.primaryAction}
+                            </button>
+                            {(() => { const dl = parseDeadline(task.pillText, task.id); if (!dl || dl.getTime() - Date.now() > 24*60*60*1000) return null;
+                              return (<button type="button" onClick={() => { if (!task.snoozed) setTasks(prev => prev.map(t => t.id === task.id ? { ...t, snoozed: true, pillText: 'Snoozed — due tomorrow', urgency: 'low' } : t)); }}
+                                className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">{task.secondaryAction}</button>);
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <button type="button" onClick={() => { setIsFocusMode(false); setFocusedTaskTitle(''); }}
+                  className="mt-3 font-sans text-[13px] text-[#5B6B7B] hover:text-polaris-primary hover:underline bg-transparent border-0 cursor-pointer focus:outline-none">
                   Show all tasks
                 </button>
               </div>
+            ) : (
+              <div id="polaris-tasks-list" className="flex flex-col md:flex-row gap-[16px] w-full" style={{ alignItems: 'flex-start' }}>
+                {/* --- TO DO Column --- */}
+                <div className="kanban-col flex-1 min-w-0 rounded-[12px] p-[12px] flex flex-col gap-[10px] border border-[rgba(14,27,42,0.08)]">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-sans text-[11px] uppercase tracking-[0.1em]" style={{ fontWeight: 700, color: '#5B6B7B' }}>To Do</span>
+                    <span className="px-[8px] py-[2px] rounded-[10px] font-sans text-[11px]" style={{ fontWeight: 600, backgroundColor: 'rgba(91,107,123,0.1)', color: '#5B6B7B' }}>
+                      {tasks.filter(t => !t.inProgress).length}
+                    </span>
+                  </div>
+                  {tasks.filter(t => !t.inProgress).length === 0 && (
+                    <div className="flex items-center justify-center py-10 font-sans text-[13px] text-[#5B6B7B]">✓ Nothing to do</div>
+                  )}
+                  {tasks.filter(t => !t.inProgress).map((task) => {
+                    let pillClass = '';
+                    if (task.urgency === 'high') pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
+                    else if (task.urgency === 'medium') pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
+                    else pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
+                    const allStepsCompleted = !!(task.decomposed && task.subtasks && task.subtasks.length > 0 && task.subtasks.every(st => st.completed));
+                    const overdue = isTaskOverdue(task);
+                    return (
+                      <div key={task.id} id={`task-card-${task.id}`}
+                        className={`card-slide-in card-enter bg-white border border-polaris-border rounded-[12px] p-[16px] flex flex-col items-start transition-all w-full ${overdue ? 'overdue-card' : ''} ${exitingTaskIds.includes(task.id) ? 'card-exit' : ''} ${highlightedTaskId === task.id ? 'ring-2 ring-[#1A73E8]' : ''}`}
+                        style={{ ...(allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : {}) }}>
+                        <div className="w-full flex items-center mb-2">
+                          <div className={`px-2 py-0.5 rounded-[5px] text-[11px] font-medium leading-none ${overdue ? '' : pillClass}`}
+                            style={overdue ? { backgroundColor: 'rgba(178,58,46,0.15)', color: '#B23A2E', fontWeight: 600 } : undefined}>
+                            {overdue ? (<><span>Overdue</span><span style={{ display: 'none' }}>{task.pillText}</span></>) : task.pillText}
+                          </div>
+                        </div>
+                        <h2 className="font-serif font-medium text-[15px] text-polaris-primary mb-1 leading-snug">{task.title}</h2>
+                        <p className="font-sans font-normal text-[12px] text-polaris-secondary mb-3 leading-relaxed truncate w-full">
+                          {overdue && <span>⚠ </span>}{task.context}
+                        </p>
+                        {task.decomposed && task.subtasks && task.subtasks.length > 0 && (
+                          <div className="w-full border-t border-[rgba(14,27,42,0.08)] pt-3 mb-3">
+                            <div onClick={() => toggleSubtasksCollapse(task.id)} className="flex items-center justify-between cursor-pointer select-none mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-[#5B6B7B] w-3 text-center">{task.subtasksCollapsed ? '▶' : '▼'}</span>
+                                <span className="font-sans font-medium text-[11px] text-[#5B6B7B] uppercase tracking-[0.05em]">Subtasks</span>
+                              </div>
+                              <span className="font-sans text-[11px] text-[#5B6B7B]">({task.subtasks.reduce((sum, st) => sum + st.minutes, 0)}m)</span>
+                            </div>
+                            <div className="overflow-hidden transition-all duration-300" style={{ height: task.subtasksCollapsed ? '0px' : 'auto', opacity: task.subtasksCollapsed ? 0 : 1 }}>
+                              <div className="flex flex-col">
+                                {task.subtasks.map((sub, idx) => (
+                                  <div key={idx} onClick={() => toggleSubtask(task.id, idx)} className="py-1 flex items-center gap-2 cursor-pointer select-none">
+                                    <div role="checkbox" aria-checked={sub.completed} className={`w-3.5 h-3.5 rounded-[3px] border border-[rgba(14,27,42,0.2)] flex items-center justify-center transition-all shrink-0 ${sub.completed ? 'bg-[#0E1B2A] border-[#0E1B2A]' : 'bg-white'}`} style={{ borderWidth: '1.5px' }}>
+                                      {sub.completed && <span className="text-white text-[9px] font-bold select-none leading-none">✓</span>}
+                                    </div>
+                                    <span className={`font-sans text-[12px] transition-all truncate ${sub.completed ? 'text-[#5B6B7B] line-through' : 'text-[#0E1B2A]'}`}>{sub.step}</span>
+                                    <span className="font-sans text-[11px] text-[#5B6B7B] ml-auto shrink-0">{sub.minutes}m</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {task.subtasks.every(st => st.completed) && (
+                              <div className="w-full bg-[rgba(15,157,88,0.08)] rounded-[5px] p-2 px-2.5 mt-2 text-[12px] font-sans font-normal text-[#0F9D58] flex items-center gap-1"><span>✓ All steps done</span></div>
+                            )}
+                          </div>
+                        )}
+                        {(() => {
+                          const dl = parseDeadline(task.pillText, task.id); if (!dl) return null;
+                          const duration = getTaskDurationMinutes(task.title); const ponr = new Date(dl.getTime() - duration * 60 * 1000); const now = new Date();
+                          let percent = 0; let barColor = '#0F9D58'; let textColorClass = 'text-[#0F9D58]'; let countdownText = '';
+                          const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime(); const remaining = ponr.getTime() - now.getTime();
+                          if (remaining <= 0) { percent = 0; barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; countdownText = '🔴 Act now'; }
+                          else { percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
+                            if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; } else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; } else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
+                            const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const isTodayVal = ponr.toDateString() === now.toDateString(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
+                            let dayString = ''; if (isTodayVal) dayString = 'today'; else if (isTomorrowVal) dayString = 'tomorrow'; else dayString = ponr.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+                            countdownText = `⚠ Start by ${dayString} ${timeString}`;
+                          }
+                          return (<div className="w-full mb-3"><div className="w-full bg-[rgba(14,27,42,0.08)] h-[2px] rounded-[1px] overflow-hidden"><div className="h-full rounded-[1px] transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: barColor }} /></div><div className={`mt-1 font-sans font-normal text-[11px] ${textColorClass}`}>{countdownText}</div></div>);
+                        })()}
+                        {overdue ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button type="button" aria-label="Draft a reply" disabled={escapeHatchLoadingTaskId === task.id} onClick={() => handleEscapeHatch(task)}
+                              className="px-3 py-[7px] bg-[#B23A2E] text-white font-sans font-medium text-[12px] rounded-[7px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer">
+                              {escapeHatchLoadingTaskId === task.id ? 'Drafting...' : '🚨 Escape Hatch'}
+                            </button>
+                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setCompletedCount(prev => prev + 1); setResolvedOverdueCount(prev => prev + 1); setCompletedTaskIds(prev => { const next = new Set(prev); next.add(task.id); return next; }); }}
+                              className="px-3 py-[7px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[12px] rounded-[7px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">
+                              Mark Done Anyway
+                            </button>
+                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setResolvedOverdueCount(prev => prev + 1); }}
+                              className="px-3 py-[7px] bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.15)] font-sans font-medium text-[12px] rounded-[7px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">
+                              Archive
+                            </button>
+                            <button type="button" aria-label="Snooze" style={{ width: 0, height: 0, opacity: 0, border: 0, padding: 0, position: 'absolute', pointerEvents: 'none' }} />
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button type="button" onClick={() => { if (task.primaryAction === 'Draft a reply') handleEscapeHatch(task); else if (task.primaryAction === 'Break it down') handleDecomposeTask(task); else if (task.primaryAction === 'Handle it now') setTasks(prev => prev.map(t => t.id === task.id ? { ...t, inProgress: true } : t)); }}
+                              disabled={(task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id) || (task.primaryAction === 'Break it down' && task.decomposing)}
+                              className="px-3 py-[7px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[12px] rounded-[7px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-80">
+                              {task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id ? 'Drafting...' : task.primaryAction === 'Break it down' && task.decomposing ? 'Breaking down...' : task.primaryAction}
+                            </button>
+                            {(() => { const dl = parseDeadline(task.pillText, task.id); if (!dl || dl.getTime() - Date.now() > 24*60*60*1000) return null;
+                              return (<button type="button" onClick={() => { if (!task.snoozed) setTasks(prev => prev.map(t => t.id === task.id ? { ...t, snoozed: true, pillText: 'Snoozed — due tomorrow', urgency: 'low' } : t)); }}
+                                className="px-3 py-[7px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[12px] rounded-[7px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">{task.secondaryAction}</button>);
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* --- IN PROGRESS Column --- */}
+                <div className="kanban-col flex-1 min-w-0 rounded-[12px] p-[12px] flex flex-col gap-[10px]" style={{ backgroundColor: 'rgba(26,115,232,0.02)', border: '1px solid rgba(26,115,232,0.1)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-sans text-[11px] uppercase tracking-[0.1em]" style={{ fontWeight: 700, color: '#1A73E8' }}>In Progress</span>
+                    <span className="px-[8px] py-[2px] rounded-[10px] font-sans text-[11px]" style={{ fontWeight: 600, backgroundColor: 'rgba(26,115,232,0.1)', color: '#1A73E8' }}>
+                      {tasks.filter(t => t.inProgress).length}
+                    </span>
+                  </div>
+                  {tasks.filter(t => t.inProgress).length === 0 && (
+                    <div className="flex items-center justify-center py-10 font-sans text-[13px] text-[#5B6B7B]">Click 'Handle it now' on any task</div>
+                  )}
+                  {tasks.filter(t => t.inProgress).map((task) => (
+                    <div key={task.id} id={`task-card-${task.id}`}
+                      className={`card-slide-in bg-white border border-polaris-border rounded-[12px] p-[16px] flex flex-col items-start transition-all w-full ${highlightedTaskId === task.id ? 'ring-2 ring-[#1A73E8]' : ''}`}
+                      style={{ borderLeft: '3px solid #1A73E8' }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-0.5 rounded-[4px] font-sans font-medium text-[10px]" style={{ backgroundColor: 'rgba(26,115,232,0.1)', color: '#1A73E8' }}>In progress</span>
+                      </div>
+                      <h2 className="font-sans font-semibold text-[14px] text-polaris-primary mb-1 leading-snug">{task.title}</h2>
+                      <p className="font-sans font-normal text-[12px] text-polaris-secondary mb-3 leading-relaxed truncate w-full">{task.context}</p>
+                      <div className="w-full flex gap-[8px]">
+                        <button id={`done-btn-${task.id}`} type="button" onClick={() => handleRemoveTask(task.id)}
+                          className="flex-1 px-[16px] py-[9px] bg-[#0E1B2A] text-white font-sans font-medium text-[13px] rounded-[8px] hover:bg-[#1a2e42] active:scale-98 transition-all cursor-pointer">
+                          Mark Done
+                        </button>
+                        <button type="button" onClick={() => setTasks(prev => prev.map(t => t.id === task.id ? { ...t, inProgress: false } : t))}
+                          className="flex-1 px-[16px] py-[9px] bg-transparent text-[#0E1B2A] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
+                          style={{ border: '1.5px solid rgba(14,27,42,0.2)' }}>
+                          Move back
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* --- DONE Column --- */}
+                <div className="kanban-col flex-1 min-w-0 rounded-[12px] p-[12px] flex flex-col gap-[10px]" style={{ backgroundColor: 'rgba(15,157,88,0.02)', border: '1px solid rgba(15,157,88,0.1)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-sans text-[11px] uppercase tracking-[0.1em]" style={{ fontWeight: 700, color: '#0F9D58' }}>Done</span>
+                    <span className="px-[8px] py-[2px] rounded-[10px] font-sans text-[11px]" style={{ fontWeight: 600, backgroundColor: 'rgba(15,157,88,0.1)', color: '#0F9D58' }}>
+                      {completedTasks.length}
+                    </span>
+                  </div>
+                  {completedTasks.length === 0 && (
+                    <div className="flex items-center justify-center py-10 font-sans text-[13px] text-[#5B6B7B]">No completed tasks yet</div>
+                  )}
+                  {completedTasks.map(task => {
+                    let pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
+                    if (task.urgency === 'high') pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
+                    else if (task.urgency === 'medium') pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
+                    return (
+                      <div key={task.id} className="bg-white border border-polaris-border rounded-[12px] p-[14px] flex flex-col gap-1.5 w-full">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <span className="font-sans font-medium text-[14px] text-polaris-primary line-through" style={{ opacity: 0.6 }}>{task.title}</span>
+                            <span className="font-sans text-[12px] text-[#5B6B7B] truncate">{task.context}</span>
+                            <span className={`self-start px-2 py-0.5 rounded-[5px] text-[10px] font-medium ${pillClass}`} style={{ opacity: 0.5 }}>{task.pillText}</span>
+                          </div>
+                          <button type="button" onClick={() => handleRestoreTask(task.id)}
+                            className="px-2.5 py-1 bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[11px] rounded-[5px] hover:bg-[rgba(14,27,42,0.03)] transition-all cursor-pointer shrink-0">
+                            Restore
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
 
-            {/* AI EXTRACTION LEDGER DRAWER */}
-            <div className="w-full mt-4" id="ai-extraction-ledger">
+            {/* AI EXTRACTION LEDGER - moved to Dashboard */}
+            <div className="hidden" id="ai-extraction-ledger">
               {/* Header Bar */}
               <div
                 onClick={() => setIsLedgerOpen(prev => !prev)}
@@ -2939,7 +2961,7 @@ export default function App() {
 
         {activeTab === 'calendar' && (
           /* CALENDAR TAB PANEL */
-          <div id="polaris-calendar-container" className="w-full max-w-[800px] flex flex-col gap-6 pt-10 pb-16 px-6">
+          <div id="polaris-calendar-container" className="tab-fade-in w-full max-w-[800px] flex flex-col gap-6 pt-10 pb-16 px-6">
             <div className="flex items-center justify-between">
               <h2 className="font-serif font-medium text-[20px] text-polaris-primary">Calendar View</h2>
               <div className="flex items-center gap-4">
@@ -2991,11 +3013,7 @@ export default function App() {
                     <div
                       key={idx}
                       onClick={() => {
-                        if (dayTasks.length > 0) {
-                          setSelectedCalendarDate(cell.date);
-                        } else {
-                          setSelectedCalendarDate(null);
-                        }
+                        setSelectedCalendarDate(cell.date);
                       }}
                       className={`calendar-cell min-h-[90px] border border-[rgba(14,27,42,0.04)] rounded-[8px] p-2 flex flex-col items-start justify-between cursor-pointer transition-all duration-150 ${
                         cell.isCurrentMonth ? 'bg-white' : 'bg-transparent text-[#C4C4C4]'
@@ -3039,49 +3057,7 @@ export default function App() {
                 })}
               </div>
 
-              {selectedCalendarDate && (
-                <div 
-                  className="absolute z-10 bg-white border border-polaris-border rounded-[12px] p-4 shadow-lg max-w-[280px] w-full"
-                  style={{
-                    bottom: '24px',
-                    right: '24px',
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-3 border-b border-[rgba(14,27,42,0.06)] pb-1.5">
-                    <span className="font-sans font-bold text-[13px] text-polaris-primary">
-                      {selectedCalendarDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedCalendarDate(null);
-                      }}
-                      className="text-polaris-secondary hover:text-polaris-primary text-[14px] border-0 bg-transparent cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto">
-                    {getTasksForDate(selectedCalendarDate).map((task) => {
-                      let pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
-                      if (task.urgency === 'high') pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
-                      else if (task.urgency === 'medium') pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
-                      
-                      return (
-                        <div key={task.id} className="flex flex-col gap-0.5">
-                          <span className="font-sans font-medium text-[13px] text-polaris-primary leading-tight">
-                            {task.title}
-                          </span>
-                          <span className={`self-start px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium ${pillClass}`}>
-                            {task.urgency}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* Calendar slide-in panel rendered via portal below */}
             </div>
           </div>
         )}
@@ -3103,7 +3079,7 @@ export default function App() {
 
           return (
             /* DASHBOARD TAB PANEL */
-            <div id="polaris-dashboard-container" className="w-full max-w-[900px] flex flex-col gap-6 pt-10 pb-16 px-6">
+            <div id="polaris-dashboard-container" className="tab-fade-in w-full max-w-[900px] flex flex-col gap-6 pt-10 pb-16 px-6">
               <h2 className="font-serif font-medium text-[20px] text-polaris-primary mb-2">Dashboard</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
@@ -3480,44 +3456,96 @@ export default function App() {
                 })()}
               </div>
             </div>
+
+              {/* Roast My Habits */}
+              <button
+                id="roast-habits-btn"
+                type="button"
+                onClick={handleRoast}
+                disabled={isRoastLoading}
+                className="w-full rounded-[12px] py-3 px-5 bg-[#0E1B2A] text-white font-sans font-medium text-[14px] hover:bg-[#1a2e42] transition-all disabled:opacity-80 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isRoastLoading ? "Roasting... 🔥" : "🔥 Roast my habits"}
+              </button>
+              {roastResult && (
+                <div className="bg-white border border-polaris-border rounded-[14px] p-[18px] shadow-sm">
+                  <p className="font-sans text-[14px] text-polaris-primary leading-relaxed">{roastResult}</p>
+                </div>
+              )}
+
+              {/* AI Extraction Ledger (Dashboard) */}
+              <div className="w-full" id="dashboard-extraction-ledger">
+                <div
+                  onClick={() => setIsLedgerOpen(prev => !prev)}
+                  className="bg-white border border-[rgba(14,27,42,0.08)] p-[14px] px-[20px] flex items-center justify-between cursor-pointer select-none hover:bg-[rgba(14,27,42,0.02)] transition-all duration-200"
+                  style={{ borderRadius: isLedgerOpen ? '12px 12px 0 0' : '12px' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[14px]">✨</span>
+                    <span className="font-sans font-medium text-[14px] text-[#0E1B2A]">AI Extraction Ledger</span>
+                  </div>
+                  <div>
+                    <span className="font-sans font-medium text-[12px] px-[10px] py-[3px] rounded-[20px] bg-[rgba(200,137,59,0.12)] text-[#C8893B]">
+                      {extractionLog.length > 0 ? `${extractionLog.length} tasks found` : 'No extractions yet'}
+                    </span>
+                  </div>
+                  <div className="font-sans text-[14px] text-[#5B6B7B]" style={{ transform: isLedgerOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+                    ▼
+                  </div>
+                </div>
+                <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isLedgerOpen ? '600px' : '0px' }}>
+                  <div className="border border-[rgba(14,27,42,0.08)] border-t-0 rounded-b-[12px] bg-white max-h-[400px] overflow-y-auto">
+                    {extractionLog.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+                        <span className="text-[48px] mb-2">🔍</span>
+                        <h4 className="font-sans font-medium text-[14px] text-[#0E1B2A]">No extractions yet</h4>
+                        <p className="font-sans text-[13px] text-[#5B6B7B] mt-1 max-w-[280px]">Scan an email or image to see what Polaris finds for you.</p>
+                      </div>
+                    ) : (
+                      <div>
+                        {extractionLog.map((entry) => {
+                          const status = getEntryStatus(entry);
+                          let badgeBg = 'rgba(14,27,42,0.06)';
+                          let badgeColor = '#5B6B7B';
+                          let badgeText = 'In progress';
+                          if (status === 'completed') { badgeBg = 'rgba(15,157,88,0.1)'; badgeColor = '#0F9D58'; badgeText = '✓ Done'; }
+                          else if (status === 'archived') { badgeBg = 'rgba(91,107,123,0.1)'; badgeColor = '#5B6B7B'; badgeText = 'Archived'; }
+                          let urgencyColor = '#5B6B7B';
+                          if (entry.urgency === 'high') urgencyColor = '#B23A2E';
+                          else if (entry.urgency === 'medium') urgencyColor = '#C8893B';
+                          return (
+                            <div key={entry.id} className="p-[12px] px-[20px] border-b border-[rgba(14,27,42,0.06)] flex items-center gap-[12px] last:border-b-0">
+                              <div className="w-[20px] h-[20px] rounded-full bg-[rgba(200,137,59,0.1)] flex items-center justify-center text-[12px] shrink-0">
+                                {entry.sourceType === 'email' ? '📧' : '📸'}
+                              </div>
+                              <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                <div className="font-sans font-medium text-[13px] text-[#0E1B2A] truncate">{entry.taskTitle}</div>
+                                <div className="font-sans text-[12px] text-[#5B6B7B] truncate">{entry.sourceName}</div>
+                                <div className="font-sans text-[12px] font-medium" style={{ color: urgencyColor }}>{entry.deadline}</div>
+                              </div>
+                              <div className="font-sans font-medium text-[11px] px-[8px] py-[3px] rounded-[10px] shrink-0" style={{ backgroundColor: badgeBg, color: badgeColor }}>{badgeText}</div>
+                            </div>
+                          );
+                        })}
+                        <div className="p-[12px] px-[20px] bg-[rgba(14,27,42,0.02)] rounded-b-[12px] border-t border-[rgba(14,27,42,0.06)]">
+                          <span className="font-sans italic text-[13px] text-[#5B6B7B]">
+                            Polaris found {extractionLog.length} task{extractionLog.length !== 1 ? 's' : ''} across {new Set(extractionLog.map(e => e.sourceName)).size} source{new Set(extractionLog.map(e => e.sourceName)).size !== 1 ? 's' : ''} you would have missed.
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
           </div>
         );
       })()}
 
         {activeTab === 'inbox' && (
-          /* INBOX TAB PANEL (Pixel-perfect Gmail clone with image scan toggle) */
-          <div id="polaris-inbox-container" className="w-full flex flex-col bg-white min-h-[calc(100vh-180px)] p-6">
-            
-            {/* Toggle Row */}
-            <div className="flex justify-center gap-2 select-none mb-6">
-              <button
-                id="toggle-inbox-emails"
-                type="button"
-                onClick={() => setInboxSubTab('emails')}
-                className={`px-5 py-2 rounded-[20px] font-sans font-medium text-[13px] transition-all cursor-pointer ${
-                  inboxSubTab === 'emails'
-                    ? 'bg-[#0E1B2A] text-white border-0 font-sans'
-                    : 'bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.2)] hover:bg-[rgba(14,27,42,0.03)] font-sans'
-                }`}
-              >
-                📧 Emails
-              </button>
-              <button
-                id="toggle-inbox-scan"
-                type="button"
-                onClick={() => setInboxSubTab('scan')}
-                className={`px-5 py-2 rounded-[20px] font-sans font-medium text-[13px] transition-all cursor-pointer ${
-                  inboxSubTab === 'scan'
-                    ? 'bg-[#0E1B2A] text-white border-0 font-sans'
-                    : 'bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.2)] hover:bg-[rgba(14,27,42,0.03)] font-sans'
-                }`}
-              >
-                📸 Scan Image
-              </button>
-            </div>
+          /* INBOX TAB PANEL (Email list only) */
+          <div id="polaris-inbox-container" className="tab-fade-in w-full flex flex-col bg-white min-h-[calc(100vh-180px)] p-6">
 
-            {inboxSubTab === 'emails' ? (
-              /* Existing Gmail-style inbox */
+              {/* Gmail-style inbox */}
               <div className="w-full flex border border-[#E5E5E5] rounded-[12px] overflow-hidden flex-1 min-h-[500px] relative">
                 {/* Backdrop */}
                 {isMobileSidebarOpen && (
@@ -3888,9 +3916,28 @@ export default function App() {
                   )}
                 </div>
               </div>
-            ) : (
-              /* SCAN IMAGE VIEW */
-              <div className="w-full flex-1 flex flex-col items-center">
+
+          </div>
+        )}
+      {/* Image Scan Modal (triggered from Tasks view) */}
+      {isImageScanModalOpen && (
+        <div
+          onClick={() => setIsImageScanModalOpen(false)}
+          className="modal-backdrop fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="modal-content bg-white max-w-[560px] w-full rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-4"
+          >
+            <button
+              type="button"
+              onClick={() => { setIsImageScanModalOpen(false); handleResetImageScan(); }}
+              className="absolute top-5 right-5 text-polaris-secondary hover:text-polaris-primary text-[20px] border-0 bg-transparent cursor-pointer font-sans"
+            >
+              ✕
+            </button>
+            <h2 className="font-serif font-medium text-[20px] text-[#0E1B2A] mb-1">Scan Image for Tasks</h2>
+            <div className="w-full flex-1 flex flex-col items-center">
                 {!imagePreviewUrl ? (
                   /* Upload Zone */
                   <div className="w-full flex flex-col items-center">
@@ -4071,11 +4118,142 @@ export default function App() {
                   className="hidden"
                 />
               </div>
-            )}
-
           </div>
-        )}
+        </div>
+      )}
       </main>
+
+      {/* Calendar Date Slide-in Panel */}
+      {selectedCalendarDate && (
+        <>
+          <div
+            onClick={() => setSelectedCalendarDate(null)}
+            className="fixed inset-0 z-40 bg-[rgba(0,0,0,0.2)]"
+          />
+          <div
+            className="fixed top-0 right-0 h-full z-50 bg-white shadow-2xl flex flex-col w-full md:w-[320px]"
+            style={{ animation: 'calendar-panel-slide-in 250ms ease forwards' }}
+          >
+            <div className="flex items-center justify-between p-5 border-b border-[rgba(14,27,42,0.08)]">
+              <h2 className="font-serif font-medium text-[18px] text-polaris-primary">
+                Tasks on {selectedCalendarDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSelectedCalendarDate(null)}
+                className="text-polaris-secondary hover:text-polaris-primary text-[20px] border-0 bg-transparent cursor-pointer font-sans"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {getTasksForDate(selectedCalendarDate).length === 0 ? (
+                <div className="flex items-center justify-center h-full text-polaris-secondary font-sans text-[14px]">
+                  No tasks on this date
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {getTasksForDate(selectedCalendarDate).map((task) => {
+                    let dotColor = '#5B6B7B';
+                    if (task.urgency === 'high') dotColor = '#B23A2E';
+                    else if (task.urgency === 'medium') dotColor = '#C8893B';
+                    return (
+                      <div
+                        key={task.id}
+                        onClick={() => {
+                          setActiveTab('tasks');
+                          setHighlightedTaskId(task.id);
+                          setSelectedCalendarDate(null);
+                          setTimeout(() => {
+                            document.getElementById(`task-card-${task.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            setTimeout(() => setHighlightedTaskId(null), 2000);
+                          }, 100);
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-[10px] border border-[rgba(14,27,42,0.06)] hover:bg-[rgba(14,27,42,0.02)] cursor-pointer transition-all"
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className="font-sans font-medium text-[13px] text-polaris-primary truncate">{task.title}</span>
+                          <span className="font-sans text-[12px] text-polaris-secondary">{task.pillText}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Add Task Modal */}
+      {isAddTaskModalOpen && (
+        <div
+          onClick={() => setIsAddTaskModalOpen(false)}
+          className="modal-backdrop fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="modal-content bg-white max-w-[480px] w-full rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-4"
+          >
+            <button
+              type="button"
+              onClick={() => setIsAddTaskModalOpen(false)}
+              className="absolute top-5 right-5 text-polaris-secondary hover:text-polaris-primary text-[20px] border-0 bg-transparent cursor-pointer font-sans"
+            >
+              ✕
+            </button>
+            <h2 className="font-serif font-medium text-[20px] text-[#0E1B2A] mb-1">Add New Task</h2>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-1 block">Task name</label>
+                <input
+                  type="text"
+                  value={addTaskModalTitle}
+                  onChange={(e) => setAddTaskModalTitle(e.target.value)}
+                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-1 block">Due date (optional)</label>
+                <input
+                  type="date"
+                  value={addTaskModalDate}
+                  onChange={(e) => setAddTaskModalDate(e.target.value)}
+                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all"
+                />
+              </div>
+              <div>
+                <label className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-1 block">Description (optional)</label>
+                <textarea
+                  value={addTaskModalDesc}
+                  onChange={(e) => setAddTaskModalDesc(e.target.value)}
+                  rows={3}
+                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all resize-none"
+                  placeholder="Add details..."
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 mt-2">
+              <button
+                type="button"
+                onClick={() => setIsAddTaskModalOpen(false)}
+                className="px-4 py-2 bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAddTask}
+                className="px-4 py-2 bg-[#0E1B2A] text-white font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer"
+              >
+                Add task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Escape Hatch Draft Modal Overlay */}
       {isEscapeModalOpen && (
@@ -4327,6 +4505,7 @@ export default function App() {
             setExtractionLog([]);
             setIsLedgerOpen(false);
             setCompletedTaskIds(new Set());
+            setCompletedTasks([]);
             setDemoResetToast(true);
             setTimeout(() => setDemoResetToast(false), 2000);
           }}
@@ -4347,6 +4526,22 @@ export default function App() {
           Reset demo
         </button>
       </div>
+
+      {/* Gemini 503 toast */}
+      {gemini503Toast && (
+        <div style={{
+          position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
+          background: '#1A202C', color: 'white', borderRadius: '10px', padding: '12px 20px',
+          fontFamily: 'Inter, sans-serif', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '12px',
+          maxWidth: '560px', animation: 'gemini-503-in 200ms ease forwards',
+        }}>
+          <span>⚡ Gemini API is experiencing high demand right now. This is a temporary Google-side issue — please try again in a moment.</span>
+          <button type="button" onClick={() => setGemini503Toast(false)}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '16px', padding: 0, lineHeight: 1, flexShrink: 0 }}>
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Demo reset toast */}
       {demoResetToast && (

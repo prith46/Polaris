@@ -60,7 +60,7 @@ describe('Renegotiation Agent Feature', () => {
     fireEvent.click(renegotiateBtn);
 
     // Verify it transitions to loading state
-    expect(screen.getByText('Analyzing your tasks...')).toBeInTheDocument();
+    expect(screen.getByText('Analyzing...')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Renegotiation Plan')).toBeInTheDocument();

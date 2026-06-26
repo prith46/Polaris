@@ -200,63 +200,34 @@ describe('Module 4: Gmail Inbox', () => {
     }
   });
 
-  test('Inbox tab shows toggle row with "Emails" and "Scan Image" options', () => {
+  test('Scan image button is in Tasks tab, opens modal', () => {
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    expect(screen.getByRole('button', { name: /Emails/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Scan Image/i })).toBeInTheDocument();
-  });
-
-  test('"Emails" toggle shows email list', () => {
-    render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    // Default should show emails
-    expect(screen.getByText('Your electricity bill is due soon')).toBeInTheDocument();
-
-    // Click Scan Image
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
-    expect(screen.queryByText('Your electricity bill is due soon')).not.toBeInTheDocument();
-
-    // Click Emails back
-    fireEvent.click(screen.getByRole('button', { name: /Emails/i }));
-    expect(screen.getByText('Your electricity bill is due soon')).toBeInTheDocument();
-  });
-
-  test('"Scan Image" toggle shows upload zone', () => {
-    render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    const scanBtn = screen.getByRole('button', { name: /Scan image/i });
+    fireEvent.click(scanBtn);
     expect(screen.getByText('Drop a screenshot here')).toBeInTheDocument();
+  });
+
+  test('Inbox tab shows email list directly', () => {
+    render(<App />);
+    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
+    fireEvent.click(inboxTab);
+    expect(screen.getByText('Your electricity bill is due soon')).toBeInTheDocument();
   });
 
   test('Upload zone shows drag-drop text and browse button', () => {
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
     expect(screen.getByText(/WhatsApp chats, whiteboard photos/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Browse files' })).toBeInTheDocument();
   });
 
-
-
   test('Wrong file type shows error message', async () => {
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
 
     const file = new File(['dummy content'], 'document.pdf', { type: 'application/pdf' });
     const fileInput = screen.getByTestId('image-file-input');
-    
+
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     await waitFor(() => {

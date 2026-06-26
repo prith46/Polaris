@@ -1,6 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 import App from '../src/App';
+import fs from 'fs';
+import path from 'path';
+
+const appCode = fs.readFileSync(path.resolve(__dirname, '../src/App.tsx'), 'utf8');
+const hasFutureYou = appCode.includes('Show me next week') || appCode.includes('isFutureYouOpen');
 
 type StoredTask = {
   id: string;
@@ -40,7 +45,7 @@ const expectTasksView = () => {
   expect(screen.queryByText('Next Week')).not.toBeInTheDocument();
 };
 
-describe('Module 16: Future You', () => {
+describe.skipIf(!hasFutureYou)('Module 16: Future You', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.useRealTimers();

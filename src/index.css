@@ -21,6 +21,40 @@
   display: none;
 }
 
+/* Gemini 503 toast animation */
+@keyframes gemini-503-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Kanban column min-height responsive */
+.kanban-col { min-height: 300px; }
+@media (max-width: 768px) { .kanban-col { min-height: auto; } }
+
+/* Tab fade-in transition */
+@keyframes tab-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.tab-fade-in {
+  animation: tab-fade-in 150ms ease-in;
+}
+
+/* Card slide-in animation */
+@keyframes card-slide-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card-slide-in {
+  animation: card-slide-in 200ms ease-out;
+}
+
+/* Calendar panel slide-in */
+@keyframes calendar-panel-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 /* Mobile responsive passes (<768px) */
 @media (max-width: 768px) {
   /* Prevent horizontal scroll globally except where intended */
@@ -300,6 +334,18 @@
   background-color: rgba(178, 58, 46, 0.02) !important;
   animation: borderLeftPulse 2s ease-in-out infinite !important;
 }
+
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.card-enter { animation: cardSlideIn 0.2s ease forwards; }
+.card-exit { animation: cardFadeOut 0.15s ease forwards; }
+
 
 
 

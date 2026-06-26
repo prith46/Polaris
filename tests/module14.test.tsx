@@ -62,11 +62,11 @@ describe('Module 14: AI Extraction Ledger', () => {
     fireEvent.click(header!);
 
     // Verify entries exist with correct titles, source name, deadline, badges, and icons
-    expect(screen.getByText(/Scanned Task A/i)).toBeInTheDocument();
-    expect(screen.getByText(/Scanned Task B/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Scanned Task A/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Scanned Task B/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/City Power & Utilities/i)[0]).toBeInTheDocument();
-    expect(screen.getByText(/Tomorrow/i)).toBeInTheDocument();
-    expect(screen.getByText(/Friday/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Tomorrow/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Friday/i)[0]).toBeInTheDocument();
     
     // Status badge is "In progress"
     const inProgressBadges = screen.getAllByText('In progress');
@@ -92,12 +92,15 @@ describe('Module 14: AI Extraction Ledger', () => {
 
     const { container } = render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
 
     const file = new File(['dummy content'], 'screenshot.png', { type: 'image/png' });
     const fileInput = screen.getByTestId('image-file-input');
     fireEvent.change(fileInput, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected preview')).toBeInTheDocument();
+    });
 
     const scanBtn = screen.getByRole('button', { name: 'Scan for tasks' });
     fireEvent.click(scanBtn);
@@ -106,15 +109,15 @@ describe('Module 14: AI Extraction Ledger', () => {
       expect(screen.getByText(/✓ Found 1 task\(s\) — added to your Tasks\./i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
-    
-    const ledger = container.querySelector('#ai-extraction-ledger');
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+
+    const ledger = container.querySelector('#dashboard-extraction-ledger');
     expect(ledger?.textContent).toContain('1 tasks found');
 
     const header = ledger?.querySelector('.cursor-pointer');
     fireEvent.click(header!);
 
-    expect(screen.getByText(/Task from photo/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Task from photo/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText('📸').length).toBe(1);
     expect(screen.getAllByText('screenshot.png').length).toBeGreaterThanOrEqual(1);
   });

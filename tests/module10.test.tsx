@@ -2,37 +2,35 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import App from '../src/App';
 
+const openScanModal = () => {
+  fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
+};
+
 describe('Module 10: Multimodal Image Scanning', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  test('Scan Image toggle appears in Inbox tab', () => {
+  test('Scan Image button appears in Tasks tab', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    expect(screen.getByRole('button', { name: /Scan Image/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Scan image/i })).toBeInTheDocument();
   });
 
   test('Upload zone renders with correct placeholder text', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
     expect(screen.getByText('Drop a screenshot here')).toBeInTheDocument();
   });
 
   test('"Browse files" button exists', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
     expect(screen.getByRole('button', { name: 'Browse files' })).toBeInTheDocument();
   });
 
-
-
   test('File type validation rejects non-image files', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
 
     const file = new File(['dummy content'], 'document.pdf', { type: 'application/pdf' });
     const fileInput = screen.getByTestId('image-file-input');
@@ -45,10 +43,8 @@ describe('Module 10: Multimodal Image Scanning', () => {
 
   test('File size validation rejects files over 10MB', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
 
-    // Create a 11MB file
     const file = new File([new ArrayBuffer(11 * 1024 * 1024)], 'large.png', { type: 'image/png' });
     const fileInput = screen.getByTestId('image-file-input');
     fireEvent.change(fileInput, { target: { files: [file] } });
@@ -59,12 +55,10 @@ describe('Module 10: Multimodal Image Scanning', () => {
   });
 
   test('Scanning state shows "Scanning image..." text', async () => {
-    // Mock fetch that hangs
     vi.spyOn(global, 'fetch').mockImplementation(() => new Promise(() => {}));
 
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
 
     const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
     const fileInput = screen.getByTestId('image-file-input');
@@ -88,8 +82,7 @@ describe('Module 10: Multimodal Image Scanning', () => {
     } as Response);
 
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
 
     const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
     const fileInput = screen.getByTestId('image-file-input');
@@ -110,8 +103,7 @@ describe('Module 10: Multimodal Image Scanning', () => {
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('API failure'));
 
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
 
     const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
     const fileInput = screen.getByTestId('image-file-input');
@@ -139,8 +131,7 @@ describe('Module 10: Multimodal Image Scanning', () => {
     } as Response);
 
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
 
     const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
     const fileInput = screen.getByTestId('image-file-input');
@@ -159,8 +150,7 @@ describe('Module 10: Multimodal Image Scanning', () => {
 
   test('"Choose different image" link resets upload zone', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    openScanModal();
 
     const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
     const fileInput = screen.getByTestId('image-file-input');

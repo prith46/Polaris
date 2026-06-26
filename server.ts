@@ -30,6 +30,7 @@ async function startServer() {
     next();
   });
   const PORT = 3000;
+  const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
   // Server-side API route for scanning emails using Gemini
   app.post("/api/scan-email", async (req, res) => {
@@ -56,7 +57,7 @@ async function startServer() {
       const systemInstruction = "You are a deadline extraction engine. Your ONLY job is to read the email text provided and extract every commitment, task, or deadline mentioned. You must return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences — just the raw JSON array. Each item in the array must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the deadline phrase exactly as mentioned in the email, or 'No deadline mentioned' if none), urgency (string: must be exactly one of 'high', 'medium', or 'low' — high means due within 48 hours or overdue, medium means due within a week, low means due later or no clear deadline). If you find no tasks or deadlines, return an empty array: []. Never return anything except the JSON array.";
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-lite",
+        model: GEMINI_MODEL,
         contents: `Extract all deadlines and tasks from this email:\n\n${bodyText}`,
         config: {
           systemInstruction,
@@ -101,7 +102,7 @@ async function startServer() {
 
       const response = await retryWithDelay(async () => {
         return await ai.models.generateContent({
-          model: "gemini-2.5-flash-lite",
+          model: GEMINI_MODEL,
           contents,
           config: {
             systemInstruction,
@@ -115,7 +116,9 @@ async function startServer() {
       res.json(result);
     } catch (err: any) {
       console.error("Error in /api/panic:", err);
-      res.status(500).json({ error: "fallback" });
+      const errMsg = err?.message || err?.toString?.() || '';
+      const is503 = errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('overloaded') || err?.status === 503;
+      res.status(is503 ? 503 : 500).json({ error: is503 ? 'high demand' : 'fallback' });
     }
   });
 
@@ -147,7 +150,7 @@ async function startServer() {
 
       const response = await retryWithDelay(async () => {
         return await ai.models.generateContent({
-          model: "gemini-2.5-flash-lite",
+          model: GEMINI_MODEL,
           contents,
           config: {
             systemInstruction,
@@ -159,7 +162,9 @@ async function startServer() {
       res.json({ draft: draftText.trim() });
     } catch (err: any) {
       console.error("Error in /api/escape-hatch:", err);
-      res.status(500).json({ error: "fallback" });
+      const errMsg = err?.message || err?.toString?.() || '';
+      const is503 = errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('overloaded') || err?.status === 503;
+      res.status(is503 ? 503 : 500).json({ error: is503 ? 'high demand' : 'fallback' });
     }
   });
 
@@ -191,7 +196,7 @@ async function startServer() {
 
       const response = await retryWithDelay(async () => {
         return await ai.models.generateContent({
-          model: "gemini-2.5-flash-lite",
+          model: GEMINI_MODEL,
           contents,
           config: {
             systemInstruction,
@@ -205,7 +210,9 @@ async function startServer() {
       res.json({ subtasks: parsed });
     } catch (err: any) {
       console.error("Error in /api/decompose:", err);
-      res.status(500).json({ error: "fallback" });
+      const errMsg = err?.message || err?.toString?.() || '';
+      const is503 = errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('overloaded') || err?.status === 503;
+      res.status(is503 ? 503 : 500).json({ error: is503 ? 'high demand' : 'fallback' });
     }
   });
 
@@ -238,7 +245,7 @@ async function startServer() {
 
       const response = await retryWithDelay(async () => {
         return await ai.models.generateContent({
-          model: "gemini-2.5-flash-lite",
+          model: GEMINI_MODEL,
           contents,
           config: {
             systemInstruction,
@@ -252,7 +259,9 @@ async function startServer() {
       res.json(result);
     } catch (err: any) {
       console.error("Error in /api/renegotiate:", err);
-      res.status(500).json({ error: "fallback" });
+      const errMsg = err?.message || err?.toString?.() || '';
+      const is503 = errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('overloaded') || err?.status === 503;
+      res.status(is503 ? 503 : 500).json({ error: is503 ? 'high demand' : 'fallback' });
     }
   });
 
@@ -280,7 +289,7 @@ async function startServer() {
 
       const response = await retryWithDelay(async () => {
         return await ai.models.generateContent({
-          model: "gemini-2.5-flash-lite",
+          model: GEMINI_MODEL,
           contents: [
             {
               role: "user",
@@ -316,7 +325,9 @@ async function startServer() {
       res.json({ tasks: parsed });
     } catch (err: any) {
       console.error("Error in /api/scan-image:", err);
-      res.status(500).json({ error: "fallback" });
+      const errMsg = err?.message || err?.toString?.() || '';
+      const is503 = errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('overloaded') || err?.status === 503;
+      res.status(is503 ? 503 : 500).json({ error: is503 ? 'high demand' : 'fallback' });
     }
   });
 

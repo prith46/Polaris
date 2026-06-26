@@ -260,3 +260,216 @@ npm run build
 - Module 21: Google Doc finalize
 - Module 22: README update
 - Module 23: Final testing + submission
+
+---
+
+## 11. Modules 6–11 Technical Reference
+
+### Module 6 — Time-to-Disaster Countdown + Calendar + Dashboard
+**What it does:** Calculates and displays a time-to-disaster countdown bar on each task card indicating the start-by time rather than the due date. It also provides a monthly calendar tab to plot tasks with urgency indicators and a dashboard tab displaying five key performance metric cards.
+**Files changed:**
+- [src/App.tsx](file:///e:/polaris/src/App.tsx)
+**Key components/functions:**
+- `parseDeadline()`: Pure frontend helper function that extracts due dates and times from a text deadline.
+- Countdown Bar: A visual bar rendered on each task card that calculates and shows the point-of-no-return remaining.
+- Calendar Tab: Renders a monthly calendar grid plotting tasks on their respective due dates with color-coded urgency dots.
+- Dashboard Tab: Features five overview panels (Task Overview, Urgency Breakdown, Deadlines This Week, Polaris Impact, and Point-of-No-Return Alerts).
+**API endpoints used:** None
+**State variables added:**
+- `currentCalendarMonth` (Date object representing the currently viewed calendar month)
+- `animateDashboard` (boolean flag to trigger dashboard intro animations)
+**Edge cases handled:**
+- Countdown auto-updates every 60 seconds using a React-level `setInterval` timer.
+- Title keywords mapped to estimated task durations (pay/bill = 20min, email/draft = 45min, letter/write = 120min, meeting = 60min, default = 30min).
+**Known limitations:**
+- Calculations are strictly frontend-based and rely on client system time.
+
+### Module 7 — Panic Button + Escape Hatch
+**What it does:** Introduces a "Panic Button" banner in the tasks view that triggers focus mode on the single most critical task. It also adds an "Escape Hatch" modal for overdue tasks to quickly copy a pre-written professional apology or draft recovery message.
+**Files changed:**
+- [src/App.tsx](file:///e:/polaris/src/App.tsx)
+- [server.ts](file:///e:/polaris/server.ts)
+**Key components/functions:**
+- Panic Button: Header banner element that filters list view down to a single urgent task.
+- Escape Hatch Modal: Interactive dialog popup displaying an automated recovery reply draft.
+- Clipboard copy: Trigger action to copy the generated response template.
+**API endpoints used:**
+- `POST /api/panic`
+  - Request schema:
+    ```json
+    {
+      "tasks": "Array of active task objects"
+    }
+    ```
+  - Response schema:
+    ```json
+    {
+      "taskTitle": "string",
+      "reason": "string",
+      "action": "string"
+    }
+    ```
+- `POST /api/escape-hatch`
+  - Request schema:
+    ```json
+    {
+      "taskTitle": "string",
+      "context": "string"
+    }
+    ```
+  - Response schema:
+    ```json
+    {
+      "draft": "string"
+    }
+    ```
+**State variables added:**
+- `isFocusMode` (boolean to toggle the filtered view state)
+- `focusTask` (Task | null representing the prioritized focus task)
+- `focusBannerData` (custom banner message data object or null)
+- `isEscapeModalOpen` (boolean visibility state for the escape modal)
+- `escapeDraft` (string containing the active copyable text draft)
+- `escapeLoadingTaskId` (string | null holding the task ID while request loads)
+**Edge cases handled:**
+- Panic falls back to the first high-urgency task if API request fails.
+- Escape hatch falls back to a hardcoded draft recovery message upon connection issues.
+**Known limitations:**
+- Requires manual click triggers; focus view operates purely in client-side memory.
+
+### Module 8 — Task Decomposition Engine
+**What it does:** Allows users to decompose complex tasks into 3 to 6 ordered subtasks with estimated completion times using Gemini. These subtasks are rendered as an interactive checklist directly inside the task card.
+**Files changed:**
+- [src/App.tsx](file:///e:/polaris/src/App.tsx)
+- [src/types.ts](file:///e:/polaris/src/types.ts)
+- [server.ts](file:///e:/polaris/server.ts)
+**Key components/functions:**
+- "Break it down" trigger: Button on individual task cards initiating decomposition.
+- Subtask checklist: Collapsible list component showing progress checklist items.
+- Green completion banner: Visual alert rendering once all subtasks are checked.
+**API endpoints used:**
+- `POST /api/decompose`
+  - Request schema:
+    ```json
+    {
+      "taskTitle": "string",
+      "taskContext": "string"
+    }
+    ```
+  - Response schema:
+    ```json
+    {
+      "subtasks": [
+        {
+          "step": "string",
+          "minutes": "number"
+        }
+      ]
+    }
+    ```
+**State variables added:**
+- `subtasks` (list of checklist items added directly to the Task model schema)
+- `decomposing` (boolean loading state per task)
+- `decomposed` (boolean status flag per task)
+- `subtasksCollapsed` (boolean display toggle per task)
+**Edge cases handled:**
+- Expand/collapse chevron behavior checks.
+- Aggregate minutes calculation for total subtask times.
+- Fallback to 5 generic subtasks (Review, Gather, Complete, Review errors, Submit) on service failure.
+**Known limitations:**
+- Subtasks do not convert into top-level cards or sync to external calendar utilities.
+
+### Module 9 — Renegotiation Agent
+**What it does:** Evaluates the active workload and generates a renegotiation plan that separates tasks into protect, extend, or drop lists. It displays this layout in a color-coded modal and includes copyable templates for extension or dropping.
+**Files changed:**
+- [src/App.tsx](file:///e:/polaris/src/App.tsx)
+- [server.ts](file:///e:/polaris/server.ts)
+**Key components/functions:**
+- "I can't do all of this": Global renegotiation action trigger button.
+- Renegotiation Modal: Three-column layout displaying the prioritized action list (Protect, Extend, Drop).
+- Copy draft control: Secondary click action targeting extend/drop items.
+**API endpoints used:**
+- `POST /api/renegotiate`
+  - Request schema:
+    ```json
+    {
+      "tasks": "Array of active task objects"
+    }
+    ```
+  - Response schema:
+    ```json
+    {
+      "protect": "Array of task titles",
+      "extend": "Array of objects with taskTitle and draft response text",
+      "drop": "Array of objects with taskTitle and draft response text"
+    }
+    ```
+**State variables added:**
+- `isRenegotiateLoading` (boolean renegotiation request state flag)
+- `isRenegotiateModalOpen` (boolean modal display visibility status)
+- `renegotiatePlan` (data object containing the protect/extend/drop recommendations)
+- `copiedDraftTaskId` (string or null representing the recently copied task ID)
+**Edge cases handled:**
+- Local fallback logic: protects the first high-urgency task, extends the first medium-urgency task, and drops all others.
+- Copy confirmation state updates with visual indicators.
+**Known limitations:**
+- Does not automatically remove or update tasks on the board; actions are copy-only.
+
+### Module 10 — Multimodal Image Scanner
+**What it does:** Embeds an image uploader workspace in the Inbox sub-tab for scanning PNG, JPG, and WEBP formats. The server parses the base64-encoded image with Gemini to detect tasks and deadlines and adds them to the list.
+**Files changed:**
+- [src/App.tsx](file:///e:/polaris/src/App.tsx)
+- [server.ts](file:///e:/polaris/server.ts)
+**Key components/functions:**
+- Uploader dropzone: Area supporting drag-and-drop or click-to-upload workflows.
+- Base64 parser: Client-side file reader converting image selections into binary-to-text strings.
+**API endpoints used:**
+- `POST /api/scan-image`
+  - Request schema:
+    ```json
+    {
+      "imageBase64": "string",
+      "mimeType": "string"
+    }
+    ```
+  - Response schema:
+    ```json
+    {
+      "tasks": [
+        {
+          "title": "string",
+          "deadline": "string",
+          "urgency": "high" | "medium" | "low"
+        }
+      ]
+    }
+    ```
+**State variables added:**
+- `inboxSubTab` (string routing tab selector for emails/scan)
+- `imageFile` (File metadata tracker or null)
+- `imagePreviewUrl` (preview string of selected file or null)
+- `imageScanError` (error feedback string or null)
+- `isImageScanning` (boolean scan state indicator)
+- `imageScanResultState` (state tracker representing the scan status)
+**Edge cases handled:**
+- Graceful UI failure message displays: "Couldn't scan this image — try again." on all processing exceptions.
+- Rejecting input files larger than 10MB limit.
+**Known limitations:**
+- Requires clean image text structure; "Try an example" shortcut is removed.
+
+### Module 11 — localStorage Persistence
+**What it does:** Saves tasks and metrics counts across sessions, verifying schema properties upon application load. It also provides a hidden "Reset demo" button to refresh storage and initialize default seed data.
+**Files changed:**
+- [src/App.tsx](file:///e:/polaris/src/App.tsx)
+- [tests/setup.ts](file:///e:/polaris/tests/setup.ts)
+**Key components/functions:**
+- Schema validator: Verifier routine ensuring stored JSON maps correctly to required properties.
+- "Reset demo" trigger: Invisible bottom-right corner control that registers on cursor hover.
+**API endpoints used:** None
+**State variables added:** None (binds existing react-state values to localStorage keys)
+**Edge cases handled:**
+- `try/catch` wrappers protecting storage read/write calls against Private Browsing limits.
+- Validation checks returning user data back to `INITIAL_TASKS` if malformed JSON is found.
+- Test-suite wrapper clearing localStorage via `afterEach` hook to avoid side effects.
+**Known limitations:**
+- Operations are limited to local browser sandbox limits; data is not synchronized with a cloud backend.
+

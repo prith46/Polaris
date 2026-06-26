@@ -52,7 +52,7 @@ describe('Module 15: Commitment Density & Proactive Warning', () => {
     expect(densityCard).toBeInTheDocument();
 
     const bars = densityCard?.querySelectorAll('div[style*="background-color"]');
-    const backgroundColors = Array.from(bars || []).map(b => b.style.backgroundColor.toLowerCase());
+    const backgroundColors = Array.from(bars || []).map(b => (b as HTMLElement).style.backgroundColor.toLowerCase());
     
     expect(backgroundColors.some(c => c.includes('rgb(229, 229, 229)') || c.includes('#e5e5e5'))).toBe(true);
     expect(backgroundColors.some(c => c.includes('rgb(15, 157, 88)') || c.includes('#0f9d58'))).toBe(true);
@@ -91,7 +91,7 @@ describe('Module 15: Commitment Density & Proactive Warning', () => {
     const renBtn = screen.getByRole('button', { name: 'Renegotiate now →' });
     fireEvent.click(renBtn);
     await waitFor(() => {
-      expect(screen.getByText('Analyzing your tasks...')).toBeInTheDocument();
+      expect(screen.getByText('Analyzing...')).toBeInTheDocument();
     });
 
     const dismissBtn = screen.getByRole('button', { name: 'Dismiss warning' });
@@ -99,10 +99,11 @@ describe('Module 15: Commitment Density & Proactive Warning', () => {
     expect(container.querySelector('#density-warning-banner')).not.toBeInTheDocument();
   });
 
-  test('PROACTIVE BEHAVIOR: warning automatically shows/hides when task count crosses 4 threshold', () => {
-    render(<App />);
+  test('PROACTIVE BEHAVIOR: warning automatically shows/hides when task count crosses 4 threshold', async () => {
+    const { unmount: unmount1 } = render(<App />);
 
     expect(document.querySelector('#density-warning-banner')).not.toBeInTheDocument();
+    unmount1();
 
     const loadOverload = [
       { id: '1', title: 'T1', urgency: 'high', pillText: 'Due today', context: 'C', primaryAction: 'Handle it now', secondaryAction: 'Snooze' },

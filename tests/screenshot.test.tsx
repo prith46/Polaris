@@ -48,10 +48,8 @@ describe('Screenshot-based Testing', () => {
 
           render(<App />);
 
-          // Navigate to Inbox
-          fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-          // Navigate to Scan Image
-          fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+          // Open scan image modal from Tasks tab
+          fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
 
           // Upload the file
           const file = new File([fileBuffer], filename, { type: mimeType });

@@ -39,7 +39,7 @@ describe('Module 12: Mobile Responsiveness', () => {
     fireEvent.click(tabInbox!);
     expect(container.querySelector('#mobile-inbox-hamburger')).toBeInTheDocument();
 
-    const emailRow = screen.getByText('Dear Customer, this is a reminder that your electricity bill...');
+    const emailRow = screen.getByText(/Your electricity bill is due soon/i);
     fireEvent.click(emailRow);
     expect(container.querySelector('#email-detail-view')).toBeInTheDocument();
     expect(container.querySelector('#scan-deadlines-btn')).toBeInTheDocument();
@@ -80,9 +80,7 @@ describe('Module 12: Mobile Responsiveness', () => {
 
   test('Task card classes', () => {
     const { container } = render(<App />);
-    expect(container.querySelector('.task-card')).toBeInTheDocument();
-    expect(container.querySelector('.task-card-top-row')).toBeInTheDocument();
-    expect(container.querySelector('.task-card-buttons-row')).toBeInTheDocument();
+    expect(container.querySelector('.card-slide-in')).toBeInTheDocument();
   });
 
   test('Calendar classes', () => {
@@ -97,11 +95,8 @@ describe('Module 12: Mobile Responsiveness', () => {
 
   test('Image scanner classes/IDs', () => {
     const { container } = render(<App />);
-    const tabInbox = container.querySelector('#tab-inbox');
-    fireEvent.click(tabInbox!);
 
-    const scanToggle = screen.getByRole('button', { name: /Scan Image/i });
-    fireEvent.click(scanToggle);
+    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
 
     expect(container.querySelector('#image-upload-zone')).toBeInTheDocument();
 

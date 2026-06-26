@@ -7,28 +7,15 @@ describe('Multimodal Image Scanning Feature', () => {
     vi.restoreAllMocks();
   });
 
-  test('Inbox tab shows subtab toggles and toggling displays upload interface', () => {
+  test('Scan image button opens modal with upload interface', () => {
     render(<App />);
 
-    // Navigate to Inbox tab
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
+    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
 
-    // Verify subtab buttons are rendered
-    const emailsToggle = screen.getByRole('button', { name: /Emails/i });
-    const scanToggle = screen.getByRole('button', { name: /Scan Image/i });
-    expect(emailsToggle).toBeInTheDocument();
-    expect(scanToggle).toBeInTheDocument();
-
-    // Click "Scan Image"
-    fireEvent.click(scanToggle);
-
-    // Verify the upload zone is displayed
     expect(screen.getByText('Drop a screenshot here')).toBeInTheDocument();
     expect(screen.getByText(/WhatsApp chats, whiteboard photos/i)).toBeInTheDocument();
     expect(screen.getByText('Browse files')).toBeInTheDocument();
   });
-
 
   test('Selecting valid image file shows preview and scanning triggers API scan', async () => {
     const mockTasks = [
@@ -44,17 +31,13 @@ describe('Multimodal Image Scanning Feature', () => {
 
     render(<App />);
 
-    // Navigate to Scan Image subtab
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
 
     const file = new File(['dummy content'], 'screenshot.png', { type: 'image/png' });
-    const fileInput = screen.getByTestId('image-file-input', { suggest: false }) || document.getElementById('image-file-input')!;
-    
-    // Trigger file select
+    const fileInput = screen.getByTestId('image-file-input');
+
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    // Wait for FileReader load and preview rendering
     await waitFor(() => {
       expect(screen.getByAltText('Selected preview')).toBeInTheDocument();
     });
@@ -64,18 +47,12 @@ describe('Multimodal Image Scanning Feature', () => {
     const scanBtn = screen.getByRole('button', { name: 'Scan for tasks' });
     fireEvent.click(scanBtn);
 
-    // Verify it is in scanning state
     expect(screen.getByText('Scanning image...')).toBeInTheDocument();
     expect(screen.getByText('Gemini is reading your image...')).toBeInTheDocument();
 
-    // Wait for mock response
     await waitFor(() => {
       expect(screen.getByText('✓ Found 1 task(s) — added to your Tasks.')).toBeInTheDocument();
     });
-
-    // Check Tasks tab
-    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
-    expect(screen.getAllByText('Task from photo')[0]).toBeInTheDocument();
 
     mockFetch.mockRestore();
   });
@@ -87,14 +64,11 @@ describe('Multimodal Image Scanning Feature', () => {
 
     render(<App />);
 
-    // Navigate to Scan Image subtab
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
 
     const file = new File(['dummy content'], 'screenshot.png', { type: 'image/png' });
-    const fileInput = document.getElementById('image-file-input')!;
-    
-    // Select file
+    const fileInput = screen.getByTestId('image-file-input');
+
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     await waitFor(() => {
@@ -108,7 +82,6 @@ describe('Multimodal Image Scanning Feature', () => {
       expect(screen.getByText("Couldn't scan this image — try again.")).toBeInTheDocument();
     });
 
-    // Verify "Try again" button exists
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
 
     mockFetch.mockRestore();
