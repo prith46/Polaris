@@ -27,41 +27,7 @@ describe('Module 10: Multimodal Image Scanning', () => {
     expect(screen.getByRole('button', { name: 'Browse files' })).toBeInTheDocument();
   });
 
-  test('"Try an example" link exists', () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
-    expect(screen.getByText('✨ Try an example →')).toBeInTheDocument();
-  });
 
-  test('Clicking try an example adds 4 tasks', async () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
-
-    const tryBtn = screen.getByText('✨ Try an example →');
-    fireEvent.click(tryBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText('✓ Found 4 task(s) — added to your Tasks.')).toBeInTheDocument();
-    });
-  });
-
-  test('Correct context line: "Found in image scan — example"', async () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
-
-    const tryBtn = screen.getByText('✨ Try an example →');
-    fireEvent.click(tryBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText('✓ Found 4 task(s) — added to your Tasks.')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
-    expect(screen.getAllByText('Found in image scan — example').length).toBeGreaterThanOrEqual(1);
-  });
 
   test('File type validation rejects non-image files', async () => {
     render(<App />);

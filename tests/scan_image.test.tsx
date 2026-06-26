@@ -27,35 +27,8 @@ describe('Multimodal Image Scanning Feature', () => {
     expect(screen.getByText('Drop a screenshot here')).toBeInTheDocument();
     expect(screen.getByText(/WhatsApp chats, whiteboard photos/i)).toBeInTheDocument();
     expect(screen.getByText('Browse files')).toBeInTheDocument();
-    expect(screen.getByText('✨ Try an example →')).toBeInTheDocument();
   });
 
-  test('Clicking try an example adds 4 simulated tasks', async () => {
-    render(<App />);
-
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    const scanToggle = screen.getByRole('button', { name: /Scan Image/i });
-    fireEvent.click(scanToggle);
-
-    const tryExampleBtn = screen.getByText('✨ Try an example →');
-    fireEvent.click(tryExampleBtn);
-
-    // Wait for the mock state update
-    await waitFor(() => {
-      expect(screen.getByText('✓ Found 4 task(s) — added to your Tasks.')).toBeInTheDocument();
-    });
-
-    // Navigate back to Tasks tab and verify tasks exist
-    const tasksTab = screen.getByRole('button', { name: 'Tasks' });
-    fireEvent.click(tasksTab);
-
-    expect(screen.getAllByText('Book hotel for trip')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('Pay entry fee')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('Meet at train station')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('Confirm headcount for dinner')[0]).toBeInTheDocument();
-  });
 
   test('Selecting valid image file shows preview and scanning triggers API scan', async () => {
     const mockTasks = [

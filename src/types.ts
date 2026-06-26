@@ -11,6 +11,7 @@ export interface Task {
   decomposed?: boolean;
   subtasksCollapsed?: boolean;
   createdAt?: number;
+  pointOfNoReturnPassed?: boolean;
 }
 
 export interface Email {
@@ -29,4 +30,16 @@ export interface Email {
   pillBg?: string;
   pillColor?: string;
 }
+
+export interface ExtractionLogEntry {
+  id: string;
+  sourceType: 'email' | 'image';
+  sourceName: string;
+  taskTitle: string;
+  deadline: string;
+  urgency: 'high' | 'medium' | 'low';
+  taskId: string;
+  extractedAt: Date;
+}
+
 

@@ -282,4 +282,24 @@
   }
 }
 
+/* Overdue card visual states */
+@keyframes borderLeftPulse {
+  0% {
+    border-left-color: rgba(178, 58, 46, 1);
+  }
+  50% {
+    border-left-color: rgba(178, 58, 46, 0.4);
+  }
+  100% {
+    border-left-color: rgba(178, 58, 46, 1);
+  }
+}
+
+.overdue-card {
+  border-left: 3px solid #B23A2E !important;
+  background-color: rgba(178, 58, 46, 0.02) !important;
+  animation: borderLeftPulse 2s ease-in-out infinite !important;
+}
+
+
 

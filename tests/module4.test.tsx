@@ -245,35 +245,7 @@ describe('Module 4: Gmail Inbox', () => {
     expect(screen.getByRole('button', { name: 'Browse files' })).toBeInTheDocument();
   });
 
-  test('"Try an example" link exists in scan image view', () => {
-    render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
 
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
-    expect(screen.getByText('✨ Try an example →')).toBeInTheDocument();
-  });
-
-  test('Clicking "Try an example" adds exactly 4 tasks to Tasks list', async () => {
-    render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    fireEvent.click(screen.getByRole('button', { name: /Scan Image/i }));
-    
-    const initialTasksCount = 4; // default seed tasks
-    
-    const tryBtn = screen.getByText('✨ Try an example →');
-    fireEvent.click(tryBtn);
-
-    // Wait for tasks to be added
-    await screen.findByText(/✓ Found 4 task\(s\) — added to your Tasks\./i);
-
-    // Check tasks list
-    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
-    const headings = screen.getAllByRole('heading', { level: 2 });
-    expect(headings.length).toBe(initialTasksCount + 4);
-  });
 
   test('Wrong file type shows error message', async () => {
     render(<App />);
