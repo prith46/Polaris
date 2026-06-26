@@ -13,3 +13,273 @@
   --color-polaris-border: rgba(14,27,42,0.08);
 }
 
+/* Custom CSS Scrollbar Utilities */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile responsive passes (<768px) */
+@media (max-width: 768px) {
+  /* Prevent horizontal scroll globally except where intended */
+  html, body, #polaris-root {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* EMAIL LIST on mobile */
+  /* Sender name column: reduce to 120px max, truncate with ellipsis */
+  .email-sender-column {
+    max-width: 120px !important;
+    width: 120px !important;
+  }
+  .email-checkbox,
+  .email-star-icon,
+  .email-important-icon {
+    display: none !important;
+  }
+
+  /* Category tabs row: enable horizontal scroll, tabs don't wrap */
+  .inbox-category-tabs {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+  }
+  .inbox-category-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  .inbox-category-tabs > div {
+    flex-shrink: 0 !important;
+  }
+
+  /* EMAIL READING VIEW on mobile */
+  /* Full width, padding 16px (reduced from 40px) */
+  #email-detail-view {
+    padding: 24px 16px !important;
+  }
+  /* Subject heading: font-size 18px (reduced from 22px) */
+  #email-detail-subject {
+    font-size: 18px !important;
+  }
+  /* "Scan for deadlines" button: full width on mobile */
+  #email-detail-view > .flex.items-start.justify-between.gap-4.mb-4 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  #email-detail-view > .flex.items-start.justify-between.gap-4.mb-4 > .flex-col {
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+  #scan-deadlines-btn {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+  #scan-result-success, #scan-result-none, #scan-result-error {
+    text-align: center !important;
+    white-space: normal !important;
+  }
+  /* Sender info row: wrap on small screens (flex-wrap: wrap) */
+  #email-detail-sender-row {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  #email-detail-sender-row > span.ml-auto {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding-left: 44px !important; /* align under sender name */
+  }
+
+  /* PART 2: TASK CARDS */
+  /* Cards: full width, padding 14px (slightly reduced) */
+  .task-card {
+    padding: 14px !important;
+  }
+  /* Pill + Done row: keep on same row but allow wrapping if needed */
+  .task-card-top-row {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Panic button bar: text wraps gracefully, "Focus me" button stays on same row but can be smaller */
+  #panic-button-bar {
+    padding: 14px !important;
+  }
+  #panic-button-bar > .flex {
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+  }
+  #panic-button-bar span {
+    white-space: normal !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Renegotiation button: full width, text wraps if needed */
+  #renegotiate-btn {
+    width: 100% !important;
+    white-space: normal !important;
+    height: auto !important;
+    min-height: 44px !important;
+  }
+
+  /* PART 3: TAB BAR */
+  #polaris-tabs button {
+    font-size: 12px !important;
+    padding: 8px 10px !important;
+  }
+
+  /* PART 4: DASHBOARD */
+  #polaris-dashboard-container {
+    padding: 16px !important;
+  }
+
+  /* PART 5: CALENDAR */
+  /* Calendar card: padding 8px on mobile (reduced from current) */
+  .calendar-card {
+    padding: 8px !important;
+  }
+  .calendar-cell {
+    min-width: 36px !important;
+    min-height: 60px !important;
+    padding: 4px !important;
+  }
+  .calendar-cell span.calendar-task-title {
+    font-size: 10px !important;
+  }
+  /* Date number: font-size 11px on mobile */
+  .calendar-cell span {
+    font-size: 11px !important;
+  }
+  .calendar-cell div.rounded-full {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 11px !important;
+  }
+
+  /* PART 6: MODALS */
+  /* Bottom sheet style */
+  .modal-backdrop {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    padding: 20px 16px !important;
+  }
+
+  /* PART 8: IMAGE SCANNER (Scan Image tab) */
+  /* Upload zone: full width, padding 32px 16px (reduced) */
+  #image-upload-zone {
+    padding: 32px 16px !important;
+    max-width: 100% !important;
+  }
+  /* "Browse files" button: full width on mobile */
+  #image-upload-zone button {
+    width: 100% !important;
+    display: block !important;
+  }
+  /* Image preview: max-height 200px on mobile (reduced from 300px) */
+  .image-scan-preview {
+    max-height: 200px !important;
+  }
+  /* Success/error messages: full width */
+  #image-scan-error {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* Screens <480px responsive rules */
+@media (max-width: 480px) {
+  /* PART 1: GMAIL INBOX */
+  /* Timestamp: hide on very small screens. */
+  .email-timestamp {
+    display: none !important;
+  }
+
+  /* PART 2: TASK CARDS */
+  /* Add task input row: input and button stack vertically on <480px. Input full width. Button full width below it. */
+  #polaris-add-form {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  #polaris-task-input {
+    width: 100% !important;
+    flex: none !important;
+  }
+  #polaris-add-button {
+    width: 100% !important;
+    display: block !important;
+  }
+
+  /* PART 5: CALENDAR */
+  /* Task dots and truncated titles: hide the title text on screens <480px, show only the colored dot. */
+  .calendar-task-title {
+    display: none !important;
+  }
+  
+  /* PART 7: TOP BAR */
+  /* Tagline: hide on screens <480px to save space */
+  #polaris-tagline {
+    display: none !important;
+  }
+}
+
+/* Screens <380px responsive rules */
+@media (max-width: 380px) {
+  /* PART 2: TASK CARDS */
+  /* Button row: buttons stack vertically on screens <380px. */
+  .task-card-buttons-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+  .task-card-buttons-row button {
+    width: 100% !important;
+    display: block !important;
+  }
+}
+
+/* GENERAL RULES */
+/* Minimum tap target size: 44px height for all interactive elements on mobile */
+@media (max-width: 768px) {
+  button, 
+  a, 
+  input[type="button"], 
+  input[type="submit"], 
+  select,
+  [role="button"] {
+    min-height: 44px;
+  }
+  
+  /* Make sure small close buttons inside modals or sidebars still have 44px touch target padding/size */
+  #close-renegotiate-modal,
+  .modal-content button.absolute,
+  aside button.absolute {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Minimum font size: 13px anywhere on mobile (never smaller) */
+  .text-\[10px\], .text-\[11px\], .text-\[12px\], .text-xs,
+  .calendar-cell span, .calendar-cell div, .calendar-task-title,
+  #demo-reset-btn {
+    font-size: 13px !important;
+  }
+}
+
+

@@ -1301,6 +1301,7 @@ export default function App() {
   const [completedCount, setCompletedCount] = useState<number>(() => loadCount('polaris-completed'));
   const [scannedCount, setScannedCount] = useState<number>(() => loadCount('polaris-scanned'));
   const [demoResetToast, setDemoResetToast] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => new Date());
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
   const [, setTimeTick] = useState(0);
@@ -2096,7 +2097,7 @@ export default function App() {
       {/* Clean Tab Navigation */}
       <nav
         id="polaris-tabs"
-        className="w-full border-b border-polaris-border px-8 md:px-16 flex bg-polaris-bg"
+        className="w-full border-b border-polaris-border px-8 md:px-16 flex bg-polaris-bg overflow-x-auto scrollbar-none"
       >
         <button
           id="tab-tasks"
@@ -2104,7 +2105,7 @@ export default function App() {
           onClick={() => {
             setActiveTab('tasks');
           }}
-          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 ${
+          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 shrink-0 ${
             activeTab === 'tasks'
               ? 'border-polaris-primary text-polaris-primary'
               : 'border-transparent text-polaris-secondary hover:text-polaris-primary'
@@ -2118,7 +2119,7 @@ export default function App() {
           onClick={() => {
             setActiveTab('calendar');
           }}
-          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 ${
+          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 shrink-0 ${
             activeTab === 'calendar'
               ? 'border-polaris-primary text-polaris-primary'
               : 'border-transparent text-polaris-secondary hover:text-polaris-primary'
@@ -2132,7 +2133,7 @@ export default function App() {
           onClick={() => {
             setActiveTab('dashboard');
           }}
-          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 ${
+          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 shrink-0 ${
             activeTab === 'dashboard'
               ? 'border-polaris-primary text-polaris-primary'
               : 'border-transparent text-polaris-secondary hover:text-polaris-primary'
@@ -2146,7 +2147,7 @@ export default function App() {
           onClick={() => {
             setActiveTab('inbox');
           }}
-          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 ${
+          className={`py-3.5 px-4 font-sans font-medium text-[14px] border-b-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaris-primary/30 shrink-0 ${
             activeTab === 'inbox'
               ? 'border-polaris-primary text-polaris-primary'
               : 'border-transparent text-polaris-secondary hover:text-polaris-primary'
@@ -2514,7 +2515,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="bg-white border border-polaris-border rounded-[14px] p-6 shadow-sm relative">
+            <div className="calendar-card bg-white border border-polaris-border rounded-[14px] p-6 shadow-sm relative">
               <div className="grid grid-cols-7 gap-2 mb-4 text-center">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                   <div key={day} className="font-sans font-medium text-[13px] text-[#5B6B7B] py-1">
@@ -2523,7 +2524,7 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-2">
+              <div className="calendar-grid grid grid-cols-7 gap-2">
                 {getCalendarCells(currentCalendarMonth).map((cell, idx) => {
                   const dayTasks = getTasksForDate(cell.date);
                   const isToday = cell.date.toDateString() === new Date().toDateString();
@@ -2538,7 +2539,7 @@ export default function App() {
                           setSelectedCalendarDate(null);
                         }
                       }}
-                      className={`min-h-[90px] border border-[rgba(14,27,42,0.04)] rounded-[8px] p-2 flex flex-col items-start justify-between cursor-pointer transition-all duration-150 ${
+                      className={`calendar-cell min-h-[90px] border border-[rgba(14,27,42,0.04)] rounded-[8px] p-2 flex flex-col items-start justify-between cursor-pointer transition-all duration-150 ${
                         cell.isCurrentMonth ? 'bg-white' : 'bg-transparent text-[#C4C4C4]'
                       } ${dayTasks.length > 0 ? 'hover:border-polaris-primary/20 hover:shadow-sm' : ''}`}
                     >
@@ -2561,9 +2562,9 @@ export default function App() {
                           else if (task.urgency === 'medium') dotColor = '#C8893B';
                           
                           return (
-                            <div key={task.id} className="flex items-center gap-1.5 w-full">
+                            <div key={task.id} title={task.title} className="flex items-center gap-1.5 w-full">
                               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
-                              <span className="font-sans font-normal text-[11px] text-polaris-primary truncate leading-none">
+                              <span className="calendar-task-title font-sans font-normal text-[11px] text-polaris-primary truncate leading-none">
                                 {task.title}
                               </span>
                             </div>
@@ -2896,9 +2897,31 @@ export default function App() {
 
             {inboxSubTab === 'emails' ? (
               /* Existing Gmail-style inbox */
-              <div className="w-full flex border border-[#E5E5E5] rounded-[12px] overflow-hidden flex-1 min-h-[500px]">
+              <div className="w-full flex border border-[#E5E5E5] rounded-[12px] overflow-hidden flex-1 min-h-[500px] relative">
+                {/* Backdrop */}
+                {isMobileSidebarOpen && (
+                  <div
+                    id="mobile-sidebar-backdrop"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    className="md:hidden fixed inset-0 bg-[rgba(0,0,0,0.3)] z-[99]"
+                  />
+                )}
                 {/* LEFT SIDEBAR */}
-                <aside className="w-[256px] shrink-0 border-r border-[#E5E5E5] bg-white pt-2 flex flex-col select-none">
+                <aside 
+                  className={`w-[256px] shrink-0 border-r border-[#E5E5E5] bg-white pt-2 flex flex-col select-none transition-transform duration-300
+                    md:translate-x-0 md:static md:w-[256px] md:h-auto md:z-auto md:shadow-none
+                    fixed left-0 top-0 h-full w-[280px] z-[100] bg-white shadow-[4px_0_12px_rgba(0,0,0,0.15)]
+                    ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                  `}
+                >
+                  {/* Close button inside sidebar top-right on mobile */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    className="md:hidden absolute top-4 right-4 text-[#5F6368] hover:text-[#202124] text-[20px] font-sans bg-transparent border-0 cursor-pointer z-10"
+                  >
+                    ✕
+                  </button>
                   {/* Compose Button */}
                   <button
                     type="button"
@@ -3025,7 +3048,7 @@ export default function App() {
                       </div>
 
                       {/* Sender Row */}
-                      <div className="flex items-center gap-3 w-full">
+                      <div id="email-detail-sender-row" className="flex items-center gap-3 w-full">
                         {/* Avatar */}
                         <div
                           style={{ backgroundColor: currentEmail.avatarColor }}
@@ -3064,6 +3087,22 @@ export default function App() {
                       
                       {/* TOP TOOLBAR ROW */}
                       <div className="flex items-center p-2 border-b border-[#E5E5E5] gap-1 select-none">
+                        {/* Hamburger button on mobile */}
+                        <button
+                          id="mobile-inbox-hamburger"
+                          type="button"
+                          onClick={() => setIsMobileSidebarOpen(true)}
+                          className="md:hidden flex flex-col justify-center gap-[4px] items-center cursor-pointer bg-transparent border-0 shrink-0 mr-2 p-2"
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            boxSizing: 'content-box'
+                          }}
+                        >
+                          <span style={{ height: '2px', width: '20px', backgroundColor: '#202124', display: 'block', borderRadius: '1px' }} />
+                          <span style={{ height: '2px', width: '20px', backgroundColor: '#202124', display: 'block', borderRadius: '1px' }} />
+                          <span style={{ height: '2px', width: '20px', backgroundColor: '#202124', display: 'block', borderRadius: '1px' }} />
+                        </button>
                         <input
                           type="checkbox"
                           className="w-3.5 h-3.5 mx-2 accent-[#001D35] cursor-pointer shrink-0"
@@ -3097,15 +3136,15 @@ export default function App() {
                       </div>
 
                       {/* CATEGORY TABS ROW */}
-                      <div className="flex border-b border-[#E5E5E5] select-none">
+                      <div className="inbox-category-tabs flex border-b border-[#E5E5E5] select-none">
                         {/* Primary tab */}
-                        <div className="flex items-center gap-3 p-3 px-4 border-b-3 border-[#D93025] text-[#D93025] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
+                        <div className="flex items-center gap-3 p-3 px-4 border-b-3 border-[#D93025] text-[#D93025] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100 shrink-0">
                           <span className="material-icons text-[20px]">inbox</span>
                           <span>Primary</span>
                         </div>
 
                         {/* Promotions tab */}
-                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
+                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100 shrink-0">
                           <span className="material-icons text-[20px]">local_offer</span>
                           <span>Promotions</span>
                           <span className="bg-[#0F9D58] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-[4px] shrink-0">
@@ -3114,14 +3153,14 @@ export default function App() {
                         </div>
 
                         {/* Updates tab */}
-                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
+                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100 shrink-0">
                           <span className="material-icons text-[20px]">info</span>
                           <span>Updates</span>
                           <span className="w-2 h-2 rounded-full bg-[#FC8019] shrink-0" />
                         </div>
 
                         {/* Forums tab */}
-                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100">
+                        <div className="flex items-center gap-3 p-3 px-4 text-[#5F6368] font-googlesans font-medium text-[14px] cursor-pointer hover:bg-[#F2F6FC] transition-colors duration-100 shrink-0">
                           <span className="material-icons text-[20px]">forum</span>
                           <span>Forums</span>
                         </div>
@@ -3135,7 +3174,7 @@ export default function App() {
                               key={email.id}
                               id={`email-row-${email.id}`}
                               onClick={() => handleOpenEmail(email.id)}
-                              className="flex items-center h-[50px] border-b border-[#F1F3F4] cursor-pointer bg-white hover:shadow-[0_4px_4px_-2px_rgba(0,0,0,0.2)] hover:bg-[#F2F6FC] transition-all duration-150 select-none px-4 gap-2"
+                              className="email-row flex items-center h-[50px] border-b border-[#F1F3F4] cursor-pointer bg-white hover:shadow-[0_4px_4px_-2px_rgba(0,0,0,0.2)] hover:bg-[#F2F6FC] transition-all duration-150 select-none px-4 gap-2"
                             >
                               {/* Unread indicator red dot or empty spacer */}
                               {email.unread ? (
@@ -3148,13 +3187,13 @@ export default function App() {
                               <input
                                 type="checkbox"
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-3.5 h-3.5 accent-[#001D35] cursor-pointer shrink-0"
+                                className="email-checkbox w-3.5 h-3.5 accent-[#001D35] cursor-pointer shrink-0"
                               />
 
                               {/* Star Icon */}
                               <span
                                 onClick={(e) => toggleStar(email.id, e)}
-                                className={`material-icons text-[20px] select-none shrink-0 cursor-pointer transition-colors ${
+                                className={`email-star-icon material-icons text-[20px] select-none shrink-0 cursor-pointer transition-colors ${
                                   email.starred ? 'text-[#F4B400]' : 'text-[#5F6368] hover:text-gray-600'
                                 }`}
                               >
@@ -3164,7 +3203,7 @@ export default function App() {
                               {/* Important Indicator */}
                               <span
                                 onClick={(e) => toggleImportant(email.id, e)}
-                                className={`material-icons text-[20px] select-none shrink-0 cursor-pointer transition-colors ${
+                                className={`email-important-icon material-icons text-[20px] select-none shrink-0 cursor-pointer transition-colors ${
                                   email.important ? 'text-[#F4B400]' : 'text-[#5F6368] hover:text-gray-600'
                                 }`}
                               >
@@ -3183,7 +3222,7 @@ export default function App() {
 
                               {/* Sender Name */}
                               <div
-                                className={`w-[160px] shrink-0 text-[13px] font-googlesans whitespace-nowrap overflow-hidden text-ellipsis pr-2 ${
+                                className={`email-sender-column w-[160px] shrink-0 text-[13px] font-googlesans whitespace-nowrap overflow-hidden text-ellipsis pr-2 ${
                                   email.unread ? 'font-bold text-[#202124]' : 'font-normal text-[#202124]'
                                 }`}
                               >
@@ -3215,7 +3254,7 @@ export default function App() {
                               )}
 
                               {/* Timestamp */}
-                              <div className="w-[80px] text-right text-[12px] text-[#5F6368] flex-shrink-0 font-normal">
+                              <div className="email-timestamp w-[80px] text-right text-[12px] text-[#5F6368] flex-shrink-0 font-normal">
                                 {email.time}
                               </div>
                             </div>
@@ -3307,7 +3346,7 @@ export default function App() {
                       <img 
                         src={imagePreviewUrl} 
                         alt="Selected preview" 
-                        className="max-h-[300px] object-contain rounded-[8px] w-full"
+                        className="image-scan-preview max-h-[300px] object-contain rounded-[8px] w-full"
                       />
                     </div>
 
@@ -3430,11 +3469,11 @@ export default function App() {
       {isEscapeModalOpen && (
         <div 
           onClick={() => setIsEscapeModalOpen(false)}
-          className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
+          className="modal-backdrop fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-white max-w-[520px] w-full rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-4"
+            className="modal-content bg-white max-w-[520px] w-full rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-4"
           >
             {/* Close Button top-right */}
             <button
@@ -3492,11 +3531,11 @@ export default function App() {
         <div 
           id="renegotiate-modal-backdrop"
           onClick={() => setIsRenegotiateModalOpen(false)}
-          className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
+          className="modal-backdrop fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-white max-w-[600px] w-full max-h-[80vh] overflow-y-auto rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-6"
+            className="modal-content bg-white max-w-[600px] w-full max-h-[80vh] overflow-y-auto rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-6"
           >
             {/* Close Button top-right */}
             <button
