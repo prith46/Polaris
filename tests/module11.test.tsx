@@ -19,7 +19,7 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('Adding a task persists it to localStorage key "polaris-tasks"', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     fireEvent.change(input, { target: { value: 'New Test Task' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
     expect(screen.getByText('New Test Task')).toBeInTheDocument();
@@ -68,7 +68,7 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('localStorage "polaris-tasks" contains valid JSON after operations', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     fireEvent.change(input, { target: { value: 'JSON check' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
     expect(() => JSON.parse(localStorage.getItem('polaris-tasks') || '')).not.toThrow();
@@ -76,7 +76,7 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('Re-rendering app loads saved tasks from localStorage', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     fireEvent.change(input, { target: { value: 'Persist Me' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
     unmount();
@@ -172,7 +172,7 @@ describe('Module 11: localStorage Persistence', () => {
   // EDGE CASES
   test('Adding 50 tasks, re-rendering — all 50 persist', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     for (let i = 1; i <= 50; i++) {
       fireEvent.change(input, { target: { value: `Task #${i}` } });
       fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
@@ -184,7 +184,7 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('Special characters in task title persist correctly', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const title = '✨ Emoji <tag> & "quotes"';
     fireEvent.change(input, { target: { value: title } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
@@ -195,7 +195,7 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('Very long task title (500 chars) persists correctly', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const title = 'A'.repeat(500);
     fireEvent.change(input, { target: { value: title } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));

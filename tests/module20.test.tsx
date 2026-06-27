@@ -105,7 +105,7 @@ describe('Module 20: Pre-Deployment Checks', () => {
     const exitBtns = screen.getAllByRole('button', { name: /Exit/i });
     fireEvent.click(exitBtns[0]);
     expect(screen.queryByText(/Step 1 of 12/i)).not.toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Add a new task…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Add a new task/i)).toBeInTheDocument();
   });
 
   // APP INTEGRITY

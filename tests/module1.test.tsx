@@ -25,7 +25,7 @@ describe('Module 1: App Shell', () => {
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     expect(tasksTab).toHaveClass('border-polaris-primary');
     expect(inboxTab).not.toHaveClass('border-polaris-primary');
-    expect(screen.getByPlaceholderText('Add a new task…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Add a new task/i)).toBeInTheDocument();
     expect(screen.queryByText('Primary')).not.toBeInTheDocument();
   });
 

@@ -49,7 +49,7 @@ describe('Screenshot-based Testing', () => {
           render(<App />);
 
           // Open scan image modal from Tasks tab
-          fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
+          fireEvent.click(screen.getByRole('button', { name: /📸 Scan/i }));
 
           // Upload the file
           const file = new File([fileBuffer], filename, { type: mimeType });

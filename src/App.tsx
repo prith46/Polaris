@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, FormEvent, MouseEvent, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, FormEvent, MouseEvent, useEffect, useRef, useCallback } from 'react';
 import { Check, Search } from 'lucide-react';
 import { Task, Email, ExtractionLogEntry } from './types';
 
@@ -1385,6 +1385,10 @@ export default function App() {
   const [isLedgerOpen, setIsLedgerOpen] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
 
+  // Feature 9 — Confetti state (does NOT persist; resets each session)
+  const [confettiShown, setConfettiShown] = useState(false);
+  const [confettiToast, setConfettiToast] = useState(false);
+
   // States for Panic Mode & Focus Mode
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [focusedTaskTitle, setFocusedTaskTitle] = useState('');
@@ -1416,6 +1420,65 @@ export default function App() {
     setAnimateDensity(true);
   }, []);
 
+  // Feature 9 — trigger confetti when recovery score hits 100%
+  const triggerConfetti = () => {
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.zIndex = '9999';
+    canvas.style.pointerEvents = 'none';
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d')!;
+    const colors = ['#C8893B', '#0F9D58', '#1A73E8', '#B23A2E', '#E8EAF0', '#F7F5F0'];
+    const particles = Array.from({ length: 150 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -10,
+      size: 6 + Math.random() * 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: -2 + Math.random() * 4,
+      vy: 3 + Math.random() * 4,
+      rotation: Math.random() * 360,
+      rotationSpeed: -3 + Math.random() * 6,
+      isCircle: Math.random() > 0.5,
+    }));
+    let animId: number;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let allDone = true;
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1;
+        p.rotation += p.rotationSpeed;
+        if (p.y < canvas.height) allDone = false;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        if (p.isCircle) {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        }
+        ctx.restore();
+      }
+      if (allDone) {
+        cancelAnimationFrame(animId);
+        canvas.remove();
+      } else {
+        animId = requestAnimationFrame(animate);
+      }
+    };
+    animId = requestAnimationFrame(animate);
+  };
+
   // States for Multimodal Image Scanning
   const [inboxSubTab, setInboxSubTab] = useState<'emails' | 'scan'>('emails');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -1427,13 +1490,34 @@ export default function App() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
   const [isCompletedOpen, setIsCompletedOpen] = useState(false);
+  const [isAddingTask, setIsAddingTask] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
-  const [addTaskModalTitle, setAddTaskModalTitle] = useState('');
-  const [addTaskModalDate, setAddTaskModalDate] = useState('');
-  const [addTaskModalDesc, setAddTaskModalDesc] = useState('');
+  const [modalTaskName, setModalTaskName] = useState('');
+  const [modalDueDate, setModalDueDate] = useState('');
+  const [modalDueDateISO, setModalDueDateISO] = useState<string | null>(null);
+  const [modalDueDateReadable, setModalDueDateReadable] = useState<string | null>(null);
+  const [modalDescription, setModalDescription] = useState('');
+  const [isReparsingDate, setIsReparsingDate] = useState(false);
+  const reparseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isImageScanModalOpen, setIsImageScanModalOpen] = useState(false);
   const [calendarPanelDate, setCalendarPanelDate] = useState<Date | null>(null);
+
+  // Feature 9 — trigger confetti when all tasks are done
+  useEffect(() => {
+    const totalActive = tasks.length;
+    const totalDone = completedTasks.length;
+    const total = totalActive + totalDone;
+    if (total > 0 && totalActive === 0 && !confettiShown) {
+      setConfettiShown(true);
+      setConfettiToast(true);
+      triggerConfetti();
+      setTimeout(() => setConfettiToast(false), 3000);
+    }
+  }, [tasks, completedTasks, confettiShown]);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+  // Feature — expandable notes
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [noteEditValue, setNoteEditValue] = useState('');
 
   // Future You
   const [isFutureYouOpen, setIsFutureYouOpen] = useState(false);
@@ -1445,6 +1529,18 @@ export default function App() {
   const [futureYouStartToast, setFutureYouStartToast] = useState(false);
 
   // Demo Mode
+  // Dark Mode
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try { return localStorage.getItem('polaris-theme') === 'dark'; }
+    catch { return false; }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    try { localStorage.setItem('polaris-theme', isDarkMode ? 'dark' : 'light'); }
+    catch {}
+  }, [isDarkMode]);
+
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
   const [demoFinalOverlay, setDemoFinalOverlay] = useState(false);
@@ -2595,12 +2691,12 @@ export default function App() {
     }
   };
 
-  const createTaskDirectly = (title: string, pillText = 'No deadline set', context = 'Newly added. Details can be set later.') => {
+  const createTaskDirectly = (title: string, pillText = 'No deadline set', context = 'Newly added. Details can be set later.', urgencyOverride?: 'high' | 'medium' | 'low') => {
     const newTask: Task = {
       id: `task-${Date.now()}`,
       title,
       pillText,
-      urgency: 'low',
+      urgency: urgencyOverride || 'low',
       context,
       primaryAction: 'Handle it now',
       secondaryAction: 'Snooze',
@@ -2613,10 +2709,49 @@ export default function App() {
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
-  const handleAddTask = (e: FormEvent) => {
+  const formatDeadlineISO = (iso: string): string => {
+    const d = new Date(iso);
+    const now = new Date();
+    const tmrw = new Date(now); tmrw.setDate(now.getDate() + 1);
+    if (d.toDateString() === now.toDateString()) return 'Due today';
+    if (d.toDateString() === tmrw.toDateString()) return 'Due tomorrow';
+    return `Due ${d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}`;
+  };
+
+  const formatReadableISO = (iso: string): string => {
+    const d = new Date(iso);
+    const now = new Date();
+    const tmrw = new Date(now); tmrw.setDate(now.getDate() + 1);
+    if (d.toDateString() === now.toDateString()) return `Today at ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+    if (d.toDateString() === tmrw.toDateString()) return `Tomorrow at ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+    return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  };
+
+  const handleModalDueDateChange = (value: string) => {
+    setModalDueDate(value);
+    if (reparseTimer.current) clearTimeout(reparseTimer.current);
+    if (value.trim().length <= 2) { setModalDueDateISO(null); setModalDueDateReadable(null); setIsReparsingDate(false); return; }
+    setIsReparsingDate(true);
+    reparseTimer.current = setTimeout(async () => {
+      try {
+        const resp = await fetchWithTimeout('/api/parse-date', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: value.trim(), currentDate: new Date().toISOString() }) }, 5000);
+        if (!resp.ok) throw new Error('Not OK');
+        const data = await resp.json();
+        setModalDueDateISO(data.date || null);
+        setModalDueDateReadable(data.date ? (data.readable || formatReadableISO(data.date)) : null);
+      } catch {
+        setModalDueDateISO(null);
+        setModalDueDateReadable(null);
+      } finally {
+        setIsReparsingDate(false);
+      }
+    }, 800);
+  };
+
+  const handleAddTask = async (e: FormEvent) => {
     e.preventDefault();
     const trimmedTitle = newTaskTitle.trim();
-    if (!trimmedTitle) return;
+    if (!trimmedTitle || isAddingTask) return;
 
     const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
     if (isTest) {
@@ -2625,22 +2760,53 @@ export default function App() {
       return;
     }
 
-    setAddTaskModalTitle(trimmedTitle);
-    setAddTaskModalDate('');
-    setAddTaskModalDesc('');
-    setIsAddTaskModalOpen(true);
-    setNewTaskTitle('');
+    setIsAddingTask(true);
+    try {
+      console.log('Calling /api/parse-task with:', trimmedTitle);
+      const response = await fetchWithTimeout('/api/parse-task', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: trimmedTitle, currentDate: new Date().toISOString() }),
+      }, 5000);
+      if (!response.ok) throw new Error('Not OK');
+      const data = await response.json();
+      setModalTaskName(data.title || trimmedTitle);
+      setModalDueDate(data.deadline || '');
+      setModalDueDateISO(data.deadlineISO || null);
+      setModalDueDateReadable(data.deadlineISO ? formatReadableISO(data.deadlineISO) : null);
+      setModalDescription(data.description || '');
+    } catch (err) {
+      console.error('parse-task error:', err);
+      setModalTaskName(trimmedTitle);
+      setModalDueDate('');
+      setModalDueDateISO(null);
+      setModalDueDateReadable(null);
+      setModalDescription('');
+    } finally {
+      setIsAddingTask(false);
+      setNewTaskTitle('');
+      setIsAddTaskModalOpen(true);
+    }
   };
 
-  const handleConfirmAddTask = () => {
-    const title = addTaskModalTitle.trim();
+  const handleModalConfirm = () => {
+    const title = modalTaskName.trim();
     if (!title) return;
-    const pillText = addTaskModalDate
-      ? `Due ${new Date(addTaskModalDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`
-      : 'No deadline set';
-    const context = addTaskModalDesc.trim() || 'Newly added. Details can be set later.';
-    createTaskDirectly(title, pillText, context);
+    let pillText = 'No deadline set';
+    let urgency: 'high' | 'medium' | 'low' = 'low';
+    if (modalDueDateISO) {
+      pillText = formatDeadlineISO(modalDueDateISO);
+      const hoursAway = (new Date(modalDueDateISO).getTime() - Date.now()) / 3600000;
+      urgency = hoursAway <= 24 ? 'high' : hoursAway <= 168 ? 'medium' : 'low';
+    }
+    const context = modalDescription.trim() || 'Newly added. Details can be set later.';
+    createTaskDirectly(title, pillText, context, urgency);
     setIsAddTaskModalOpen(false);
+    if (reparseTimer.current) clearTimeout(reparseTimer.current);
+  };
+
+  const closeAddTaskModal = () => {
+    setIsAddTaskModalOpen(false);
+    if (reparseTimer.current) clearTimeout(reparseTimer.current);
   };
 
   const handleRemoveTask = (taskId: string) => {
@@ -2657,6 +2823,10 @@ export default function App() {
       });
       if (taskToComplete) {
         setCompletedTasks((prev) => [...prev, taskToComplete]);
+        // If this task was overdue, count it toward recovery score
+        if (isTaskOverdue(taskToComplete)) {
+          setResolvedOverdueCount((prev) => prev + 1);
+        }
       }
     };
 
@@ -2717,6 +2887,20 @@ export default function App() {
   };
 
   const isInbox = activeTab === 'inbox';
+  const dm = {
+    bg: isDarkMode ? '#0F1117' : '#F7F5F0',
+    card: isDarkMode ? '#1A1D27' : '#FFFFFF',
+    cardHover: isDarkMode ? '#20243A' : '#F9F9F9',
+    textPrimary: isDarkMode ? '#E8EAF0' : '#0E1B2A',
+    textSecondary: isDarkMode ? '#9AA5B4' : '#5B6B7B',
+    border: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(14,27,42,0.08)',
+    borderStrong: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(14,27,42,0.15)',
+    inputBg: isDarkMode ? '#13161F' : '#FFFFFF',
+    sidebarBg: isDarkMode ? '#13161F' : '#FFFFFF',
+    rowBg: isDarkMode ? '#1A1D27' : '#FFFFFF',
+    rowHover: isDarkMode ? '#20243A' : '#F2F6FC',
+    rowDivider: isDarkMode ? 'rgba(255,255,255,0.05)' : 'whitesmoke',
+  };
   const currentEmail = emails.find((e) => e.id === selectedEmailId);
 
   return (
@@ -2737,7 +2921,34 @@ export default function App() {
         <p id="polaris-tagline" className="font-sans font-normal text-[13px] text-polaris-secondary mt-1.5 sm:mt-0">
           Your fixed point before the deadline.
         </p>
-        <div className="sm:ml-auto mt-2 sm:mt-0">
+        <div className="sm:ml-auto mt-2 sm:mt-0 flex items-center gap-3">
+          {/* Progress Bar */}
+          {(() => {
+            const Y = tasks.length + completedTasks.length;
+            const X = completedTasks.length;
+            const percentage = Y === 0 ? 0 : Math.round((X / Y) * 100);
+            const fillColor = percentage <= 33 ? '#C8893B' : percentage <= 66 ? '#1A73E8' : '#0F9D58';
+            const textColor = percentage > 40 ? '#FFFFFF' : (isDarkMode ? '#E8EAF0' : '#0E1B2A');
+            return (
+              <div className="group relative" style={{ width: '120px', height: '28px' }}>
+                <div style={{ width: '120px', height: '28px', borderRadius: '14px', background: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(14,27,42,0.08)', overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ width: `${percentage}%`, height: '100%', borderRadius: '14px', backgroundColor: fillColor, transition: 'width 0.6s ease', minWidth: percentage > 0 ? '28px' : '0' }} />
+                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '11px', color: textColor, userSelect: 'none' }}>
+                    {X}/{Y} done
+                  </span>
+                </div>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2.5 py-1 rounded-[6px] font-sans text-[11px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                  style={{ background: '#0E1B2A', zIndex: 10 }}>
+                  {X} of {Y} tasks completed this session
+                </div>
+              </div>
+            );
+          })()}
+          <button type="button" onClick={() => setIsDarkMode(prev => !prev)}
+            className="font-sans text-[14px] bg-transparent cursor-pointer transition-colors px-[10px] py-[6px] rounded-[6px]"
+            style={{ border: '1px solid var(--border-strong, rgba(14,27,42,0.15))' }}>
+            {isDarkMode ? '☀️' : '🌙'}
+          </button>
           {isDemoMode ? (
             <button type="button" onClick={handleDemoExit}
               className="bg-[#B23A2E] text-white font-sans font-medium text-[12px] px-[14px] py-[6px] rounded-[6px] cursor-pointer hover:bg-[#9e2f24] transition-colors border-0">
@@ -2860,14 +3071,21 @@ export default function App() {
             {/* Add Task Row + Scan Image — same row on desktop, stacked on mobile */}
             <div className="w-full flex flex-col md:flex-row gap-[8px] mb-[16px]">
               <form id="polaris-add-form" onSubmit={handleAddTask} className="flex gap-[8px] w-full md:w-auto" style={{ flex: 3 }}>
-                <input id="polaris-task-input" type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="Add a new task…"
-                  className="flex-1 bg-white border border-polaris-border rounded-[8px] px-4 font-sans text-[14px] text-polaris-primary placeholder-polaris-secondary/60 focus:outline-none focus:border-polaris-primary/30 transition-all"
-                  style={{ height: '44px' }} />
-                <button id="polaris-add-button" type="submit"
-                  className="px-5 bg-polaris-primary text-[#F7F5F0] font-sans font-semibold text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer whitespace-nowrap"
+                <div className="flex-1 relative">
+                  <input id="polaris-task-input" type="text" value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    disabled={isAddingTask}
+                    placeholder="Add a new task… e.g. 'Pay rent tomorrow' or 'Submit report by Friday'"
+                    className="w-full bg-white rounded-[8px] px-4 pr-9 font-sans text-[14px] text-polaris-primary placeholder-polaris-secondary/60 focus:outline-none transition-all disabled:opacity-70"
+                    style={{ height: '44px', border: isAddingTask ? '1.5px solid rgba(26,115,232,0.3)' : '1px solid var(--color-polaris-border, rgba(14,27,42,0.08))' }} />
+                  {isAddingTask && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 w-[14px] h-[14px] border-[1.5px] border-[#5B6B7B]/30 border-t-[#1A73E8] rounded-full animate-spin" />
+                  )}
+                </div>
+                <button id="polaris-add-button" type="submit" disabled={isAddingTask}
+                  className="px-5 bg-polaris-primary text-[#F7F5F0] font-sans font-semibold text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer whitespace-nowrap disabled:opacity-70"
                   style={{ height: '44px' }}>
-                  Add task
+                  {isAddingTask ? 'Parsing...' : 'Add task'}
                 </button>
               </form>
               <button id="scan-image-tasks-btn" type="button" onClick={() => setIsImageScanModalOpen(true)}
@@ -2890,7 +3108,13 @@ export default function App() {
                     const overdue = isTaskOverdue(task);
                     return (
                       <div key={task.id} id={`task-card-${task.id}`} data-task-id={task.id}
-                        className={`card-slide-in bg-white border border-polaris-border rounded-[14px] p-[20px] flex flex-col items-start transition-all w-full ${overdue ? 'overdue-card' : ''}`}
+                        onClick={(e) => {
+                          const target = e.target as HTMLElement;
+                          if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('a')) return;
+                          if (expandedTaskId === task.id) { setExpandedTaskId(null); }
+                          else { setExpandedTaskId(task.id); setNoteEditValue(task.notes || ''); }
+                        }}
+                        className={`card-slide-in bg-white border border-polaris-border rounded-[14px] p-[20px] flex flex-col items-start transition-all w-full cursor-pointer ${overdue ? 'overdue-card' : ''} ${expandedTaskId !== task.id ? 'hover:bg-[rgba(14,27,42,0.01)]' : ''}`}
                         style={{ ...(allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : {}), ...(task.inProgress ? { borderLeft: '3px solid #1A73E8' } : {}) }}>
                         <div className="w-full flex justify-between items-center mb-3">
                           <div className="flex items-center gap-2">
@@ -2910,6 +3134,14 @@ export default function App() {
                         <p className="font-sans font-normal text-[14px] text-polaris-secondary mb-[18px] leading-relaxed">
                           {overdue && <span>⚠ This commitment is overdue. </span>}<span>{task.context}</span>
                         </p>
+                        {/* Note preview (collapsed state) */}
+                        {task.notes && expandedTaskId !== task.id && (
+                          <div style={{ background: 'rgba(14,27,42,0.03)', borderRadius: '4px', padding: '4px 8px', marginTop: '-10px', marginBottom: '14px', maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                            <span style={{ fontFamily: 'Inter, sans-serif', fontStyle: 'italic', fontSize: '12px', color: '#5B6B7B' }}>
+                              📝 {task.notes.length > 60 ? task.notes.slice(0, 60) + '…' : task.notes}
+                            </span>
+                          </div>
+                        )}
                         {task.decomposed && task.subtasks && task.subtasks.length > 0 && (
                           <div className="w-full border-t border-[rgba(14,27,42,0.08)] pt-3.5 mb-[18px]">
                             <div onClick={() => toggleSubtasksCollapse(task.id)} className="flex items-center justify-between cursor-pointer select-none mb-2">
@@ -2954,8 +3186,8 @@ export default function App() {
                         {overdue ? (
                           <div className="flex items-center gap-3 flex-wrap">
                             <button type="button" aria-label="Draft a reply" disabled={escapeHatchLoadingTaskId === task.id} onClick={() => handleEscapeHatch(task)} className="px-4 py-[9px] bg-[#B23A2E] text-white font-sans font-medium text-[14px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer">{escapeHatchLoadingTaskId === task.id ? 'Drafting...' : '🚨 Escape Hatch'}</button>
-                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setCompletedCount(prev => prev + 1); setResolvedOverdueCount(prev => prev + 1); setCompletedTaskIds(prev => { const next = new Set(prev); next.add(task.id); return next; }); }} className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">Mark Done Anyway</button>
-                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setResolvedOverdueCount(prev => prev + 1); }} className="px-4 py-[9px] bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.15)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">Archive</button>
+                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setCompletedCount(prev => prev + 1); setResolvedOverdueCount(prev => prev + 1); setCompletedTasks(prev => [...prev, task]); setCompletedTaskIds(prev => { const next = new Set(prev); next.add(task.id); return next; }); }} className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">Mark Done Anyway</button>
+                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setResolvedOverdueCount(prev => prev + 1); setCompletedTasks(prev => [...prev, task]); }} className="px-4 py-[9px] bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.15)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">Archive</button>
                             <button type="button" aria-label="Snooze" style={{ width: 0, height: 0, opacity: 0, border: 0, padding: 0, position: 'absolute', pointerEvents: 'none' }} />
                           </div>
                         ) : (
@@ -2969,6 +3201,43 @@ export default function App() {
                               return (<button type="button" onClick={() => { if (!task.snoozed) setTasks(prev => prev.map(t => t.id === task.id ? { ...t, snoozed: true, pillText: 'Snoozed — due tomorrow', urgency: 'low' } : t)); }}
                                 className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">{task.secondaryAction}</button>);
                             })()}
+                          </div>
+                        )}
+                        {/* Notes expansion panel */}
+                        {expandedTaskId === task.id && (
+                          <div style={{ width: '100%' }}>
+                            <div style={{ borderTop: '1px solid rgba(14,27,42,0.08)', margin: '12px 0' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '10px', color: '#5B6B7B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>📝 Notes</span>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setExpandedTaskId(null); }}
+                                style={{ background: 'transparent', border: 'none', color: '#5B6B7B', fontSize: '14px', cursor: 'pointer', lineHeight: 1, padding: '2px 4px' }}>×</button>
+                            </div>
+                            <textarea
+                              value={noteEditValue}
+                              onChange={(e) => setNoteEditValue(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              placeholder="Add a private note about this task..."
+                              style={{ width: '100%', minHeight: '80px', resize: 'vertical', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#0E1B2A', lineHeight: 1.5, border: '1px solid rgba(14,27,42,0.12)', borderRadius: '8px', padding: '10px 12px', background: '#FAFAFA', boxSizing: 'border-box', outline: 'none' }}
+                            />
+                            <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <button type="button"
+                                onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: noteEditValue.trim() || undefined } : t)); setExpandedTaskId(null); }}
+                                style={{ background: '#0E1B2A', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '12px', padding: '6px 14px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>
+                                Save note
+                              </button>
+                              <button type="button"
+                                onClick={(e) => { e.stopPropagation(); setExpandedTaskId(null); setNoteEditValue(''); }}
+                                style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#5B6B7B', cursor: 'pointer', padding: '6px 0' }}>
+                                Cancel
+                              </button>
+                              {task.notes && (
+                                <button type="button"
+                                  onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: undefined } : t)); setExpandedTaskId(null); }}
+                                  style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#B23A2E', cursor: 'pointer', padding: '6px 0' }}>
+                                  Clear note
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -3002,7 +3271,13 @@ export default function App() {
                     const overdue = isTaskOverdue(task);
                     return (
                       <div key={task.id} id={`task-card-${task.id}`} data-task-id={task.id}
-                        className={`card-slide-in card-enter bg-white border border-polaris-border rounded-[12px] p-[16px] flex flex-col items-start transition-all w-full ${overdue ? 'overdue-card' : ''} ${exitingTaskIds.includes(task.id) ? 'card-exit' : ''} ${highlightedTaskId === task.id ? 'ring-2 ring-[#1A73E8]' : ''}`}
+                        onClick={(e) => {
+                          const target = e.target as HTMLElement;
+                          if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('a')) return;
+                          if (expandedTaskId === task.id) { setExpandedTaskId(null); }
+                          else { setExpandedTaskId(task.id); setNoteEditValue(task.notes || ''); }
+                        }}
+                        className={`card-slide-in card-enter bg-white border border-polaris-border rounded-[12px] p-[16px] flex flex-col items-start transition-all w-full cursor-pointer ${overdue ? 'overdue-card' : ''} ${exitingTaskIds.includes(task.id) ? 'card-exit' : ''} ${highlightedTaskId === task.id ? 'ring-2 ring-[#1A73E8]' : ''} ${expandedTaskId !== task.id ? 'hover:bg-[rgba(14,27,42,0.01)]' : ''}`}
                         style={{ ...(allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : {}) }}>
                         <div className="w-full flex items-center mb-2">
                           <div className={`px-2 py-0.5 rounded-[5px] text-[11px] font-medium leading-none ${overdue ? '' : pillClass}`}
@@ -3014,6 +3289,14 @@ export default function App() {
                         <p className="font-sans font-normal text-[12px] text-polaris-secondary mb-3 leading-relaxed truncate w-full">
                           {overdue && <span>⚠ </span>}{task.context}
                         </p>
+                        {/* Note preview (collapsed state) */}
+                        {task.notes && expandedTaskId !== task.id && (
+                          <div style={{ background: 'rgba(14,27,42,0.03)', borderRadius: '4px', padding: '4px 8px', marginTop: '-6px', marginBottom: '8px', maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                            <span style={{ fontFamily: 'Inter, sans-serif', fontStyle: 'italic', fontSize: '12px', color: '#5B6B7B' }}>
+                              📝 {task.notes.length > 60 ? task.notes.slice(0, 60) + '…' : task.notes}
+                            </span>
+                          </div>
+                        )}
                         {task.decomposed && task.subtasks && task.subtasks.length > 0 && (
                           <div className="w-full border-t border-[rgba(14,27,42,0.08)] pt-3 mb-3">
                             <div onClick={() => toggleSubtasksCollapse(task.id)} className="flex items-center justify-between cursor-pointer select-none mb-2">
@@ -3061,16 +3344,21 @@ export default function App() {
                               className="px-3 py-[7px] bg-[#B23A2E] text-white font-sans font-medium text-[12px] rounded-[7px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer">
                               {escapeHatchLoadingTaskId === task.id ? 'Drafting...' : '🚨 Escape Hatch'}
                             </button>
-                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setCompletedCount(prev => prev + 1); setResolvedOverdueCount(prev => prev + 1); setCompletedTaskIds(prev => { const next = new Set(prev); next.add(task.id); return next; }); }}
+                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setCompletedCount(prev => prev + 1); setResolvedOverdueCount(prev => prev + 1); setCompletedTasks(prev => [...prev, task]); setCompletedTaskIds(prev => { const next = new Set(prev); next.add(task.id); return next; }); }}
                               className="px-3 py-[7px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[12px] rounded-[7px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">
                               Mark Done Anyway
                             </button>
-                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setResolvedOverdueCount(prev => prev + 1); }}
+                            <button type="button" onClick={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); setResolvedOverdueCount(prev => prev + 1); setCompletedTasks(prev => [...prev, task]); }}
                               className="px-3 py-[7px] bg-transparent text-[#5B6B7B] border border-[rgba(14,27,42,0.15)] font-sans font-medium text-[12px] rounded-[7px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">
                               Archive
                             </button>
                             <button type="button" aria-label="Snooze" style={{ width: 0, height: 0, opacity: 0, border: 0, padding: 0, position: 'absolute', pointerEvents: 'none' }} />
                           </div>
+                        ) : allStepsCompleted ? (
+                          <button type="button" onClick={() => handleRemoveTask(task.id)}
+                            className="w-full py-[10px] bg-[#0F9D58] text-white font-sans font-medium text-[14px] rounded-[8px] hover:bg-[#0b8a4a] active:scale-98 transition-all cursor-pointer">
+                            ✓ Mark as Done
+                          </button>
                         ) : (
                           <div className="flex items-center gap-2 flex-wrap">
                             <button type="button" onClick={() => { if (task.primaryAction === 'Draft a reply') handleEscapeHatch(task); else if (task.primaryAction === 'Break it down') handleDecomposeTask(task); else if (task.primaryAction === 'Handle it now') setTasks(prev => prev.map(t => t.id === task.id ? { ...t, inProgress: true } : t)); }}
@@ -3082,6 +3370,43 @@ export default function App() {
                               return (<button type="button" onClick={() => { if (!task.snoozed) setTasks(prev => prev.map(t => t.id === task.id ? { ...t, snoozed: true, pillText: 'Snoozed — due tomorrow', urgency: 'low' } : t)); }}
                                 className="px-3 py-[7px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[12px] rounded-[7px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">{task.secondaryAction}</button>);
                             })()}
+                          </div>
+                        )}
+                        {/* Notes expansion panel (kanban) */}
+                        {expandedTaskId === task.id && (
+                          <div style={{ width: '100%' }}>
+                            <div style={{ borderTop: '1px solid rgba(14,27,42,0.08)', margin: '12px 0' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '10px', color: '#5B6B7B', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>📝 Notes</span>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setExpandedTaskId(null); }}
+                                style={{ background: 'transparent', border: 'none', color: '#5B6B7B', fontSize: '14px', cursor: 'pointer', lineHeight: 1, padding: '2px 4px' }}>×</button>
+                            </div>
+                            <textarea
+                              value={noteEditValue}
+                              onChange={(e) => setNoteEditValue(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              placeholder="Add a private note about this task..."
+                              style={{ width: '100%', minHeight: '80px', resize: 'vertical', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#0E1B2A', lineHeight: 1.5, border: '1px solid rgba(14,27,42,0.12)', borderRadius: '8px', padding: '10px 12px', background: '#FAFAFA', boxSizing: 'border-box' as const, outline: 'none' }}
+                            />
+                            <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <button type="button"
+                                onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: noteEditValue.trim() || undefined } : t)); setExpandedTaskId(null); }}
+                                style={{ background: '#0E1B2A', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '12px', padding: '6px 14px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>
+                                Save note
+                              </button>
+                              <button type="button"
+                                onClick={(e) => { e.stopPropagation(); setExpandedTaskId(null); setNoteEditValue(''); }}
+                                style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#5B6B7B', cursor: 'pointer', padding: '6px 0' }}>
+                                Cancel
+                              </button>
+                              {task.notes && (
+                                <button type="button"
+                                  onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: undefined } : t)); setExpandedTaskId(null); }}
+                                  style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#B23A2E', cursor: 'pointer', padding: '6px 0' }}>
+                                  Clear note
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -3295,16 +3620,16 @@ export default function App() {
 
         {/* === FUTURE YOU SCREEN === */}
         {isFutureYouOpen && (
-          <div id="future-you-screen" className="fixed inset-0 z-50 bg-polaris-bg overflow-y-auto" style={{ animation: 'futureYouFadeIn 0.3s ease' }}>
+          <div id="future-you-screen" className="fixed inset-0 z-50 overflow-y-auto" style={{ animation: 'futureYouFadeIn 0.3s ease', backgroundColor: dm.bg }}>
             <div className="w-full max-w-[900px] mx-auto px-6 py-10 flex flex-col items-center">
               {/* Header */}
               <button type="button" onClick={() => { setIsFutureYouOpen(false); setFutureYouSingleTask(null); }}
-                className="self-start font-sans text-[13px] text-[#5B6B7B] hover:text-polaris-primary bg-transparent border-0 cursor-pointer mb-6">
+                className="self-start font-sans text-[13px] hover:text-polaris-primary bg-transparent border-0 cursor-pointer mb-6" style={{ color: dm.textSecondary }}>
                 ← Back to tasks
               </button>
-              <h1 className="font-serif font-medium text-[28px] text-polaris-primary mb-2">Next Week</h1>
-              <p className="font-sans text-[14px] text-[#5B6B7B] mb-3">Two paths. Same starting point.</p>
-              <span className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-6" style={{ background: 'rgba(14,27,42,0.04)', borderRadius: '20px', padding: '4px 16px', display: 'inline-block' }}>
+              <h1 className="font-serif font-medium text-[28px] mb-2" style={{ color: dm.textPrimary }}>Next Week</h1>
+              <p className="font-sans text-[14px] mb-3" style={{ color: dm.textSecondary }}>Two paths. Same starting point.</p>
+              <span className="font-sans font-medium text-[13px] mb-6" style={{ background: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(14,27,42,0.04)', borderRadius: '20px', padding: '4px 16px', display: 'inline-block', color: dm.textSecondary }}>
                 {getFutureYouDateRange()}
               </span>
 
@@ -3321,8 +3646,8 @@ export default function App() {
                       {futureYouHighTasks.map(task => {
                         const dl = parseDeadline(task.pillText, task.id);
                         return (
-                          <div key={task.id} className="bg-white border border-[rgba(178,58,46,0.15)] rounded-[10px] p-[14px]">
-                            <span className="font-sans font-medium text-[14px] text-polaris-primary">{task.title}</span>
+                          <div key={task.id} className="border rounded-[10px] p-[14px]" style={{ backgroundColor: dm.card, borderColor: isDarkMode ? 'rgba(201,75,62,0.25)' : 'rgba(178,58,46,0.15)' }}>
+                            <span className="font-sans font-medium text-[14px]" style={{ color: dm.textPrimary }}>{task.title}</span>
                             <p className="font-sans text-[12px] text-[#B23A2E] mt-1">{getFutureYouConsequence(task.title)}</p>
                             {dl && <p className="font-sans text-[11px] text-[#B23A2E] mt-1">Missed: {dl.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>}
                             <div className="mt-1 ml-3 pl-2 border-l-2 border-[rgba(178,58,46,0.2)]">
@@ -3335,7 +3660,7 @@ export default function App() {
                     <p className="font-sans font-medium text-[13px] text-[#B23A2E] mt-4">
                       {futureYouHighTasks.length} commitment{futureYouHighTasks.length !== 1 ? 's' : ''} broken
                     </p>
-                    <div className="flex items-center gap-2 mt-3 rounded-[8px] p-[10px]" style={{ background: 'rgba(178,58,46,0.04)' }}>
+                    <div className="flex items-center gap-2 mt-3 rounded-[8px] p-[10px]" style={{ background: isDarkMode ? 'rgba(201,75,62,0.1)' : 'rgba(178,58,46,0.04)' }}>
                       <span className="text-[20px]">😰</span>
                       <span className="font-sans text-[12px] text-[#B23A2E]">Stressed, behind, reputation at risk</span>
                     </div>
@@ -3343,14 +3668,14 @@ export default function App() {
 
                   {/* VS Divider */}
                   <div className="hidden md:flex flex-col items-center mx-6 relative self-stretch">
-                    <div className="flex-1 w-px bg-[rgba(14,27,42,0.1)]" />
-                    <div className="w-8 h-8 rounded-full bg-white border border-[rgba(14,27,42,0.1)] flex items-center justify-center shrink-0">
-                      <span className="font-sans font-bold text-[11px] text-[#5B6B7B]">OR</span>
+                    <div className="flex-1 w-px" style={{ backgroundColor: dm.border }} />
+                    <div className="w-8 h-8 rounded-full border flex items-center justify-center shrink-0" style={{ backgroundColor: dm.card, borderColor: dm.border }}>
+                      <span className="font-sans font-bold text-[11px]" style={{ color: dm.textSecondary }}>OR</span>
                     </div>
-                    <div className="flex-1 w-px bg-[rgba(14,27,42,0.1)]" />
+                    <div className="flex-1 w-px" style={{ backgroundColor: dm.border }} />
                   </div>
                   <div className="md:hidden text-center py-4">
-                    <span className="font-sans text-[13px] text-[#5B6B7B]">— OR —</span>
+                    <span className="font-sans text-[13px]" style={{ color: dm.textSecondary }}>— OR —</span>
                   </div>
 
                   {/* RIGHT LANE */}
@@ -3358,12 +3683,13 @@ export default function App() {
                     <h2 className="font-sans font-semibold text-[14px] text-[#0F9D58] mb-3">If you act now</h2>
                     <div className="flex flex-col gap-3">
                       {futureYouRightTasks.map(task => (
-                        <div key={task.id} className="bg-white border border-[rgba(15,157,88,0.15)] rounded-[10px] p-[14px]">
-                          <span className="font-sans font-medium text-[14px] text-polaris-primary">{task.title}</span>
+                        <div key={task.id} className="border rounded-[10px] p-[14px]" style={{ backgroundColor: dm.card, borderColor: isDarkMode ? 'rgba(46,204,113,0.25)' : 'rgba(15,157,88,0.15)' }}>
+                          <span className="font-sans font-medium text-[14px]" style={{ color: dm.textPrimary }}>{task.title}</span>
                           <p className="font-sans text-[12px] text-[#0F9D58] mt-1">{getFutureYouWin(task.title)}</p>
                           <p className="font-sans text-[11px] text-[#0F9D58] mt-0.5">{getFutureYouDuration(task.title).label}</p>
                           <button type="button" onClick={() => handleFutureYouStart(task.title)}
-                            className="mt-2 font-sans font-medium text-[11px] text-[#0F9D58] bg-transparent border border-[rgba(15,157,88,0.3)] rounded-[6px] px-[10px] py-[4px] cursor-pointer hover:bg-[rgba(15,157,88,0.04)] transition-colors">
+                            className="mt-2 font-sans font-medium text-[11px] bg-transparent rounded-[6px] px-[10px] py-[4px] cursor-pointer transition-colors"
+                            style={{ color: isDarkMode ? '#2ECC71' : '#0F9D58', border: `1px solid ${isDarkMode ? 'rgba(46,204,113,0.4)' : 'rgba(15,157,88,0.3)'}` }}>
                             Start now →
                           </button>
                         </div>
@@ -3372,7 +3698,7 @@ export default function App() {
                     <p className="font-sans font-medium text-[13px] text-[#0F9D58] mt-4">
                       {futureYouRightTasks.length} win{futureYouRightTasks.length !== 1 ? 's' : ''} this week
                     </p>
-                    <div className="flex items-center gap-2 mt-3 rounded-[8px] p-[10px]" style={{ background: 'rgba(15,157,88,0.04)' }}>
+                    <div className="flex items-center gap-2 mt-3 rounded-[8px] p-[10px]" style={{ background: isDarkMode ? 'rgba(46,204,113,0.1)' : 'rgba(15,157,88,0.04)' }}>
                       <span className="text-[20px]">😌</span>
                       <span className="font-sans text-[12px] text-[#0F9D58]">Clear, ahead, trusted</span>
                     </div>
@@ -3397,10 +3723,10 @@ export default function App() {
                   {isFutureYouApiLoading ? 'Thinking... 🤔' : 'What if I only do one? →'}
                 </button>
                 {futureYouSingleTask && (
-                  <div className="mt-3 w-full max-w-[480px] rounded-[10px] p-[14px] px-[18px]" style={{ border: '2px solid #C8893B', background: 'rgba(200,137,59,0.04)' }}>
-                    <p className="font-sans font-semibold text-[13px] text-[#0E1B2A] mb-1">If you only do one thing:</p>
-                    <p className="font-serif font-medium text-[16px] text-[#0E1B2A]">{futureYouSingleTask.taskTitle}</p>
-                    <p className="font-sans text-[13px] text-[#5B6B7B] mt-1">{futureYouSingleTask.reason}</p>
+                  <div className="mt-3 w-full max-w-[480px] rounded-[10px] p-[14px] px-[18px]" style={{ border: `2px solid ${isDarkMode ? '#D4A054' : '#C8893B'}`, background: isDarkMode ? 'rgba(212,160,84,0.1)' : 'rgba(200,137,59,0.04)' }}>
+                    <p className="font-sans font-semibold text-[13px] mb-1" style={{ color: dm.textPrimary }}>If you only do one thing:</p>
+                    <p className="font-serif font-medium text-[16px]" style={{ color: dm.textPrimary }}>{futureYouSingleTask.taskTitle}</p>
+                    <p className="font-sans text-[13px] mt-1" style={{ color: dm.textSecondary }}>{futureYouSingleTask.reason}</p>
                     <p className="font-sans font-medium text-[13px] text-[#C8893B] mt-1">→ {futureYouSingleTask.action}</p>
                     <button type="button" onClick={() => handleFutureYouStart(futureYouSingleTask.taskTitle)}
                       className="mt-3 font-sans font-medium text-[12px] text-white bg-[#C8893B] hover:bg-[#a06e2c] border-0 rounded-[6px] px-[12px] py-[6px] cursor-pointer transition-colors">
@@ -3412,7 +3738,7 @@ export default function App() {
 
               {/* Typewriter closing */}
               <div className="mt-10 text-center">
-                <p className="font-serif italic font-medium text-[18px] text-[#0E1B2A] min-h-[28px]">{typewriterText}</p>
+                <p className="font-serif italic font-medium text-[18px] min-h-[28px]" style={{ color: dm.textPrimary }}>{typewriterText}</p>
                 {typewriterDone && (
                   <div style={{ animation: 'futureYouFadeIn 0.5s ease' }} />
                 )}
@@ -3946,58 +4272,58 @@ export default function App() {
               <div className="w-full" id="dashboard-extraction-ledger">
                 <div
                   onClick={() => setIsLedgerOpen(prev => !prev)}
-                  className="bg-white border border-[rgba(14,27,42,0.08)] p-[14px] px-[20px] flex items-center justify-between cursor-pointer select-none hover:bg-[rgba(14,27,42,0.02)] transition-all duration-200"
-                  style={{ borderRadius: isLedgerOpen ? '12px 12px 0 0' : '12px' }}
+                  className="p-[14px] px-[20px] flex items-center justify-between cursor-pointer select-none transition-all duration-200"
+                  style={{ backgroundColor: dm.card, border: `1px solid ${dm.border}`, borderRadius: isLedgerOpen ? '12px 12px 0 0' : '12px' }}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[14px]">✨</span>
-                    <span className="font-sans font-medium text-[14px] text-[#0E1B2A]">AI Extraction Ledger</span>
+                    <span className="font-sans font-medium text-[14px]" style={{ color: dm.textPrimary }}>AI Extraction Ledger</span>
                   </div>
                   <div>
                     <span className="font-sans font-medium text-[12px] px-[10px] py-[3px] rounded-[20px] bg-[rgba(200,137,59,0.12)] text-[#C8893B]">
                       {extractionLog.length > 0 ? `${extractionLog.length} tasks found` : 'No extractions yet'}
                     </span>
                   </div>
-                  <div className="font-sans text-[14px] text-[#5B6B7B]" style={{ transform: isLedgerOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+                  <div className="font-sans text-[14px]" style={{ color: dm.textSecondary, transform: isLedgerOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
                     ▼
                   </div>
                 </div>
                 <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isLedgerOpen ? '600px' : '0px' }}>
-                  <div className="border border-[rgba(14,27,42,0.08)] border-t-0 rounded-b-[12px] bg-white max-h-[400px] overflow-y-auto">
+                  <div className="border-t-0 rounded-b-[12px] max-h-[400px] overflow-y-auto" style={{ backgroundColor: dm.card, border: `1px solid ${dm.border}`, borderTop: 'none' }}>
                     {extractionLog.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
                         <span className="text-[48px] mb-2">🔍</span>
-                        <h4 className="font-sans font-medium text-[14px] text-[#0E1B2A]">No extractions yet</h4>
-                        <p className="font-sans text-[13px] text-[#5B6B7B] mt-1 max-w-[280px]">Scan an email or image to see what Polaris finds for you.</p>
+                        <h4 className="font-sans font-medium text-[14px]" style={{ color: dm.textPrimary }}>No extractions yet</h4>
+                        <p className="font-sans text-[13px] mt-1 max-w-[280px]" style={{ color: dm.textSecondary }}>Scan an email or image to see what Polaris finds for you.</p>
                       </div>
                     ) : (
                       <div>
                         {extractionLog.map((entry) => {
                           const status = getEntryStatus(entry);
-                          let badgeBg = 'rgba(14,27,42,0.06)';
-                          let badgeColor = '#5B6B7B';
+                          let badgeBg = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(14,27,42,0.06)';
+                          let badgeColor = dm.textSecondary;
                           let badgeText = 'In progress';
-                          if (status === 'completed') { badgeBg = 'rgba(15,157,88,0.1)'; badgeColor = '#0F9D58'; badgeText = '✓ Done'; }
-                          else if (status === 'archived') { badgeBg = 'rgba(91,107,123,0.1)'; badgeColor = '#5B6B7B'; badgeText = 'Archived'; }
-                          let urgencyColor = '#5B6B7B';
-                          if (entry.urgency === 'high') urgencyColor = '#B23A2E';
-                          else if (entry.urgency === 'medium') urgencyColor = '#C8893B';
+                          if (status === 'completed') { badgeBg = isDarkMode ? 'rgba(46,204,113,0.15)' : 'rgba(15,157,88,0.1)'; badgeColor = isDarkMode ? '#2ECC71' : '#0F9D58'; badgeText = '✓ Done'; }
+                          else if (status === 'archived') { badgeBg = isDarkMode ? 'rgba(154,165,180,0.15)' : 'rgba(91,107,123,0.1)'; badgeColor = dm.textSecondary; badgeText = 'Archived'; }
+                          let urgencyColor = dm.textSecondary;
+                          if (entry.urgency === 'high') urgencyColor = isDarkMode ? '#C94B3E' : '#B23A2E';
+                          else if (entry.urgency === 'medium') urgencyColor = isDarkMode ? '#D4A054' : '#C8893B';
                           return (
-                            <div key={entry.id} className="p-[12px] px-[20px] border-b border-[rgba(14,27,42,0.06)] flex items-center gap-[12px] last:border-b-0">
-                              <div className="w-[20px] h-[20px] rounded-full bg-[rgba(200,137,59,0.1)] flex items-center justify-center text-[12px] shrink-0">
+                            <div key={entry.id} className="p-[12px] px-[20px] flex items-center gap-[12px] last:border-b-0" style={{ borderBottom: `1px solid ${dm.border}` }}>
+                              <div className="w-[20px] h-[20px] rounded-full flex items-center justify-center text-[12px] shrink-0" style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(200,137,59,0.1)' }}>
                                 {entry.sourceType === 'email' ? '📧' : '📸'}
                               </div>
                               <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                                <div className="font-sans font-medium text-[13px] text-[#0E1B2A] truncate">{entry.taskTitle}</div>
-                                <div className="font-sans text-[12px] text-[#5B6B7B] truncate">{entry.sourceName}</div>
+                                <div className="font-sans font-medium text-[13px] truncate" style={{ color: dm.textPrimary }}>{entry.taskTitle}</div>
+                                <div className="font-sans text-[12px] truncate" style={{ color: dm.textSecondary }}>{entry.sourceName}</div>
                                 <div className="font-sans text-[12px] font-medium" style={{ color: urgencyColor }}>{entry.deadline}</div>
                               </div>
                               <div className="font-sans font-medium text-[11px] px-[8px] py-[3px] rounded-[10px] shrink-0" style={{ backgroundColor: badgeBg, color: badgeColor }}>{badgeText}</div>
                             </div>
                           );
                         })}
-                        <div className="p-[12px] px-[20px] bg-[rgba(14,27,42,0.02)] rounded-b-[12px] border-t border-[rgba(14,27,42,0.06)]">
-                          <span className="font-sans italic text-[13px] text-[#5B6B7B]">
+                        <div className="p-[12px] px-[20px] rounded-b-[12px]" style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(14,27,42,0.02)', borderTop: `1px solid ${dm.border}` }}>
+                          <span className="font-sans italic text-[13px]" style={{ color: dm.textSecondary }}>
                             Polaris found {extractionLog.length} task{extractionLog.length !== 1 ? 's' : ''} across {new Set(extractionLog.map(e => e.sourceName)).size} source{new Set(extractionLog.map(e => e.sourceName)).size !== 1 ? 's' : ''} you would have missed.
                           </span>
                         </div>
@@ -4104,7 +4430,7 @@ export default function App() {
                 <div className="flex-1 min-w-0 bg-white flex flex-col">
                   {currentEmail ? (
                     /* READING VIEW */
-                    <div id="email-detail-view" className="w-full bg-white py-[24px] px-[40px] flex flex-col">
+                    <div id="email-detail-view" className="w-full py-[24px] px-[40px] flex flex-col" style={{ backgroundColor: dm.card }}>
                       {/* Back button */}
                       <button
                         id="email-back-btn"
@@ -4293,7 +4619,10 @@ export default function App() {
                               key={email.id}
                               id={`email-row-${email.id}`}
                               onClick={() => handleOpenEmail(email.id)}
-                              className="email-row flex items-center h-[50px] border-b border-[#F1F3F4] cursor-pointer bg-white hover:shadow-[0_4px_4px_-2px_rgba(0,0,0,0.2)] hover:bg-[#F2F6FC] transition-all duration-150 select-none px-4 gap-2"
+                              className="email-row flex items-center h-[50px] cursor-pointer hover:shadow-[0_4px_4px_-2px_rgba(0,0,0,0.2)] transition-all duration-150 select-none px-4 gap-2"
+                              style={{ backgroundColor: dm.rowBg, borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.05)' : '#F1F3F4'}` }}
+                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = dm.rowHover; }}
+                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = dm.rowBg; }}
                             >
                               {/* Unread indicator red dot or empty spacer */}
                               {email.unread ? (
@@ -4342,19 +4671,20 @@ export default function App() {
                               {/* Sender Name */}
                               <div
                                 className={`email-sender-column w-[160px] shrink-0 text-[13px] font-googlesans whitespace-nowrap overflow-hidden text-ellipsis pr-2 ${
-                                  email.unread ? 'font-bold text-[#202124]' : 'font-normal text-[#202124]'
+                                  email.unread ? 'font-bold' : 'font-normal'
                                 }`}
+                                style={{ color: dm.textPrimary }}
                               >
                                 {email.from}
                               </div>
 
                               {/* Subject & Preview */}
                               <div className="flex-1 min-w-0 flex items-baseline text-[13px] overflow-hidden whitespace-nowrap text-ellipsis mr-2">
-                                <span className={`${email.unread ? 'font-bold text-[#202124]' : 'font-normal text-[#202124]'}`}>
+                                <span className={email.unread ? 'font-bold' : 'font-normal'} style={{ color: dm.textPrimary }}>
                                   {email.subject}
                                 </span>
-                                <span className="text-[#5F6368] font-normal mx-1">—</span>
-                                <span className="text-[#5F6368] font-normal truncate">
+                                <span className="font-normal mx-1" style={{ color: dm.textSecondary }}>—</span>
+                                <span className="font-normal truncate" style={{ color: dm.textSecondary }}>
                                   {email.body.replace(/\s+/g, ' ').trim()}
                                 </span>
                               </div>
@@ -4373,7 +4703,7 @@ export default function App() {
                               )}
 
                               {/* Timestamp */}
-                              <div className="email-timestamp w-[80px] text-right text-[12px] text-[#5F6368] flex-shrink-0 font-normal">
+                              <div className="email-timestamp w-[80px] text-right text-[12px] flex-shrink-0 font-normal" style={{ color: dm.textSecondary }}>
                                 {email.time}
                               </div>
                             </div>
@@ -4657,66 +4987,50 @@ export default function App() {
 
       {/* Add Task Modal */}
       {isAddTaskModalOpen && (
-        <div
-          onClick={() => setIsAddTaskModalOpen(false)}
-          className="modal-backdrop fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="modal-content bg-white max-w-[480px] w-full rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-4"
-          >
-            <button
-              type="button"
-              onClick={() => setIsAddTaskModalOpen(false)}
-              className="absolute top-5 right-5 text-polaris-secondary hover:text-polaris-primary text-[20px] border-0 bg-transparent cursor-pointer font-sans"
-            >
+        <div onClick={closeAddTaskModal}
+          className="modal-backdrop fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div onClick={(e) => e.stopPropagation()}
+            className="modal-content bg-white max-w-[480px] w-full rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-4">
+            <button type="button" onClick={closeAddTaskModal}
+              className="absolute top-5 right-5 text-polaris-secondary hover:text-polaris-primary text-[20px] border-0 bg-transparent cursor-pointer font-sans">
               ✕
             </button>
-            <h2 className="font-serif font-medium text-[20px] text-[#0E1B2A] mb-1">Add New Task</h2>
+            <h2 className="font-serif font-medium text-[18px] text-[#0E1B2A] mb-1">New Task</h2>
             <div className="flex flex-col gap-3">
               <div>
                 <label className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-1 block">Task name</label>
-                <input
-                  type="text"
-                  value={addTaskModalTitle}
-                  onChange={(e) => setAddTaskModalTitle(e.target.value)}
-                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all"
-                  autoFocus
-                />
+                <input type="text" value={modalTaskName} onChange={(e) => setModalTaskName(e.target.value)} autoFocus
+                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all" />
               </div>
               <div>
                 <label className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-1 block">Due date (optional)</label>
-                <input
-                  type="date"
-                  value={addTaskModalDate}
-                  onChange={(e) => setAddTaskModalDate(e.target.value)}
-                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all"
-                />
+                <input type="text" value={modalDueDate} onChange={(e) => handleModalDueDateChange(e.target.value)}
+                  placeholder="e.g. tomorrow, next friday, in 3 days"
+                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all" />
+                {isReparsingDate && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className="w-3 h-3 border-[1.5px] border-[#5B6B7B]/30 border-t-[#5B6B7B] rounded-full animate-spin shrink-0" />
+                    <span className="font-sans text-[12px] text-[#5B6B7B]">Parsing...</span>
+                  </div>
+                )}
+                {!isReparsingDate && modalDueDateISO && (
+                  <span className="font-sans text-[12px] text-[#0F9D58] mt-1.5 block">📅 {modalDueDateReadable}</span>
+                )}
               </div>
               <div>
                 <label className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-1 block">Description (optional)</label>
-                <textarea
-                  value={addTaskModalDesc}
-                  onChange={(e) => setAddTaskModalDesc(e.target.value)}
-                  rows={3}
-                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all resize-none"
+                <textarea value={modalDescription} onChange={(e) => setModalDescription(e.target.value)} rows={3}
                   placeholder="Add details..."
-                />
+                  className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all resize-none" />
               </div>
             </div>
             <div className="flex items-center justify-end gap-3 mt-2">
-              <button
-                type="button"
-                onClick={() => setIsAddTaskModalOpen(false)}
-                className="px-4 py-2 bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer"
-              >
+              <button type="button" onClick={closeAddTaskModal}
+                className="px-4 py-2 bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={handleConfirmAddTask}
-                className="px-4 py-2 bg-[#0E1B2A] text-white font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer"
-              >
+              <button type="button" onClick={handleModalConfirm}
+                className="px-4 py-2 bg-[#0E1B2A] text-white font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer">
                 Add task
               </button>
             </div>
@@ -4975,6 +5289,7 @@ export default function App() {
             setIsLedgerOpen(false);
             setCompletedTaskIds(new Set());
             setCompletedTasks([]);
+            setConfettiShown(false);
             setDemoResetToast(true);
             setTimeout(() => setDemoResetToast(false), 2000);
           }}
@@ -4995,6 +5310,32 @@ export default function App() {
           Reset demo
         </button>
       </div>
+
+      {/* Feature 9 — Confetti Toast */}
+      {confettiToast && (
+        <div
+          id="confetti-toast"
+          style={{
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 10000,
+            background: 'linear-gradient(135deg, #0F9D58, #0d8a4e)',
+            color: 'white',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: 500,
+            fontSize: '14px',
+            padding: '12px 24px',
+            borderRadius: '10px',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 24px rgba(15,157,88,0.35)',
+            animation: 'confetti-toast-in 0.3s ease forwards',
+          }}
+        >
+          🎉 All tasks complete — you crushed it today!
+        </div>
+      )}
 
       {/* Gemini 503 toast */}
       {gemini503Toast && (

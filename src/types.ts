@@ -14,6 +14,7 @@ export interface Task {
   pointOfNoReturnPassed?: boolean;
   inProgress?: boolean;
   snoozed?: boolean;
+  notes?: string;
 }
 
 export interface Email {

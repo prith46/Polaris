@@ -5,12 +5,12 @@ describe('Module 3: Add & Manage Tasks', () => {
   // ADD TASK — BASIC
   test('Input placeholder reads "Add a new task…"', () => {
     render(<App />);
-    expect(screen.getByPlaceholderText('Add a new task…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Add a new task/i)).toBeInTheDocument();
   });
 
   test('Typing a name and clicking "Add task" adds a new card', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const addButton = screen.getByRole('button', { name: /Add task/i });
 
     fireEvent.change(input, { target: { value: 'New Custom Task' } });
@@ -22,7 +22,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('New card appears in To Do column', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const addButton = screen.getByRole('button', { name: /Add task/i });
 
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
@@ -35,7 +35,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Pressing Enter also adds task (form submit)', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
 
     fireEvent.change(input, { target: { value: 'Task added via Enter' } });
     const form = input.closest('form');
@@ -55,7 +55,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Whitespace-only input does nothing', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const addButton = screen.getByRole('button', { name: /Add task/i });
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
 
@@ -66,7 +66,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('After adding, input is cleared', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…') as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/Add a new task/i) as HTMLInputElement;
     const addButton = screen.getByRole('button', { name: /Add task/i });
 
     fireEvent.change(input, { target: { value: 'Clear Test' } });
@@ -127,7 +127,7 @@ describe('Module 3: Add & Manage Tasks', () => {
   // EDGE CASES
   test('Adding 20 tasks rapidly — all appear, no crash', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const addButton = screen.getByRole('button', { name: /Add task/i });
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
 
@@ -140,7 +140,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Long title 300+ characters — creates one card, no crash', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const addButton = screen.getByRole('button', { name: /Add task/i });
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
     const longTitle = 'a'.repeat(305);
@@ -152,7 +152,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Special characters and emoji in title — renders correctly', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const addButton = screen.getByRole('button', { name: /Add task/i });
 
     const specialTitle = '🔥 Test & Special! Ch@r$';
@@ -163,7 +163,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Adding two tasks with identical titles then marking one done — only one moves', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const addButton = screen.getByRole('button', { name: /Add task/i });
 
     fireEvent.change(input, { target: { value: 'Identical Task' } });
@@ -183,7 +183,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Adding 50 tasks, mark 25 to In Progress — correct distribution', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     const addButton = screen.getByRole('button', { name: /Add task/i });
 
     for (let i = 0; i < 50; i++) {

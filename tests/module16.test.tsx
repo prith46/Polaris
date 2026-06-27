@@ -180,7 +180,7 @@ describe('Module 16: Future You', () => {
     fireEvent.click(startBtns[0]);
 
     expect(screen.queryByText('Next Week')).not.toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Add a new task…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Add a new task/i)).toBeInTheDocument();
     expect(screen.getByText('In progress')).toBeInTheDocument();
   });
 

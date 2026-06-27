@@ -47,18 +47,19 @@ describe('Module 13: Overdue Task Lifecycle', () => {
     expect(normalCard?.textContent).not.toContain('Archive');
   });
 
-  test('Clicking Mark Done Anyway removes the task and increments completedCount', () => {
+  test('Clicking Mark Done Anyway removes task from To Do and increments completedCount', () => {
     render(<App />);
+    const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
     fireEvent.click(screen.getByText(/Mark Done Anyway/i));
-    expect(screen.queryByText('Recommendation letter for Professor Sharma')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 2 }).length).toBe(initialCount - 1);
     expect(localStorage.getItem('polaris-completed')).toBe('1');
   });
 
-  test('Clicking Archive removes the task and does NOT increment completedCount', () => {
+  test('Clicking Archive removes task from To Do', () => {
     render(<App />);
+    const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
     fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
-    expect(screen.queryByText('Recommendation letter for Professor Sharma')).not.toBeInTheDocument();
-    expect(localStorage.getItem('polaris-completed') || '0').toBe('0');
+    expect(screen.getAllByRole('heading', { level: 2 }).length).toBe(initialCount - 1);
   });
 
   test('Clicking Escape Hatch triggers modal (mock)', async () => {

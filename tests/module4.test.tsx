@@ -119,13 +119,13 @@ describe('Module 4: Gmail Inbox', () => {
     expect(screen.getByText('Primary')).toBeInTheDocument();
 
     fireEvent.click(tasksTab);
-    expect(screen.getByPlaceholderText('Add a new task…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Add a new task/i)).toBeInTheDocument();
 
     for (let i = 0; i < 5; i++) {
       fireEvent.click(inboxTab);
       fireEvent.click(tasksTab);
     }
-    expect(screen.getByPlaceholderText('Add a new task…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Add a new task/i)).toBeInTheDocument();
   });
 
   test('6 story emails contain correct body text strings', () => {

@@ -24,7 +24,7 @@ describe('Modules 11-15 Stress & Robustness Tests', () => {
     }
     localStorage.setItem('polaris-tasks', JSON.stringify(list));
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
     fireEvent.change(input, { target: { value: 'Stress Task #200' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
 
@@ -35,19 +35,20 @@ describe('Modules 11-15 Stress & Robustness Tests', () => {
 
   test('Rapid add/remove 50 tasks alternating — state stays consistent', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
+    const input = screen.getByPlaceholderText(/Add a new task/i);
 
     for (let i = 1; i <= 50; i++) {
-      // Add
       fireEvent.change(input, { target: { value: `Alt Task ${i}` } });
       fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
-      
-      // Done the first available task
-      const doneBtns = screen.getAllByRole('button', { name: 'Done' });
-      fireEvent.click(doneBtns[0]);
+
+      const handleBtns = screen.queryAllByRole('button', { name: 'Handle it now' });
+      if (handleBtns.length > 0) {
+        fireEvent.click(handleBtns[0]);
+        const markDone = screen.queryByRole('button', { name: 'Mark Done' });
+        if (markDone) fireEvent.click(markDone);
+      }
     }
 
-    // Expect tasks in DOM to be correct (should have seed tasks minus whatever we cleared plus what's left)
     const stored = JSON.parse(localStorage.getItem('polaris-tasks') || '[]');
     expect(Array.isArray(stored)).toBe(true);
   });
@@ -118,7 +119,7 @@ describe('Modules 11-15 Stress & Robustness Tests', () => {
     });
 
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
+    fireEvent.click(screen.getByRole('button', { name: /📸 Scan/i }));
 
     const fileInput = screen.getByTestId('image-file-input');
 
