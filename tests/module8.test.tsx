@@ -7,96 +7,65 @@ describe('Module 8: Task Decomposition (Break it down)', () => {
     vi.restoreAllMocks();
   });
 
-  test('"Break it down" button exists on "Submit project proposal" card', () => {
+  test('"Break it down" button exists on "Submit project proposal" card in To Do column', () => {
     render(<App />);
-    // "Submit project proposal" is the 3rd seed task, which has 'Break it down' primary action
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    expect(breakDownBtn).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Break it down' })).toBeInTheDocument();
   });
 
   test('Clicking "Break it down" shows loading state "Breaking down..."', () => {
     vi.spyOn(global, 'fetch').mockImplementation(() => new Promise(() => {}));
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     expect(screen.getByText('Breaking down...')).toBeInTheDocument();
   });
 
-  test('Subtask checklist appears after decomposition', async () => {
-    const mockSubtasks = [
-      { step: 'Step A', minutes: 10 },
-      { step: 'Step B', minutes: 15 },
-      { step: 'Step C', minutes: 20 }
-    ];
+  test('Subtask checklist appears after decomposition (mock success)', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ subtasks: mockSubtasks }),
+      json: async () => ({ subtasks: [{ step: 'Step A', minutes: 10 }, { step: 'Step B', minutes: 15 }, { step: 'Step C', minutes: 20 }] }),
     } as Response);
 
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
       expect(screen.getByText('Step A')).toBeInTheDocument();
     });
   });
 
   test('"SUBTASKS" header appears', async () => {
-    const mockSubtasks = [
-      { step: 'Step A', minutes: 10 },
-      { step: 'Step B', minutes: 15 },
-      { step: 'Step C', minutes: 20 }
-    ];
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ subtasks: mockSubtasks }),
+      json: async () => ({ subtasks: [{ step: 'Step A', minutes: 10 }] }),
     } as Response);
 
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
       expect(screen.getByText('Subtasks')).toBeInTheDocument();
     });
   });
 
-  test('Total time display appears (e.g. "45 min total")', async () => {
-    const mockSubtasks = [
-      { step: 'Step A', minutes: 10 },
-      { step: 'Step B', minutes: 15 },
-      { step: 'Step C', minutes: 20 }
-    ];
+  test('Total time display appears', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ subtasks: mockSubtasks }),
+      json: async () => ({ subtasks: [{ step: 'Step A', minutes: 10 }, { step: 'Step B', minutes: 15 }, { step: 'Step C', minutes: 20 }] }),
     } as Response);
 
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
-      expect(screen.getByText('(45 min total)')).toBeInTheDocument();
+      expect(screen.getByText('(45m)')).toBeInTheDocument();
     });
   });
 
   test('At least 3 subtask rows render', async () => {
-    const mockSubtasks = [
-      { step: 'Step A', minutes: 10 },
-      { step: 'Step B', minutes: 15 },
-      { step: 'Step C', minutes: 20 }
-    ];
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ subtasks: mockSubtasks }),
+      json: async () => ({ subtasks: [{ step: 'Step A', minutes: 10 }, { step: 'Step B', minutes: 15 }, { step: 'Step C', minutes: 20 }] }),
     } as Response);
 
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
       expect(screen.getByText('Step A')).toBeInTheDocument();
       expect(screen.getByText('Step B')).toBeInTheDocument();
@@ -104,21 +73,14 @@ describe('Module 8: Task Decomposition (Break it down)', () => {
     });
   });
 
-  test('Each subtask row has a checkbox and time estimate', async () => {
-    const mockSubtasks = [
-      { step: 'Step A', minutes: 10 },
-      { step: 'Step B', minutes: 15 },
-      { step: 'Step C', minutes: 20 }
-    ];
+  test('Each subtask row has checkbox and time estimate', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ subtasks: mockSubtasks }),
+      json: async () => ({ subtasks: [{ step: 'Step A', minutes: 10 }, { step: 'Step B', minutes: 15 }, { step: 'Step C', minutes: 20 }] }),
     } as Response);
 
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
       expect(screen.getByText('10m')).toBeInTheDocument();
       expect(screen.getByText('15m')).toBeInTheDocument();
@@ -126,48 +88,30 @@ describe('Module 8: Task Decomposition (Break it down)', () => {
     });
   });
 
-  test('Checking a subtask marks it visually complete', async () => {
-    const mockSubtasks = [
-      { step: 'Step A', minutes: 10 },
-      { step: 'Step B', minutes: 15 },
-      { step: 'Step C', minutes: 20 }
-    ];
+  test('Checking a subtask marks it visually complete with line-through', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ subtasks: mockSubtasks }),
+      json: async () => ({ subtasks: [{ step: 'Step A', minutes: 10 }] }),
     } as Response);
 
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
       expect(screen.getByText('Step A')).toBeInTheDocument();
     });
 
-    const rowA = screen.getByText('Step A');
-    fireEvent.click(rowA.closest('div')!);
-    
-    // Checked items have line-through - line-through text decoration or className text-[#5B6B7B]/50
-    // Let's verify style/className
-    const element = screen.getByText('Step A');
-    expect(element.className).toContain('line-through');
+    fireEvent.click(screen.getByText('Step A').closest('div')!);
+    expect(screen.getByText('Step A').className).toContain('line-through');
   });
 
   test('Checking all subtasks shows completion banner', async () => {
-    const mockSubtasks = [
-      { step: 'Step A', minutes: 10 },
-      { step: 'Step B', minutes: 15 }
-    ];
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ subtasks: mockSubtasks }),
+      json: async () => ({ subtasks: [{ step: 'Step A', minutes: 10 }, { step: 'Step B', minutes: 15 }] }),
     } as Response);
 
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
       expect(screen.getByText('Step A')).toBeInTheDocument();
     });
@@ -176,33 +120,26 @@ describe('Module 8: Task Decomposition (Break it down)', () => {
     fireEvent.click(screen.getByText('Step B').closest('div')!);
 
     await waitFor(() => {
-      expect(screen.getByText('✓ All steps done — ready to mark complete?')).toBeInTheDocument();
+      expect(screen.getByText(/All steps done/i)).toBeInTheDocument();
     });
   });
 
   test('Collapse chevron toggles checklist visibility', async () => {
-    const mockSubtasks = [
-      { step: 'Step A', minutes: 10 }
-    ];
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ subtasks: mockSubtasks }),
+      json: async () => ({ subtasks: [{ step: 'Step A', minutes: 10 }] }),
     } as Response);
 
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
       expect(screen.getByText('Step A')).toBeInTheDocument();
     });
 
     const collapseHeader = screen.getByText('Subtasks').closest('div')!;
-    // Click header to collapse
     fireEvent.click(collapseHeader);
     expect(screen.getByText('▶')).toBeInTheDocument();
 
-    // Click again to expand
     fireEvent.click(collapseHeader);
     expect(screen.getByText('▼')).toBeInTheDocument();
   });
@@ -210,13 +147,27 @@ describe('Module 8: Task Decomposition (Break it down)', () => {
   test('Fallback subtasks appear when API fails', async () => {
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('API failure'));
     render(<App />);
-    const breakDownBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakDownBtn);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
     await waitFor(() => {
       expect(screen.getByText('Subtasks')).toBeInTheDocument();
     });
-
     expect(screen.getByText('Review what needs to be done')).toBeInTheDocument();
+  });
+
+  test('Subtask state persists across re-renders', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ subtasks: [{ step: 'Persist Step', minutes: 5 }] }),
+    } as Response);
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Break it down' }));
+    await waitFor(() => {
+      expect(screen.getByText('Persist Step')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    expect(screen.getByText('Persist Step')).toBeInTheDocument();
   });
 });

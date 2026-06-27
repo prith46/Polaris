@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, FormEvent, MouseEvent, useEffect } from 'react';
+import { useState, FormEvent, MouseEvent, useEffect, useRef, useCallback } from 'react';
 import { Check, Search } from 'lucide-react';
 import { Task, Email, ExtractionLogEntry } from './types';
 
@@ -1435,6 +1435,319 @@ export default function App() {
   const [calendarPanelDate, setCalendarPanelDate] = useState<Date | null>(null);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
 
+  // Future You
+  const [isFutureYouOpen, setIsFutureYouOpen] = useState(false);
+  const [isFutureYouApiLoading, setIsFutureYouApiLoading] = useState(false);
+  const [futureYouSingleTask, setFutureYouSingleTask] = useState<{ taskTitle: string; reason: string; action: string } | null>(null);
+  const [typewriterText, setTypewriterText] = useState('');
+  const [typewriterDone, setTypewriterDone] = useState(false);
+  const [futureYouShareCopied, setFutureYouShareCopied] = useState(false);
+  const [futureYouStartToast, setFutureYouStartToast] = useState(false);
+
+  // Demo Mode
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoStep, setDemoStep] = useState(0);
+  const [demoFinalOverlay, setDemoFinalOverlay] = useState(false);
+  const demoAutoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [demoCountdown, setDemoCountdown] = useState(4);
+  const demoCountdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // === FUTURE YOU LOGIC ===
+  const getFutureYouDateRange = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+    const nextMon = new Date(now); nextMon.setDate(now.getDate() + daysUntilMonday);
+    const nextSun = new Date(nextMon); nextSun.setDate(nextMon.getDate() + 6);
+    return `Week of ${nextMon.toLocaleDateString([], { month: 'short', day: 'numeric' })} – ${nextSun.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
+  };
+
+  const getFutureYouDuration = (title: string): { minutes: number; label: string } => {
+    const lower = title.toLowerCase();
+    if (/bill|payment/.test(lower)) return { minutes: 20, label: '~20 min to handle' };
+    if (/email|reply|draft/.test(lower)) return { minutes: 45, label: '~45 min to complete' };
+    if (/letter|write|report/.test(lower)) return { minutes: 120, label: '~2 hours to complete' };
+    if (/meeting|sync/.test(lower)) return { minutes: 60, label: '~1 hour commitment' };
+    return { minutes: 30, label: '~30 min to complete' };
+  };
+
+  const getFutureYouConsequence = (title: string): string => {
+    const lower = title.toLowerCase();
+    if (/bill|payment/.test(lower)) return 'Late fee + possible service interruption';
+    if (/letter|recommendation/.test(lower)) return 'Relationship damaged — hard to recover';
+    if (/meeting|sync/.test(lower)) return 'Team left waiting — trust weakened';
+    if (/proposal|submit/.test(lower)) return 'Opportunity missed — slot given to someone else';
+    return 'Commitment broken — trust eroded';
+  };
+
+  const getFutureYouCascade = (title: string): string => {
+    const lower = title.toLowerCase();
+    if (/bill|payment/.test(lower)) return '→ Late fee accumulates daily until paid';
+    if (/letter|recommendation/.test(lower)) return '→ May affect their application deadline too';
+    if (/meeting|sync/.test(lower)) return '→ Team decisions get delayed without your input';
+    if (/proposal|submit/.test(lower)) return '→ Slot may be given to someone else';
+    return '→ Trust takes longer to rebuild than to lose';
+  };
+
+  const getFutureYouWin = (title: string): string => {
+    const lower = title.toLowerCase();
+    if (/bill|payment/.test(lower)) return 'Paid on time — no stress, no fees';
+    if (/letter|recommendation/.test(lower)) return 'Relationship strengthened — favor returned';
+    if (/meeting|sync/.test(lower)) return 'Showed up — team momentum maintained';
+    if (/proposal|submit/.test(lower)) return 'Opportunity seized — you showed up';
+    return 'Commitment kept — trust built';
+  };
+
+  const futureYouHighTasks = tasks.filter(t => t.urgency === 'high');
+  const futureYouRightTasks = futureYouHighTasks.slice(0, 3);
+  const futureYouTotalMinutes = futureYouRightTasks.reduce((sum, t) => sum + getFutureYouDuration(t.title).minutes, 0);
+  const futureYouTotalLabel = futureYouTotalMinutes < 60 ? `${futureYouTotalMinutes}min` : `${Math.floor(futureYouTotalMinutes / 60)}h ${futureYouTotalMinutes % 60}min`;
+
+  const futureYouRecoveryProjection = (() => {
+    if (totalOverdueEncountered === 0) return null;
+    const additionalResolved = futureYouRightTasks.filter(t => isTaskOverdue(t)).length;
+    const projected = Math.round(((resolvedOverdueCount + additionalResolved) / totalOverdueEncountered) * 100);
+    return Math.min(projected, 100);
+  })();
+
+  useEffect(() => {
+    if (!isFutureYouOpen) { setTypewriterText(''); setTypewriterDone(false); return; }
+    const full = 'This version of you exists.';
+    const part2 = ' Pick one.';
+    let i = 0;
+    let current = '';
+    let phase = 1;
+    const timer = setInterval(() => {
+      if (phase === 1) {
+        if (i < full.length) { current += full[i]; setTypewriterText(current); i++; }
+        else { phase = 2; i = 0; setTimeout(() => { phase = 3; }, 600); }
+      } else if (phase === 3) {
+        if (i < part2.length) { current += part2[i]; setTypewriterText(current); i++; }
+        else { clearInterval(timer); setTypewriterDone(true); }
+      }
+    }, 40);
+    return () => clearInterval(timer);
+  }, [isFutureYouOpen]);
+
+  const handleFutureYouStart = (taskTitle: string) => {
+    setTasks(prev => prev.map(t => t.title === taskTitle ? { ...t, inProgress: true } : t));
+    setIsFutureYouOpen(false);
+    setActiveTab('tasks');
+    setFutureYouStartToast(true);
+    setTimeout(() => setFutureYouStartToast(false), 2000);
+  };
+
+  const handleFutureYouOnlyOne = async () => {
+    setIsFutureYouApiLoading(true);
+    setFutureYouSingleTask(null);
+    try {
+      const taskList = tasks.map(t => ({ title: t.title, urgency: t.urgency, deadline: t.pillText || 'No deadline set', context: t.context || '' }));
+      const response = await fetchWithTimeout('/api/panic', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tasks: taskList }) }, 10000);
+      if (!response.ok) throw new Error(`Response not OK (${response.status})`);
+      const data = await response.json();
+      if (data && data.taskTitle) { setFutureYouSingleTask({ taskTitle: data.taskTitle, reason: data.reason || '', action: data.action || '' }); }
+      else throw new Error('Invalid data');
+    } catch (error) {
+      check503(error);
+      const fallback = tasks.find(t => t.urgency === 'high') || tasks[0];
+      if (fallback) setFutureYouSingleTask({ taskTitle: fallback.title, reason: 'Highest urgency — needs attention first', action: 'Start working on it now' });
+    } finally {
+      setIsFutureYouApiLoading(false);
+    }
+  };
+
+  const handleFutureYouShare = () => {
+    const leftLines = futureYouHighTasks.map(t => `• ${t.title} — ${getFutureYouConsequence(t.title)}`).join('\n');
+    const rightLines = futureYouRightTasks.map(t => `• ${t.title} — ${getFutureYouWin(t.title)} (${getFutureYouDuration(t.title).label})`).join('\n');
+    const text = `My two futures this week (via Polaris):\n\n❌ If I ignore this:\n${leftLines}\n😰 Stressed, behind, reputation at risk\n\n✅ If I act now:\n${rightLines}\n😌 Clear, ahead, trusted\n\nTotal time to change my week: ${futureYouTotalLabel}\n\n'This version of you exists. Pick one.'\n— Polaris`;
+    navigator.clipboard.writeText(text);
+    setFutureYouShareCopied(true);
+    setTimeout(() => setFutureYouShareCopied(false), 2000);
+  };
+
+  // === DEMO MODE LOGIC ===
+  const DEMO_STEPS = [
+    { text: "It's 11 PM. You think you're done for the day.", spotlightSelector: null },
+    { text: "But your inbox has other plans.", spotlightSelector: '#tab-inbox' },
+    { text: "An electricity bill. Due tomorrow. You never saw it.", spotlightSelector: '#email-detail-view' },
+    { text: "Polaris found it. You didn't have to type a thing.", spotlightSelector: '[data-task-id="demo-task-1"]' },
+    { text: "There are two more hiding in your inbox.", spotlightSelector: null },
+    { text: "One task is already past the point of no return.", spotlightSelector: '[data-task-id="demo-task-2"]' },
+    { text: "You're overcommitted. Six deadlines. The same day.", spotlightSelector: null },
+    { text: "Polaris knows what to protect. And what to drop.", spotlightSelector: null },
+    { text: "The recovery email — already written. Just copy and send.", spotlightSelector: null },
+    { text: "Break the big ones down. Step by step.", spotlightSelector: null },
+    { text: "Two versions of next week. You choose.", spotlightSelector: null },
+    { text: "This version of you exists. Polaris just showed you the way.", spotlightSelector: null },
+  ];
+
+  const clearDemoTimers = useCallback(() => {
+    if (demoAutoTimer.current) { clearTimeout(demoAutoTimer.current); demoAutoTimer.current = null; }
+    if (demoCountdownTimer.current) { clearInterval(demoCountdownTimer.current); demoCountdownTimer.current = null; }
+  }, []);
+
+  const clearSpotlight = useCallback(() => {
+    document.querySelectorAll('[data-demo-spotlight]').forEach(el => {
+      (el as HTMLElement).style.removeProperty('position');
+      (el as HTMLElement).style.removeProperty('z-index');
+      (el as HTMLElement).style.removeProperty('box-shadow');
+      (el as HTMLElement).style.removeProperty('border-radius');
+      el.removeAttribute('data-demo-spotlight');
+    });
+  }, []);
+
+  const applySpotlight = useCallback((selector: string | null) => {
+    clearSpotlight();
+    if (!selector) return;
+    setTimeout(() => {
+      const el = document.querySelector(selector) as HTMLElement | null;
+      if (el) {
+        el.style.position = 'relative';
+        el.style.zIndex = '1001';
+        el.style.boxShadow = '0 0 0 4000px rgba(0,0,0,0.5)';
+        el.style.borderRadius = '8px';
+        el.setAttribute('data-demo-spotlight', 'true');
+      }
+    }, 100);
+  }, [clearSpotlight]);
+
+  const executeDemoStep = useCallback((step: number) => {
+    setIsRenegotiateModalOpen(false);
+    setIsEscapeModalOpen(false);
+    setDemoFinalOverlay(false);
+
+    switch (step) {
+      case 0:
+        setActiveTab('tasks');
+        break;
+      case 1:
+        setActiveTab('inbox');
+        setSelectedEmailId(null);
+        break;
+      case 2:
+        setActiveTab('inbox');
+        setSelectedEmailId('email-1');
+        break;
+      case 3:
+        setTasks(prev => {
+          if (prev.some(t => t.id === 'demo-task-1')) return prev;
+          return [...prev, { id: 'demo-task-1', title: 'Pay electricity bill', pillText: 'Due tomorrow', urgency: 'high' as const, context: 'Found in your inbox — City Power & Utilities', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false }];
+        });
+        setActiveTab('tasks');
+        setTimeout(() => {
+          const newCard = document.querySelector('[data-task-id="demo-task-1"]');
+          if (newCard) {
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => applySpotlight('[data-task-id="demo-task-1"]'), 400);
+          }
+        }, 300);
+        break;
+      case 4:
+        setTasks(prev => {
+          let next = prev;
+          if (!next.some(t => t.id === 'demo-task-2')) {
+            next = [...next, { id: 'demo-task-2', title: 'Send recommendation letter', pillText: '2 days overdue', urgency: 'high' as const, context: 'Found in your inbox — Prof. Anjali Sharma', primaryAction: 'Draft a reply', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false, pointOfNoReturnPassed: true }];
+          }
+          if (!next.some(t => t.id === 'demo-task-3')) {
+            next = [...next, { id: 'demo-task-3', title: 'Submit enrollment form', pillText: 'Due before the 30th', urgency: 'medium' as const, context: 'Found in your inbox — Scholarship Office', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false }];
+          }
+          return next;
+        });
+        setActiveTab('tasks');
+        break;
+      case 5:
+        setActiveTab('tasks');
+        break;
+      case 6:
+        setActiveTab('dashboard');
+        break;
+      case 7:
+        setRenegotiatePlan({
+          protect: [{ title: 'Pay electricity bill', reason: 'Due tomorrow — cannot defer' }],
+          extend: [{ title: 'Submit enrollment form', reason: 'Has a few days of flexibility', draft: 'Hi, I wanted to reach out about the enrollment confirmation. I am currently managing several urgent deadlines. Would it be possible to get a short extension? I can submit within the next 2 days. Thank you.' }],
+          drop: [{ title: 'Renew gym membership', reason: 'Low priority — safely deferrable', draft: 'Hi, I need to pause my gym membership renewal for now due to some pressing commitments. I will follow up next week. Apologies for the inconvenience.' }],
+        });
+        setIsRenegotiateModalOpen(true);
+        break;
+      case 8:
+        setIsRenegotiateModalOpen(false);
+        setEscapeDraftText("Hi Prof. Sharma, I sincerely apologize for the delay on the recommendation letter. I got caught up with some urgent competing deadlines. I will have it to you by tomorrow evening — thank you so much for your patience and understanding.");
+        setIsEscapeModalOpen(true);
+        break;
+      case 9:
+        setIsEscapeModalOpen(false);
+        setActiveTab('tasks');
+        setTasks(prev => prev.map(t => t.id === 'task-3' ? {
+          ...t,
+          decomposed: true,
+          subtasksCollapsed: false,
+          subtasks: [
+            { step: 'Review project requirements', minutes: 15, completed: false },
+            { step: 'Draft the main proposal', minutes: 45, completed: false },
+            { step: 'Add supporting data', minutes: 20, completed: false },
+            { step: 'Review and edit', minutes: 15, completed: false },
+            { step: 'Submit via portal', minutes: 5, completed: false },
+          ],
+        } : t));
+        setTimeout(() => {
+          const card = document.querySelector('[data-task-id="task-3"]');
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => applySpotlight('[data-task-id="task-3"]'), 400);
+          }
+        }, 500);
+        break;
+      case 10:
+        setIsFutureYouOpen(true);
+        break;
+      case 11:
+        setDemoFinalOverlay(true);
+        break;
+    }
+  }, []);
+
+  const startDemoAutoAdvance = useCallback(() => {
+    clearDemoTimers();
+    setDemoCountdown(4);
+    demoCountdownTimer.current = setInterval(() => {
+      setDemoCountdown(prev => prev <= 1 ? 4 : prev - 1);
+    }, 1000);
+    demoAutoTimer.current = setTimeout(() => {
+      setDemoStep(prev => prev < 11 ? prev + 1 : prev);
+    }, 4000);
+  }, [clearDemoTimers]);
+
+  const handleDemoStart = useCallback(() => {
+    setIsDemoMode(true);
+    setDemoStep(0);
+    setDemoFinalOverlay(false);
+    executeDemoStep(0);
+  }, [executeDemoStep]);
+
+  const handleDemoExit = useCallback(() => {
+    clearDemoTimers();
+    clearSpotlight();
+    setIsDemoMode(false);
+    setDemoStep(0);
+    setDemoFinalOverlay(false);
+    setIsRenegotiateModalOpen(false);
+    setIsEscapeModalOpen(false);
+    setIsFutureYouOpen(false);
+    setTasks(prev => prev.filter(t => !t.id.startsWith('demo-task-')));
+    setTasks(prev => prev.map(t => t.id === 'task-3' ? { ...t, decomposed: false, subtasks: [], subtasksCollapsed: false } : t));
+    setActiveTab('tasks');
+    setSelectedEmailId(null);
+  }, [clearDemoTimers, clearSpotlight]);
+
+  useEffect(() => {
+    if (!isDemoMode) return;
+    executeDemoStep(demoStep);
+    const step = DEMO_STEPS[demoStep];
+    if (step) applySpotlight(step.spotlightSelector);
+    startDemoAutoAdvance();
+    return () => clearDemoTimers();
+  }, [demoStep, isDemoMode]);
+
   const check503 = (err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand')) {
@@ -2424,6 +2737,19 @@ export default function App() {
         <p id="polaris-tagline" className="font-sans font-normal text-[13px] text-polaris-secondary mt-1.5 sm:mt-0">
           Your fixed point before the deadline.
         </p>
+        <div className="sm:ml-auto mt-2 sm:mt-0">
+          {isDemoMode ? (
+            <button type="button" onClick={handleDemoExit}
+              className="bg-[#B23A2E] text-white font-sans font-medium text-[12px] px-[14px] py-[6px] rounded-[6px] cursor-pointer hover:bg-[#9e2f24] transition-colors border-0">
+              ✕ Exit
+            </button>
+          ) : (
+            <button type="button" onClick={handleDemoStart}
+              className="bg-[#0E1B2A] text-white font-sans font-medium text-[12px] px-[14px] py-[6px] rounded-[6px] cursor-pointer hover:bg-[#1a2e42] transition-colors border-0">
+              ▶ Demo
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Clean Tab Navigation */}
@@ -2563,7 +2889,7 @@ export default function App() {
                     const allStepsCompleted = !!(task.decomposed && task.subtasks && task.subtasks.length > 0 && task.subtasks.every(st => st.completed));
                     const overdue = isTaskOverdue(task);
                     return (
-                      <div key={task.id} id={`task-card-${task.id}`}
+                      <div key={task.id} id={`task-card-${task.id}`} data-task-id={task.id}
                         className={`card-slide-in bg-white border border-polaris-border rounded-[14px] p-[20px] flex flex-col items-start transition-all w-full ${overdue ? 'overdue-card' : ''}`}
                         style={{ ...(allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : {}), ...(task.inProgress ? { borderLeft: '3px solid #1A73E8' } : {}) }}>
                         <div className="w-full flex justify-between items-center mb-3">
@@ -2675,7 +3001,7 @@ export default function App() {
                     const allStepsCompleted = !!(task.decomposed && task.subtasks && task.subtasks.length > 0 && task.subtasks.every(st => st.completed));
                     const overdue = isTaskOverdue(task);
                     return (
-                      <div key={task.id} id={`task-card-${task.id}`}
+                      <div key={task.id} id={`task-card-${task.id}`} data-task-id={task.id}
                         className={`card-slide-in card-enter bg-white border border-polaris-border rounded-[12px] p-[16px] flex flex-col items-start transition-all w-full ${overdue ? 'overdue-card' : ''} ${exitingTaskIds.includes(task.id) ? 'card-exit' : ''} ${highlightedTaskId === task.id ? 'ring-2 ring-[#1A73E8]' : ''}`}
                         style={{ ...(allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : {}) }}>
                         <div className="w-full flex items-center mb-2">
@@ -2775,7 +3101,7 @@ export default function App() {
                     <div className="flex items-center justify-center py-10 font-sans text-[13px] text-[#5B6B7B]">Click 'Handle it now' on any task</div>
                   )}
                   {tasks.filter(t => t.inProgress).map((task) => (
-                    <div key={task.id} id={`task-card-${task.id}`}
+                    <div key={task.id} id={`task-card-${task.id}`} data-task-id={task.id}
                       className={`card-slide-in bg-white border border-polaris-border rounded-[12px] p-[16px] flex flex-col items-start transition-all w-full ${highlightedTaskId === task.id ? 'ring-2 ring-[#1A73E8]' : ''}`}
                       style={{ borderLeft: '3px solid #1A73E8' }}>
                       <div className="flex items-center gap-2 mb-2">
@@ -2832,6 +3158,14 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Future You trigger */}
+            <div className="w-full flex justify-center mt-4 mb-4">
+              <button type="button" onClick={() => setIsFutureYouOpen(true)}
+                className="font-sans font-medium text-[14px] text-white bg-[#1A73E8] hover:bg-[#1557B0] border-0 rounded-[8px] px-[24px] py-[10px] cursor-pointer transition-colors block mx-auto">
+                Show me next week →
+              </button>
+            </div>
 
             {/* AI EXTRACTION LEDGER - moved to Dashboard */}
             <div className="hidden" id="ai-extraction-ledger">
@@ -2956,6 +3290,141 @@ export default function App() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* === FUTURE YOU SCREEN === */}
+        {isFutureYouOpen && (
+          <div id="future-you-screen" className="fixed inset-0 z-50 bg-polaris-bg overflow-y-auto" style={{ animation: 'futureYouFadeIn 0.3s ease' }}>
+            <div className="w-full max-w-[900px] mx-auto px-6 py-10 flex flex-col items-center">
+              {/* Header */}
+              <button type="button" onClick={() => { setIsFutureYouOpen(false); setFutureYouSingleTask(null); }}
+                className="self-start font-sans text-[13px] text-[#5B6B7B] hover:text-polaris-primary bg-transparent border-0 cursor-pointer mb-6">
+                ← Back to tasks
+              </button>
+              <h1 className="font-serif font-medium text-[28px] text-polaris-primary mb-2">Next Week</h1>
+              <p className="font-sans text-[14px] text-[#5B6B7B] mb-3">Two paths. Same starting point.</p>
+              <span className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-6" style={{ background: 'rgba(14,27,42,0.04)', borderRadius: '20px', padding: '4px 16px', display: 'inline-block' }}>
+                {getFutureYouDateRange()}
+              </span>
+
+              {futureYouHighTasks.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="font-sans text-[15px] text-[#0F9D58]">{"✓ No critical tasks — you're ahead of the curve."}</p>
+                </div>
+              ) : (
+                <div className="w-full flex flex-col md:flex-row gap-0 items-stretch">
+                  {/* LEFT LANE */}
+                  <div className="flex-1 min-w-0" style={{ animation: 'slideFromLeft 0.4s ease 0.1s both' }}>
+                    <h2 className="font-sans font-semibold text-[14px] text-[#B23A2E] mb-3">If you ignore this</h2>
+                    <div className="flex flex-col gap-3">
+                      {futureYouHighTasks.map(task => {
+                        const dl = parseDeadline(task.pillText, task.id);
+                        return (
+                          <div key={task.id} className="bg-white border border-[rgba(178,58,46,0.15)] rounded-[10px] p-[14px]">
+                            <span className="font-sans font-medium text-[14px] text-polaris-primary">{task.title}</span>
+                            <p className="font-sans text-[12px] text-[#B23A2E] mt-1">{getFutureYouConsequence(task.title)}</p>
+                            {dl && <p className="font-sans text-[11px] text-[#B23A2E] mt-1">Missed: {dl.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>}
+                            <div className="mt-1 ml-3 pl-2 border-l-2 border-[rgba(178,58,46,0.2)]">
+                              <p className="font-sans text-[11px] text-[#B23A2E] italic">{getFutureYouCascade(task.title)}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="font-sans font-medium text-[13px] text-[#B23A2E] mt-4">
+                      {futureYouHighTasks.length} commitment{futureYouHighTasks.length !== 1 ? 's' : ''} broken
+                    </p>
+                    <div className="flex items-center gap-2 mt-3 rounded-[8px] p-[10px]" style={{ background: 'rgba(178,58,46,0.04)' }}>
+                      <span className="text-[20px]">😰</span>
+                      <span className="font-sans text-[12px] text-[#B23A2E]">Stressed, behind, reputation at risk</span>
+                    </div>
+                  </div>
+
+                  {/* VS Divider */}
+                  <div className="hidden md:flex flex-col items-center mx-6 relative self-stretch">
+                    <div className="flex-1 w-px bg-[rgba(14,27,42,0.1)]" />
+                    <div className="w-8 h-8 rounded-full bg-white border border-[rgba(14,27,42,0.1)] flex items-center justify-center shrink-0">
+                      <span className="font-sans font-bold text-[11px] text-[#5B6B7B]">OR</span>
+                    </div>
+                    <div className="flex-1 w-px bg-[rgba(14,27,42,0.1)]" />
+                  </div>
+                  <div className="md:hidden text-center py-4">
+                    <span className="font-sans text-[13px] text-[#5B6B7B]">— OR —</span>
+                  </div>
+
+                  {/* RIGHT LANE */}
+                  <div className="flex-1 min-w-0" style={{ animation: 'slideFromRight 0.4s ease 0.2s both' }}>
+                    <h2 className="font-sans font-semibold text-[14px] text-[#0F9D58] mb-3">If you act now</h2>
+                    <div className="flex flex-col gap-3">
+                      {futureYouRightTasks.map(task => (
+                        <div key={task.id} className="bg-white border border-[rgba(15,157,88,0.15)] rounded-[10px] p-[14px]">
+                          <span className="font-sans font-medium text-[14px] text-polaris-primary">{task.title}</span>
+                          <p className="font-sans text-[12px] text-[#0F9D58] mt-1">{getFutureYouWin(task.title)}</p>
+                          <p className="font-sans text-[11px] text-[#0F9D58] mt-0.5">{getFutureYouDuration(task.title).label}</p>
+                          <button type="button" onClick={() => handleFutureYouStart(task.title)}
+                            className="mt-2 font-sans font-medium text-[11px] text-[#0F9D58] bg-transparent border border-[rgba(15,157,88,0.3)] rounded-[6px] px-[10px] py-[4px] cursor-pointer hover:bg-[rgba(15,157,88,0.04)] transition-colors">
+                            Start now →
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="font-sans font-medium text-[13px] text-[#0F9D58] mt-4">
+                      {futureYouRightTasks.length} win{futureYouRightTasks.length !== 1 ? 's' : ''} this week
+                    </p>
+                    <div className="flex items-center gap-2 mt-3 rounded-[8px] p-[10px]" style={{ background: 'rgba(15,157,88,0.04)' }}>
+                      <span className="text-[20px]">😌</span>
+                      <span className="font-sans text-[12px] text-[#0F9D58]">Clear, ahead, trusted</span>
+                    </div>
+                    <div className="text-center mt-2">
+                      <span className="font-sans font-medium text-[13px] text-[#0F9D58]" style={{ background: 'rgba(15,157,88,0.06)', borderRadius: '20px', padding: '4px 16px', display: 'inline-block' }}>
+                        Total time to prevent all of this: {futureYouTotalLabel}
+                      </span>
+                    </div>
+                    {futureYouRecoveryProjection !== null && (
+                      <p className={`font-sans text-[12px] text-center mt-1.5 ${futureYouRecoveryProjection >= 100 ? 'text-[#0F9D58]' : 'text-[#5B6B7B]'}`}>
+                        {futureYouRecoveryProjection >= 100 ? '✓ ' : ''}Completing these will bring your Recovery Score to {futureYouRecoveryProjection}%
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* "What if I only do one?" */}
+              <div className="w-full flex flex-col items-center mt-6">
+                <button type="button" onClick={handleFutureYouOnlyOne} disabled={isFutureYouApiLoading}
+                  className="font-sans font-medium text-[13px] text-[#C8893B] hover:underline bg-transparent border-0 cursor-pointer disabled:opacity-60">
+                  {isFutureYouApiLoading ? 'Thinking... 🤔' : 'What if I only do one? →'}
+                </button>
+                {futureYouSingleTask && (
+                  <div className="mt-3 w-full max-w-[480px] rounded-[10px] p-[14px] px-[18px]" style={{ border: '2px solid #C8893B', background: 'rgba(200,137,59,0.04)' }}>
+                    <p className="font-sans font-semibold text-[13px] text-[#0E1B2A] mb-1">If you only do one thing:</p>
+                    <p className="font-serif font-medium text-[16px] text-[#0E1B2A]">{futureYouSingleTask.taskTitle}</p>
+                    <p className="font-sans text-[13px] text-[#5B6B7B] mt-1">{futureYouSingleTask.reason}</p>
+                    <p className="font-sans font-medium text-[13px] text-[#C8893B] mt-1">→ {futureYouSingleTask.action}</p>
+                    <button type="button" onClick={() => handleFutureYouStart(futureYouSingleTask.taskTitle)}
+                      className="mt-3 font-sans font-medium text-[12px] text-white bg-[#C8893B] hover:bg-[#a06e2c] border-0 rounded-[6px] px-[12px] py-[6px] cursor-pointer transition-colors">
+                      Do this now →
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Typewriter closing */}
+              <div className="mt-10 text-center">
+                <p className="font-serif italic font-medium text-[18px] text-[#0E1B2A] min-h-[28px]">{typewriterText}</p>
+                {typewriterDone && (
+                  <div style={{ animation: 'futureYouFadeIn 0.5s ease' }} />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Future You start toast */}
+        {futureYouStartToast && (
+          <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 10000, background: '#0F9D58', color: 'white', fontFamily: 'Inter, sans-serif', fontSize: '13px', padding: '10px 20px', borderRadius: '8px', pointerEvents: 'none' }}>
+            Task moved to In Progress ✓
           </div>
         )}
 
@@ -4563,6 +5032,62 @@ export default function App() {
           }}
         >
           Demo reset — showing seed data
+        </div>
+      )}
+
+      {/* === DEMO MODE OVERLAY === */}
+      {isDemoMode && !demoFinalOverlay && (
+        <>
+          {/* Top bar */}
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(14,27,42,0.95)', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '200px', height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)', flexShrink: 0 }}>
+              <div style={{ height: '100%', borderRadius: '2px', background: '#C8893B', width: `${((demoStep + 1) / 12) * 100}%`, transition: 'width 0.3s ease' }} />
+            </div>
+            <div key={demoStep} style={{ flex: 1, textAlign: 'center', fontFamily: 'Fraunces, Georgia, serif', fontStyle: 'italic', fontWeight: 500, fontSize: '22px', color: 'white', animation: 'demo-text-fade 0.3s ease', maxWidth: '600px', margin: '0 auto' }}>
+              {DEMO_STEPS[demoStep]?.text}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Step {demoStep + 1} of 12</span>
+              <button type="button" onClick={handleDemoExit}
+                style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', color: 'white', fontFamily: 'Inter, sans-serif', fontSize: '12px', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>
+                ✕ Exit
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom nav bar */}
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(14,27,42,0.95)', padding: '12px 24px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
+            <button type="button" disabled={demoStep === 0} onClick={() => {
+              clearDemoTimers();
+              setDemoStep(prev => Math.max(prev - 1, 0));
+            }}
+              style={{ background: 'none', border: '1px solid rgba(255,255,255,0.4)', color: demoStep === 0 ? 'rgba(255,255,255,0.3)' : 'white', fontFamily: 'Inter, sans-serif', fontSize: '13px', padding: '8px 16px', borderRadius: '6px', cursor: demoStep === 0 ? 'not-allowed' : 'pointer' }}>
+              ← Prev
+            </button>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+              Auto-advancing in {demoCountdown}s
+            </span>
+            <button type="button" disabled={demoStep === 11} onClick={() => {
+              clearDemoTimers();
+              setDemoStep(prev => Math.min(prev + 1, 11));
+            }}
+              style={{ background: '#C8893B', border: 'none', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', padding: '8px 16px', borderRadius: '6px', cursor: demoStep === 11 ? 'not-allowed' : 'pointer', opacity: demoStep === 11 ? 0.5 : 1 }}>
+              Next →
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Demo Final Overlay (Step 12) */}
+      {isDemoMode && demoFinalOverlay && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1002, background: 'rgba(14,27,42,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '24px' }}>
+          <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 500, fontSize: '36px', color: 'white', margin: 0 }}>Polaris</h1>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', margin: 0 }}>Your fixed point before the deadline.</p>
+          <p style={{ fontFamily: 'Fraunces, Georgia, serif', fontStyle: 'italic', fontWeight: 500, fontSize: '22px', color: '#C8893B', margin: '16px 0 0', textAlign: 'center' }}>This version of you exists. Pick one.</p>
+          <button type="button" onClick={handleDemoExit}
+            style={{ marginTop: '24px', background: '#C8893B', border: 'none', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '16px', padding: '14px 32px', borderRadius: '10px', cursor: 'pointer' }}>
+            Try it yourself →
+          </button>
         </div>
       )}
     </div>

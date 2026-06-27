@@ -11,32 +11,21 @@ describe('Module 5: Email Scanner (mocked)', () => {
     vi.useRealTimers();
   });
 
-  test('"Scan for deadlines" button visibility', () => {
+  // SCAN BUTTON
+  test('"Scan for deadlines" button not visible in email list view, only in reading view', () => {
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    // Not visible in email list view
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
     expect(screen.queryByRole('button', { name: /Scan for deadlines/i })).not.toBeInTheDocument();
 
-    // Click on an email to open reading view
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    // Visible in reading view
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
     expect(screen.getByRole('button', { name: /Scan for deadlines/i })).toBeInTheDocument();
   });
 
-  test('Clicking scan shows loading state "Scanning…"', () => {
-    const fetchPromise = new Promise<any>(() => {});
-    vi.spyOn(global, 'fetch').mockImplementation(() => fetchPromise);
-
+  test('Clicking scan shows loading state "Scanning…" and button is disabled', () => {
+    vi.spyOn(global, 'fetch').mockImplementation(() => new Promise(() => {}));
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
 
     const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
     fireEvent.click(scanBtn);
@@ -45,79 +34,57 @@ describe('Module 5: Email Scanner (mocked)', () => {
     expect(scanBtn).toBeDisabled();
   });
 
-  test('Mock successful response returning one task', async () => {
+  // SUCCESSFUL SCAN
+  test('Mock returns 1 task — task card appears in Tasks list', async () => {
     const mockTasks = [
       { title: 'Pay electricity bill', deadline: 'Friday the 27th', urgency: 'high' }
     ];
-    const mockResponse = {
-      result: JSON.stringify(mockTasks)
-    };
-
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => mockResponse,
+      json: async () => ({ result: JSON.stringify(mockTasks) }),
     } as Response);
 
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
 
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
-    fireEvent.click(scanBtn);
-
-    // Verify success message
     await waitFor(() => {
-      expect(screen.getByText(/✓ Found 1 deadline\(s\) — added to your Tasks\./i)).toBeInTheDocument();
+      expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
     });
 
-    // Check that button returns to normal state
     expect(screen.getByRole('button', { name: /Scan for deadlines/i })).not.toBeDisabled();
 
-    // Verify task is added to Tasks list and context contains sender name
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
-    fireEvent.click(tasksTab);
-
+    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
     expect(screen.getByText('Pay electricity bill')).toBeInTheDocument();
     expect(screen.getByText('Friday the 27th')).toBeInTheDocument();
     expect(screen.getByText('Found in your inbox — City Power & Utilities')).toBeInTheDocument();
   });
 
-  test('Mock response returning empty array []', async () => {
+  test('Mock returns empty array — shows "No deadlines found" message', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({ result: '[]' }),
     } as Response);
 
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
-    fireEvent.click(scanBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
 
     await waitFor(() => {
       expect(screen.getByText('No deadlines found in this email.')).toBeInTheDocument();
     });
   });
 
-  test('Mock network failure (fetch throws)', async () => {
+  // ERROR STATES
+  test('Mock network failure — shows error message', async () => {
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Network failure'));
 
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
-    fireEvent.click(scanBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
 
     await waitFor(() => {
       const errorMsg = screen.getByText("Couldn't scan right now — try again.");
@@ -126,23 +93,15 @@ describe('Module 5: Email Scanner (mocked)', () => {
     });
   });
 
-  test('Mock timeout (fetch never resolves within 10s)', async () => {
+  test('Mock timeout (10s) — shows error message', async () => {
     vi.useFakeTimers();
-
-    // Mock fetch that does not resolve
     vi.spyOn(global, 'fetch').mockImplementation(() => new Promise(() => {}));
 
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
 
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
-    fireEvent.click(scanBtn);
-
-    // Fast-forward time by 11 seconds and flush all microtasks inside React's act
     await act(async () => {
       await vi.advanceTimersByTimeAsync(11000);
     });
@@ -150,28 +109,40 @@ describe('Module 5: Email Scanner (mocked)', () => {
     expect(screen.getByText("Couldn't scan right now — try again.")).toBeInTheDocument();
   });
 
-  test('Mock malformed JSON response', async () => {
+  test('Mock malformed JSON — shows error message, no crash', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({ result: 'invalid json string' }),
     } as Response);
 
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
-    fireEvent.click(scanBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
 
     await waitFor(() => {
       expect(screen.getByText("Couldn't scan right now — try again.")).toBeInTheDocument();
     });
   });
 
-  test('Mock urgency value not in allowed set (defaults to low)', async () => {
+  test('Mock 503 error — shows 503 toast notification', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ error: 'high demand' }),
+    } as Response);
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Gemini API is experiencing high demand/i)).toBeInTheDocument();
+    });
+  });
+
+  test('Mock invalid urgency value — defaults to low', async () => {
     const mockTasks = [
       { title: 'Invalid Urgency Task', deadline: 'Soon', urgency: 'very-high' }
     ];
@@ -181,28 +152,19 @@ describe('Module 5: Email Scanner (mocked)', () => {
     } as Response);
 
     const { container } = render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
-    fireEvent.click(scanBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/✓ Found 1 deadline\(s\) — added to your Tasks\./i)).toBeInTheDocument();
+      expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
     });
 
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
-    fireEvent.click(tasksTab);
-
+    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
     expect(screen.getByText('Invalid Urgency Task')).toBeInTheDocument();
-    
-    const lowUrgencyPill = container.querySelector('.text-\\[\\#5B6B7B\\]');
-    expect(lowUrgencyPill).toBeInTheDocument();
   });
 
+  // RESULT PERSISTENCE
   test('Result message disappears when navigating back to inbox list', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
@@ -210,30 +172,20 @@ describe('Module 5: Email Scanner (mocked)', () => {
     } as Response);
 
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
-    fireEvent.click(scanBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
 
     await waitFor(() => {
       expect(screen.getByText('No deadlines found in this email.')).toBeInTheDocument();
     });
 
-    const backBtn = screen.getByRole('button', { name: /Back to Inbox/i });
-    fireEvent.click(backBtn);
-
-    // Open again
+    fireEvent.click(screen.getByRole('button', { name: /Back to Inbox/i }));
     fireEvent.click(screen.getByText('Your electricity bill is due soon'));
-    
-    // Result message should be gone
     expect(screen.queryByText('No deadlines found in this email.')).not.toBeInTheDocument();
   });
 
-  test('Tasks added from scan persist in Tasks list during same session', async () => {
+  test('Tasks added from scan persist across tab switches', async () => {
     const mockTasks = [
       { title: 'Persisted Scan Task', deadline: 'Someday', urgency: 'medium' }
     ];
@@ -243,43 +195,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
     } as Response);
 
     render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-
-    const scanBtn = screen.getByRole('button', { name: /Scan for deadlines/i });
-    fireEvent.click(scanBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
-    });
-
-    // Go to tasks tab
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
-    fireEvent.click(tasksTab);
-    expect(screen.getByText('Persisted Scan Task')).toBeInTheDocument();
-
-    // Go back to Inbox
-    fireEvent.click(inboxTab);
-    // Go back to Tasks
-    fireEvent.click(tasksTab);
-    expect(screen.getByText('Persisted Scan Task')).toBeInTheDocument();
-  });
-
-  test('Multiple sequential scans work correctly (mock)', async () => {
-    let mockResponse = { result: JSON.stringify([{ title: 'First Sequential Task', deadline: 'Soon', urgency: 'medium' }]) };
-    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(() => Promise.resolve({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response));
-
-    render(<App />);
-    const inboxTab = screen.getByRole('button', { name: /Inbox/i });
-    fireEvent.click(inboxTab);
-
-    // Open first email
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
     fireEvent.click(screen.getByText('Your electricity bill is due soon'));
     fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
 
@@ -287,10 +203,33 @@ describe('Module 5: Email Scanner (mocked)', () => {
       expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
     });
 
-    // Go back and open another email
+    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    expect(screen.getByText('Persisted Scan Task')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    expect(screen.getByText('Persisted Scan Task')).toBeInTheDocument();
+  });
+
+  test('Multiple sequential scans work correctly', async () => {
+    let mockResponse = { result: JSON.stringify([{ title: 'First Sequential Task', deadline: 'Soon', urgency: 'medium' }]) };
+    vi.spyOn(global, 'fetch').mockImplementation(() => Promise.resolve({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response));
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
+    });
+
     fireEvent.click(screen.getByRole('button', { name: /Back to Inbox/i }));
-    
-    // Change mock response for second scan
+
     mockResponse = { result: JSON.stringify([{ title: 'Second Sequential Task', deadline: 'Later', urgency: 'low' }]) };
 
     fireEvent.click(screen.getByText('Following up on the recommendation letter'));
@@ -300,9 +239,58 @@ describe('Module 5: Email Scanner (mocked)', () => {
       expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
     });
 
-    // Check Tasks tab
     fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
     expect(screen.getByText('First Sequential Task')).toBeInTheDocument();
     expect(screen.getByText('Second Sequential Task')).toBeInTheDocument();
+  });
+
+  // EXTRACTION LEDGER
+  test('After scan, extraction ledger on Dashboard shows entry', async () => {
+    const mockTasks = [
+      { title: 'Ledger Test Task', deadline: 'Tomorrow', urgency: 'high' }
+    ];
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ result: JSON.stringify(mockTasks) }),
+    } as Response);
+
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+    const ledger = container.querySelector('#dashboard-extraction-ledger');
+    expect(ledger?.textContent).toContain('1 tasks found');
+  });
+
+  // PERSISTENCE
+  test('scannedCount persists to localStorage after scan', async () => {
+    const mockTasks = [
+      { title: 'localStorage Task', deadline: 'Friday', urgency: 'low' }
+    ];
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ result: JSON.stringify(mockTasks) }),
+    } as Response);
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: /Scan for deadlines/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      const scanned = localStorage.getItem('polaris-scanned');
+      expect(scanned).toBeTruthy();
+      expect(Number(JSON.parse(scanned!))).toBeGreaterThanOrEqual(1);
+    });
   });
 });

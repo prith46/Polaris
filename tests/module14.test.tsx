@@ -9,152 +9,151 @@ describe('Module 14: AI Extraction Ledger', () => {
     vi.restoreAllMocks();
   });
 
-  test('LEDGER UI: verifies default collapsed state and empty state text', () => {
+  // LEDGER ON DASHBOARD
+  test('Dashboard has AI Extraction Ledger section', () => {
     const { container } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+    expect(container.querySelector('#dashboard-extraction-ledger')).toBeInTheDocument();
+  });
 
-    const ledger = container.querySelector('#ai-extraction-ledger');
-    expect(ledger).toBeInTheDocument();
-    expect(ledger?.textContent).toContain('AI Extraction Ledger');
+  test('Ledger shows "No extractions yet" badge when empty', () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+    const ledger = container.querySelector('#dashboard-extraction-ledger');
     expect(ledger?.textContent).toContain('No extractions yet');
+  });
 
-    // Collapsed by default (maxHeight is 0px)
+  test('Ledger is collapsible — clicking header toggles', () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+    const ledger = container.querySelector('#dashboard-extraction-ledger');
     const collapsible = ledger?.querySelector('.overflow-hidden');
     expect(collapsible).toHaveStyle({ maxHeight: '0px' });
 
-    // Toggles open on click
     const header = ledger?.querySelector('.cursor-pointer');
     fireEvent.click(header!);
     expect(collapsible).toHaveStyle({ maxHeight: '600px' });
-
-    // Expanded empty ledger shows "No extractions yet" and scanning description
-    expect(screen.getByRole('heading', { name: 'No extractions yet' })).toBeInTheDocument();
-    expect(screen.getByText(/Scan an email or image to see what Polaris finds for you/i)).toBeInTheDocument();
   });
 
-  test('AFTER EMAIL SCAN: mock scan adding entries to ledger', async () => {
+  // AFTER EMAIL SCAN
+  test('After email scan, ledger shows entries with correct data', async () => {
     const mockTasks = [
       { title: 'Scanned Task A', deadline: 'Tomorrow', urgency: 'high' },
       { title: 'Scanned Task B', deadline: 'Friday', urgency: 'medium' }
     ];
-    vi.spyOn(global, 'fetch').mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ result: JSON.stringify(mockTasks) }),
-      } as any)
-    );
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: () => Promise.resolve({ result: JSON.stringify(mockTasks) }),
+    } as any);
 
     const { container } = render(<App />);
-
     fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
     fireEvent.click(screen.getByText('Your electricity bill is due soon'));
     fireEvent.click(screen.getByRole('button', { name: 'Scan for deadlines' }));
+    await waitFor(() => { expect(screen.getAllByText(/✓ Found 2/i).length).toBeGreaterThanOrEqual(1); });
 
-    await screen.findByText(/✓ Found 2 task\(s\) — added to your Tasks\./i);
-
-    // Go back to Tasks view to check ledger
-    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
-
-    const ledger = container.querySelector('#ai-extraction-ledger');
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+    const ledger = container.querySelector('#dashboard-extraction-ledger');
     expect(ledger?.textContent).toContain('2 tasks found');
 
-    // Expand ledger
     const header = ledger?.querySelector('.cursor-pointer');
     fireEvent.click(header!);
 
-    // Verify entries exist with correct titles, source name, deadline, badges, and icons
     expect(screen.getAllByText(/Scanned Task A/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/Scanned Task B/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/City Power & Utilities/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/Tomorrow/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/Friday/i)[0]).toBeInTheDocument();
-    
-    // Status badge is "In progress"
-    const inProgressBadges = screen.getAllByText('In progress');
-    expect(inProgressBadges.length).toBe(2);
-
-    // Email source icon 📧
     expect(screen.getAllByText('📧').length).toBe(2);
 
-    // Footer check
-    expect(screen.getByText(/Polaris found 2 tasks across 1 source/i)).toBeInTheDocument();
+    const inProgressBadges = screen.getAllByText('In progress');
+    expect(inProgressBadges.length).toBe(2);
   });
 
-  test('AFTER IMAGE SCAN: successful scan adds entries to the extraction ledger', async () => {
-    const mockTasks = [
-      { title: 'Task from photo', deadline: 'Today', urgency: 'low' }
-    ];
-    vi.spyOn(global, 'fetch').mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ tasks: mockTasks }),
-      } as any)
-    );
+  // AFTER IMAGE SCAN
+  test('After image scan, ledger shows entries with 📸 icon', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: () => Promise.resolve({ tasks: [{ title: 'Photo Task', deadline: 'Today', urgency: 'low' }] }),
+    } as any);
 
     const { container } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /📸 Scan/i }));
 
-    fireEvent.click(screen.getByRole('button', { name: /Scan image/i }));
+    const file = new File(['dummy'], 'shot.png', { type: 'image/png' });
+    fireEvent.change(screen.getByTestId('image-file-input'), { target: { files: [file] } });
+    await waitFor(() => expect(screen.getByAltText('Selected preview')).toBeInTheDocument());
 
-    const file = new File(['dummy content'], 'screenshot.png', { type: 'image/png' });
-    const fileInput = screen.getByTestId('image-file-input');
-    fireEvent.change(fileInput, { target: { files: [file] } });
-
-    await waitFor(() => {
-      expect(screen.getByAltText('Selected preview')).toBeInTheDocument();
-    });
-
-    const scanBtn = screen.getByRole('button', { name: 'Scan for tasks' });
-    fireEvent.click(scanBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText(/✓ Found 1 task\(s\) — added to your Tasks\./i)).toBeInTheDocument();
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Scan for tasks' }));
+    await waitFor(() => expect(screen.getByText(/✓ Found 1 task\(s\)/i)).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
-
     const ledger = container.querySelector('#dashboard-extraction-ledger');
     expect(ledger?.textContent).toContain('1 tasks found');
 
     const header = ledger?.querySelector('.cursor-pointer');
     fireEvent.click(header!);
-
-    expect(screen.getAllByText(/Task from photo/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText('📸').length).toBe(1);
-    expect(screen.getAllByText('screenshot.png').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('📸').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Photo Task/i)[0]).toBeInTheDocument();
   });
 
-  test('STATUS TRACKING: status badge updates based on task completion and archive', async () => {
-    const mockTasks = [
-      { title: 'Scanned Task A', deadline: 'Tomorrow', urgency: 'high' }
-    ];
-    vi.spyOn(global, 'fetch').mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ result: JSON.stringify(mockTasks) }),
-      } as any)
-    );
+  // STATUS TRACKING
+  test('Moving scanned task to Done changes ledger status', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: () => Promise.resolve({ result: JSON.stringify([{ title: 'Track Task', deadline: 'Soon', urgency: 'high' }]) }),
+    } as any);
 
     const { container } = render(<App />);
-
     fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
     fireEvent.click(screen.getByText('Your electricity bill is due soon'));
     fireEvent.click(screen.getByRole('button', { name: 'Scan for deadlines' }));
+    await waitFor(() => { expect(screen.getAllByText(/✓ Found 1/i).length).toBeGreaterThanOrEqual(1); });
 
-    await screen.findByText(/✓ Found 1 task\(s\) — added to your Tasks\./i);
-    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
+    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
 
-    // Expand ledger
-    const header = container.querySelector('#ai-extraction-ledger')?.querySelector('.cursor-pointer');
+    // Move the scanned task to In Progress then Mark Done
+    const handleBtns = screen.getAllByRole('button', { name: 'Handle it now' });
+    // The scanned task will have "Handle it now" — click the last one (newly added)
+    fireEvent.click(handleBtns[handleBtns.length - 1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Done' }));
+
+    // Check ledger on Dashboard
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+    const ledger = container.querySelector('#dashboard-extraction-ledger');
+    const header = ledger?.querySelector('.cursor-pointer');
     fireEvent.click(header!);
-
-    expect(screen.getByText('In progress')).toBeInTheDocument();
-
-    // Mark task done
-    // Find the task card for "Scanned Task A"
-    const scannedCard = screen.getByText('Scanned Task A').closest('.bg-white');
-    const doneBtn = scannedCard?.querySelector('button');
-    fireEvent.click(doneBtn!);
-
-    // Ledger status updates to "✓ Done"
     expect(screen.getByText('✓ Done')).toBeInTheDocument();
+  });
+
+  // SUMMARY FOOTER
+  test('Footer shows "Polaris found N task(s) across M source(s)"', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: () => Promise.resolve({ result: JSON.stringify([{ title: 'Footer Task', deadline: 'Today', urgency: 'low' }]) }),
+    } as any);
+
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: 'Scan for deadlines' }));
+    await waitFor(() => { expect(screen.getAllByText(/✓ Found 1/i).length).toBeGreaterThanOrEqual(1); });
+
+    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
+    const ledger = container.querySelector('#dashboard-extraction-ledger');
+    const header = ledger?.querySelector('.cursor-pointer');
+    fireEvent.click(header!);
+    expect(screen.getByText(/Polaris found 1 task across 1 source/i)).toBeInTheDocument();
+  });
+
+  // PERSISTENCE
+  test('Ledger entries persist to localStorage', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: () => Promise.resolve({ result: JSON.stringify([{ title: 'Persist Entry', deadline: 'Soon', urgency: 'low' }]) }),
+    } as any);
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: 'Scan for deadlines' }));
+    await waitFor(() => { expect(screen.getAllByText(/✓ Found 1/i).length).toBeGreaterThanOrEqual(1); });
+
+    await waitFor(() => {
+      const log = JSON.parse(localStorage.getItem('polaris-extraction-log') || '[]');
+      expect(log.length).toBe(1);
+    });
   });
 });

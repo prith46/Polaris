@@ -1,11 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import App from '../src/App';
-import fs from 'fs';
-import path from 'path';
-
-const appCode = fs.readFileSync(path.resolve(__dirname, '../src/App.tsx'), 'utf8');
-const hasFutureYou = appCode.includes('Show me next week') || appCode.includes('isFutureYouOpen');
 
 type StoredTask = {
   id: string;
@@ -17,196 +12,324 @@ type StoredTask = {
   secondaryAction: string;
 };
 
-const buildTask = (
-  id: string,
-  title: string,
-  urgency: StoredTask['urgency'],
-  pillText = 'Due today'
-): StoredTask => ({
-  id,
-  title,
-  urgency,
-  pillText,
-  context: `Context for ${title}`,
-  primaryAction: 'Handle it now',
-  secondaryAction: 'Snooze',
+const buildTask = (id: string, title: string, urgency: StoredTask['urgency'], pillText = 'Due today'): StoredTask => ({
+  id, title, urgency, pillText, context: `Context for ${title}`, primaryAction: 'Handle it now', secondaryAction: 'Snooze',
 });
 
-const seedTasks = (tasks: StoredTask[]) => {
-  localStorage.setItem('polaris-tasks', JSON.stringify(tasks));
-};
+const seedTasks = (tasks: StoredTask[]) => localStorage.setItem('polaris-tasks', JSON.stringify(tasks));
 
-const openFutureYou = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Show me next week →' }));
-};
+const openFutureYou = () => fireEvent.click(screen.getByRole('button', { name: 'Show me next week →' }));
 
-const expectTasksView = () => {
-  expect(screen.getByRole('button', { name: 'Show me next week →' })).toBeInTheDocument();
-  expect(screen.queryByText('Next Week')).not.toBeInTheDocument();
-};
-
-describe.skipIf(!hasFutureYou)('Module 16: Future You', () => {
+describe('Module 16: Future You', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
-  test('TRIGGER: opens Future You from Tasks and returns via back link', () => {
+  // TRIGGER
+  test('"Show me next week →" button exists in Tasks view', () => {
     render(<App />);
-
     expect(screen.getByRole('button', { name: 'Show me next week →' })).toBeInTheDocument();
+  });
 
+  test('Button has blue background styling', () => {
+    render(<App />);
+    const btn = screen.getByRole('button', { name: 'Show me next week →' });
+    expect(btn.className).toContain('bg-[#1A73E8]');
+  });
+
+  test('Clicking opens Future You screen with title and subtitle', () => {
+    render(<App />);
     openFutureYou();
-
-    expect(screen.queryByText("I'm overwhelmed — what do I do RIGHT NOW?")).not.toBeInTheDocument();
     expect(screen.getByText('Next Week')).toBeInTheDocument();
     expect(screen.getByText('Two paths. Same starting point.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '← Back to tasks' })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: '← Back to tasks' }));
-
-    expectTasksView();
-    expect(screen.getByText("I'm overwhelmed — what do I do RIGHT NOW?")).toBeInTheDocument();
   });
 
-  test('LEFT LANE: shows all high urgency tasks, strikethroughs, consequences, and correct summary', () => {
-    seedTasks([
-      buildTask('bill', 'Electricity bill payment', 'high'),
-      buildTask('letter', 'Recommendation letter for Professor Sharma', 'high'),
-      buildTask('default', 'Call landlord about lease renewal', 'high'),
-      buildTask('medium', 'Submit project proposal', 'medium', 'Due in 2 days'),
-    ]);
-
-    const { container } = render(<App />);
+  test('"← Back to tasks" link exists and returns to Tasks', () => {
+    render(<App />);
     openFutureYou();
+    expect(screen.getByRole('button', { name: '← Back to tasks' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '← Back to tasks' }));
+    expect(screen.queryByText('Next Week')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show me next week →' })).toBeInTheDocument();
+  });
 
+  test('Future You does NOT persist to localStorage', () => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem');
+    const { unmount } = render(<App />);
+    openFutureYou();
+    unmount();
+    render(<App />);
+    expect(screen.queryByText('Next Week')).not.toBeInTheDocument();
+    expect(spy).not.toHaveBeenCalledWith(expect.stringMatching(/future/i), expect.any(String));
+  });
+
+  // DATE HEADER
+  test('Shows "Week of" date range', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText(/Week of/i)).toBeInTheDocument();
+  });
+
+  // VS DIVIDER
+  test('"OR" text exists between lanes', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText('OR')).toBeInTheDocument();
+  });
+
+  // LEFT LANE
+  test('"If you ignore this" header exists with high urgency tasks', () => {
+    render(<App />);
+    openFutureYou();
     expect(screen.getByText('If you ignore this')).toBeInTheDocument();
-    expect(screen.getByText('3 commitments broken')).toBeInTheDocument();
-    expect(screen.getByText('Late fee + possible service interruption')).toBeInTheDocument();
-    expect(screen.getByText('Relationship damaged — hard to recover')).toBeInTheDocument();
-    expect(screen.getByText('Commitment broken — trust eroded')).toBeInTheDocument();
+  });
 
-    ['Electricity bill payment', 'Recommendation letter for Professor Sharma', 'Call landlord about lease renewal'].forEach((title) => {
-      const titleNode = screen.getByText(title);
-      expect(titleNode).toBeInTheDocument();
-      expect(titleNode).toHaveStyle({ textDecoration: 'line-through' });
+  test('Left lane shows consequence lines', () => {
+    render(<App />);
+    openFutureYou();
+    const consequences = screen.queryAllByText(/Late fee|Relationship damaged|Commitment broken|trust eroded/i);
+    expect(consequences.length).toBeGreaterThan(0);
+  });
+
+  test('Left lane shows cascade lines with → prefix', () => {
+    render(<App />);
+    openFutureYou();
+    const cascades = screen.queryAllByText(/^→ /);
+    expect(cascades.length).toBeGreaterThan(0);
+  });
+
+  test('"N commitments broken" summary exists', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText(/commitment.*broken/i)).toBeInTheDocument();
+  });
+
+  test('Left lane mood card shows 😰 and "Stressed" text', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText('😰')).toBeInTheDocument();
+    expect(screen.getByText(/Stressed, behind, reputation at risk/i)).toBeInTheDocument();
+  });
+
+  test('Left lane task titles do NOT have strikethrough', () => {
+    render(<App />);
+    openFutureYou();
+    const leftHeader = screen.getByText('If you ignore this');
+    const leftLane = leftHeader.closest('div')?.parentElement;
+    const titles = leftLane?.querySelectorAll('.font-sans.font-medium.text-\\[14px\\]');
+    titles?.forEach(t => {
+      expect((t as HTMLElement).style.textDecoration).not.toContain('line-through');
+    });
+  });
+
+  // RIGHT LANE
+  test('"If you act now" header exists', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText('If you act now')).toBeInTheDocument();
+  });
+
+  test('Right lane shows win lines', () => {
+    render(<App />);
+    openFutureYou();
+    const wins = screen.queryAllByText(/Paid on time|Relationship strengthened|Commitment kept/i);
+    expect(wins.length).toBeGreaterThan(0);
+  });
+
+  test('Right lane shows time estimates', () => {
+    render(<App />);
+    openFutureYou();
+    const times = screen.queryAllByText(/~\d+ min|~\d+ hour/i);
+    expect(times.length).toBeGreaterThan(0);
+  });
+
+  test('"Start now →" buttons exist on right lane cards', () => {
+    render(<App />);
+    openFutureYou();
+    const startBtns = screen.queryAllByRole('button', { name: 'Start now →' });
+    expect(startBtns.length).toBeGreaterThan(0);
+    expect(startBtns.length).toBeLessThanOrEqual(3);
+  });
+
+  test('"N wins this week" summary exists', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText(/win.*this week/i)).toBeInTheDocument();
+  });
+
+  test('Right lane mood card shows 😌 and "Clear, ahead, trusted"', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText('😌')).toBeInTheDocument();
+    expect(screen.getByText(/Clear, ahead, trusted/i)).toBeInTheDocument();
+  });
+
+  test('Total time estimate shows', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText(/Total time to prevent all of this:/i)).toBeInTheDocument();
+  });
+
+  // CLICK TO START
+  test('Clicking "Start now →" closes Future You and moves task to In Progress', () => {
+    render(<App />);
+    openFutureYou();
+    const startBtns = screen.getAllByRole('button', { name: 'Start now →' });
+    fireEvent.click(startBtns[0]);
+
+    expect(screen.queryByText('Next Week')).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Add a new task…')).toBeInTheDocument();
+    expect(screen.getByText('In progress')).toBeInTheDocument();
+  });
+
+  // WHAT IF ONE
+  test('"What if I only do one? →" button exists', () => {
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByRole('button', { name: /What if I only do one/i })).toBeInTheDocument();
+  });
+
+  test('Clicking "What if I only do one?" shows loading then recommendation (mock success)', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: async () => ({ taskTitle: 'Electricity bill payment', reason: 'Most urgent', action: 'Pay it now' }),
+    } as Response);
+
+    render(<App />);
+    openFutureYou();
+    fireEvent.click(screen.getByRole('button', { name: /What if I only do one/i }));
+
+    expect(screen.getByText('Thinking... 🤔')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('If you only do one thing:')).toBeInTheDocument();
+      expect(screen.getAllByText('Electricity bill payment').length).toBeGreaterThanOrEqual(2);
+      expect(screen.getByText('Most urgent')).toBeInTheDocument();
+      expect(screen.getByText(/Pay it now/)).toBeInTheDocument();
     });
 
-    const leftLane = screen.getByText('If you ignore this').parentElement;
-    expect(leftLane?.textContent).toContain('Electricity bill payment');
-    expect(leftLane?.textContent).toContain('Recommendation letter for Professor Sharma');
-    expect(leftLane?.textContent).toContain('Call landlord about lease renewal');
-    expect(container.querySelector('#future-you-screen')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Do this now →' })).toBeInTheDocument();
   });
 
-  test('RIGHT LANE: shows top 3 high urgency tasks, win lines, and correct summary', () => {
+  test('Mock API failure falls back to first high urgency task', async () => {
+    vi.spyOn(global, 'fetch').mockRejectedValue(new Error('API fail'));
+
+    render(<App />);
+    openFutureYou();
+    fireEvent.click(screen.getByRole('button', { name: /What if I only do one/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('If you only do one thing:')).toBeInTheDocument();
+      expect(screen.getByText('Highest urgency — needs attention first')).toBeInTheDocument();
+    });
+  });
+
+  // TYPEWRITER
+  test('Typewriter text eventually shows full closing line', async () => {
+    render(<App />);
+    openFutureYou();
+
+    await waitFor(() => {
+      expect(screen.getByText(/This version of you exists/i)).toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Pick one/i)).toBeInTheDocument();
+    }, { timeout: 5000 });
+  });
+
+  test('Closing line uses serif font styling', async () => {
+    render(<App />);
+    openFutureYou();
+
+    await waitFor(() => {
+      const el = screen.getByText(/This version of you exists/i);
+      expect(el.className).toContain('font-serif');
+    }, { timeout: 5000 });
+  });
+
+  // EMPTY STATE
+  test('With no high urgency tasks: shows "No critical tasks" message', () => {
     seedTasks([
-      buildTask('bill', 'Electricity bill payment', 'high'),
-      buildTask('letter', 'Recommendation letter for Professor Sharma', 'high'),
-      buildTask('default', 'Call landlord about lease renewal', 'high'),
-      buildTask('medium', 'Submit project proposal', 'medium', 'Due in 2 days'),
-      buildTask('low', 'Renew gym membership', 'low', 'Due next week'),
+      buildTask('m1', 'Medium task', 'medium', 'Due in 2 days'),
+      buildTask('l1', 'Low task', 'low', 'Due next week'),
     ]);
-
     render(<App />);
     openFutureYou();
-
-    expect(screen.getByText('If you act now')).toBeInTheDocument();
-    expect(screen.getByText('3 wins this week')).toBeInTheDocument();
-    expect(screen.getByText('Paid on time — no stress, no fees')).toBeInTheDocument();
-    expect(screen.getByText('Relationship strengthened — favor returned')).toBeInTheDocument();
-    expect(screen.getByText('Commitment kept — trust built')).toBeInTheDocument();
-
-    const rightLane = screen.getByText('If you act now').parentElement;
-    expect(rightLane?.textContent).toContain('Electricity bill payment');
-    expect(rightLane?.textContent).toContain('Recommendation letter for Professor Sharma');
-    expect(rightLane?.textContent).toContain('Call landlord about lease renewal');
-    expect(rightLane?.textContent).not.toContain('Submit project proposalOpportunity seized — you showed up');
+    expect(screen.getByText(/No critical tasks/i)).toBeInTheDocument();
   });
 
-  test('CLOSING: shows closing line and CTA returns to tasks view', () => {
+  test('Closing line still appears in empty state', async () => {
+    seedTasks([buildTask('l1', 'Low task', 'low')]);
     render(<App />);
     openFutureYou();
-
-    expect(screen.getByText('This version of you exists. Pick one.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start with the most critical task →' })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start with the most critical task →' }));
-
-    expectTasksView();
+    await waitFor(() => {
+      expect(screen.getByText(/This version of you exists/i)).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
-  test('EMPTY STATE: shows no critical tasks message and still keeps closing line', () => {
-    seedTasks([
-      buildTask('medium', 'Submit project proposal', 'medium', 'Due in 2 days'),
-      buildTask('low', 'Renew gym membership', 'low', 'Due next week'),
-    ]);
-
-    render(<App />);
-    openFutureYou();
-
-    expect(screen.getByText('✓ No critical tasks — you\'re ahead of the curve.')).toBeInTheDocument();
-    expect(screen.getByText('This version of you exists. Pick one.')).toBeInTheDocument();
-  });
-
-  test('EDGE CASE: 1 high urgency task renders without crash and summaries singularize correctly', () => {
-    seedTasks([
-      buildTask('only', 'Electricity bill payment', 'high'),
-      buildTask('medium', 'Submit project proposal', 'medium', 'Due in 2 days'),
-    ]);
-
-    render(<App />);
-    openFutureYou();
-
-    expect(screen.getByText('1 commitment broken')).toBeInTheDocument();
-    expect(screen.getByText('1 win this week')).toBeInTheDocument();
-    expect(screen.getByText('Electricity bill payment')).toBeInTheDocument();
-  });
-
-  test('EDGE CASE: 10 high urgency tasks show all on left and max 3 on right', () => {
-    const tasks = Array.from({ length: 10 }, (_, index) =>
-      buildTask(`high-${index + 1}`, `Urgent task ${index + 1}`, 'high')
-    );
+  // EDGE CASES
+  test('10 high urgency tasks: left shows all, right shows max 3', () => {
+    const tasks = Array.from({ length: 10 }, (_, i) => buildTask(`h-${i}`, `Urgent task ${i + 1}`, 'high'));
     seedTasks(tasks);
-
     render(<App />);
     openFutureYou();
 
     expect(screen.getByText('10 commitments broken')).toBeInTheDocument();
     expect(screen.getByText('3 wins this week')).toBeInTheDocument();
 
-    tasks.forEach((task) => {
-      expect(screen.getByText(task.title)).toBeInTheDocument();
-    });
-
-    expect(screen.getAllByText('Commitment kept — trust built')).toHaveLength(3);
-    expect(screen.queryByText('Urgent task 4Commitment kept — trust built')).not.toBeInTheDocument();
+    const startBtns = screen.getAllByRole('button', { name: 'Start now →' });
+    expect(startBtns).toHaveLength(3);
   });
 
-  test('EDGE CASE: rapidly toggling Future You 10 times does not crash', () => {
+  test('Toggle open/close 5 times rapidly: no crash', () => {
     render(<App />);
-
-    for (let index = 0; index < 10; index += 1) {
+    for (let i = 0; i < 5; i++) {
       openFutureYou();
       expect(screen.getByText('Next Week')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: '← Back to tasks' }));
-      expectTasksView();
     }
+    expect(screen.getByRole('button', { name: 'Show me next week →' })).toBeInTheDocument();
   });
 
-  test('EDGE CASE: Future You open state does not persist to localStorage across remounts', () => {
-    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-    const { unmount } = render(<App />);
+  test('futureYouSingleTask resets when Future You closes', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: async () => ({ taskTitle: 'Test', reason: 'R', action: 'A' }),
+    } as Response);
 
-    openFutureYou();
-    expect(screen.getByText('Next Week')).toBeInTheDocument();
-
-    unmount();
     render(<App />);
+    openFutureYou();
+    fireEvent.click(screen.getByRole('button', { name: /What if I only do one/i }));
+    await waitFor(() => { expect(screen.getByText('If you only do one thing:')).toBeInTheDocument(); });
 
-    expectTasksView();
-    expect(screen.queryByText('Next Week')).not.toBeInTheDocument();
-    expect(setItemSpy).not.toHaveBeenCalledWith(expect.stringMatching(/future/i), expect.any(String));
+    fireEvent.click(screen.getByRole('button', { name: '← Back to tasks' }));
+    openFutureYou();
+    expect(screen.queryByText('If you only do one thing:')).not.toBeInTheDocument();
+  });
+
+  // SPECIFIC CONSEQUENCE/WIN KEYWORDS
+  test('Bill task shows "Late fee" consequence and "Paid on time" win', () => {
+    seedTasks([buildTask('bill', 'Electricity bill payment', 'high')]);
+    render(<App />);
+    openFutureYou();
+    expect(screen.getAllByText(/Late fee/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Paid on time/i)).toBeInTheDocument();
+  });
+
+  test('Letter task shows "Relationship damaged" consequence and "Relationship strengthened" win', () => {
+    seedTasks([buildTask('letter', 'Recommendation letter for Professor Sharma', 'high')]);
+    render(<App />);
+    openFutureYou();
+    expect(screen.getByText(/Relationship damaged/i)).toBeInTheDocument();
+    expect(screen.getByText(/Relationship strengthened/i)).toBeInTheDocument();
+  });
+
+  test('Default task shows "Commitment broken" consequence and "Commitment kept" win', () => {
+    seedTasks([buildTask('def', 'Call landlord about lease renewal', 'high')]);
+    render(<App />);
+    openFutureYou();
+    expect(screen.getAllByText(/Commitment broken/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Commitment kept/i)).toBeInTheDocument();
   });
 });

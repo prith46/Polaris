@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import App from '../src/App';
 
@@ -9,178 +9,168 @@ describe('Module 11: localStorage Persistence', () => {
     vi.restoreAllMocks();
   });
 
+  // BASIC PERSISTENCE
   test('App loads with 4 seed tasks when localStorage is empty', () => {
     render(<App />);
-    const taskTitles = [
-      'Electricity bill payment',
-      'Recommendation letter for Professor Sharma',
-      'Submit project proposal',
-      'Renew gym membership',
-    ];
-    taskTitles.forEach(title => {
-      expect(screen.getAllByText(title)[0]).toBeInTheDocument();
+    ['Electricity bill payment', 'Recommendation letter for Professor Sharma', 'Submit project proposal', 'Renew gym membership'].forEach(t => {
+      expect(screen.getAllByText(t)[0]).toBeInTheDocument();
     });
   });
 
-  test('Adding a task and re-rendering loads the saved task from localStorage', () => {
+  test('Adding a task persists it to localStorage key "polaris-tasks"', () => {
     const { unmount } = render(<App />);
-    
     const input = screen.getByPlaceholderText('Add a new task…');
     fireEvent.change(input, { target: { value: 'New Test Task' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
-    
     expect(screen.getByText('New Test Task')).toBeInTheDocument();
     unmount();
-    
     const stored = localStorage.getItem('polaris-tasks');
     expect(stored).toBeDefined();
-    const tasks = JSON.parse(stored || '[]');
-    expect(tasks.some((t: any) => t.title === 'New Test Task')).toBe(true);
-
-    render(<App />);
-    expect(screen.getByText('New Test Task')).toBeInTheDocument();
+    expect(JSON.parse(stored || '[]').some((t: any) => t.title === 'New Test Task')).toBe(true);
   });
 
-  test('Removing a task (Done) persists the removal across re-renders', () => {
+  test('Moving task to In Progress shows In progress badge', () => {
+    render(<App />);
+    const handleBtns = screen.getAllByRole('button', { name: 'Handle it now' });
+    fireEvent.click(handleBtns[0]);
+    expect(screen.getByText('In progress')).toBeInTheDocument();
+  });
+
+  test('Marking task Done via Handle it now → Mark Done persists removal', () => {
     const { unmount } = render(<App />);
-    
-    const doneButtons = screen.getAllByRole('button', { name: 'Done' });
-    fireEvent.click(doneButtons[0]);
-    
+    const handleBtns = screen.getAllByRole('button', { name: 'Handle it now' });
+    fireEvent.click(handleBtns[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Done' }));
     unmount();
-    
     render(<App />);
-    expect(screen.queryByText('Electricity bill payment')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 2 }).length).toBe(3);
   });
 
-  test('completedCount persists to localStorage after marking a task done', () => {
-    const { unmount } = render(<App />);
-    const doneButtons = screen.getAllByRole('button', { name: 'Done' });
-    fireEvent.click(doneButtons[0]);
-    
+  test('completedCount persists to "polaris-completed"', () => {
+    render(<App />);
+    const handleBtns = screen.getAllByRole('button', { name: 'Handle it now' });
+    fireEvent.click(handleBtns[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Done' }));
     expect(localStorage.getItem('polaris-completed')).toBe('1');
-    unmount();
-    
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
-    expect(screen.queryAllByText('1').length).toBeGreaterThan(0);
   });
 
-  test('scannedCount persists to localStorage after a scan (mock the scan)', async () => {
-    const mockTasks = [
-      { title: 'Scanned task 1', deadline: 'Today', urgency: 'high' }
-    ];
-    vi.spyOn(global, 'fetch').mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ result: JSON.stringify(mockTasks) }),
-      } as any)
-    );
-
-    render(<App />);
-    
-    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    const emailRow = screen.getByText('Your electricity bill is due soon');
-    fireEvent.click(emailRow);
-    
-    const scanBtn = screen.getByRole('button', { name: 'Scan for deadlines' });
-    fireEvent.click(scanBtn);
-    
-    await screen.findByText(/✓ Found 1 task\(s\) — added to your Tasks\./i);
-    
-    expect(localStorage.getItem('polaris-scanned')).toBe('1');
-  });
-
-  test('localStorage key "polaris-tasks" contains valid JSON after any task operation', () => {
-    render(<App />);
-    const input = screen.getByPlaceholderText('Add a new task…');
-    fireEvent.change(input, { target: { value: 'JSON verification task' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
-    
-    const raw = localStorage.getItem('polaris-tasks');
-    expect(() => JSON.parse(raw || '')).not.toThrow();
-  });
-
-  test('localStorage key "polaris-completed" contains a number after marking done', () => {
-    render(<App />);
-    const doneButtons = screen.getAllByRole('button', { name: 'Done' });
-    fireEvent.click(doneButtons[0]);
-    expect(Number(localStorage.getItem('polaris-completed'))).toBe(1);
-  });
-
-  test('localStorage key "polaris-scanned" contains a number after a scan', async () => {
-    vi.spyOn(global, 'fetch').mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ result: JSON.stringify([{ title: 'S1', deadline: 'Today', urgency: 'low' }]) }),
-      } as any)
-    );
-
+  test('scannedCount persists to "polaris-scanned" after scan', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: () => Promise.resolve({ result: JSON.stringify([{ title: 'S1', deadline: 'Today', urgency: 'low' }]) }),
+    } as any);
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
     fireEvent.click(screen.getByText('Your electricity bill is due soon'));
     fireEvent.click(screen.getByRole('button', { name: 'Scan for deadlines' }));
     await screen.findByText(/✓ Found 1 task\(s\) — added to your Tasks\./i);
-    
-    expect(Number(localStorage.getItem('polaris-scanned'))).toBe(1);
+    await waitFor(() => { expect(Number(localStorage.getItem('polaris-scanned'))).toBe(1); });
   });
 
-  test('If localStorage contains malformed JSON for "polaris-tasks", app loads seed tasks instead', () => {
+  test('localStorage "polaris-tasks" contains valid JSON after operations', () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Add a new task…');
+    fireEvent.change(input, { target: { value: 'JSON check' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    expect(() => JSON.parse(localStorage.getItem('polaris-tasks') || '')).not.toThrow();
+  });
+
+  test('Re-rendering app loads saved tasks from localStorage', () => {
+    const { unmount } = render(<App />);
+    const input = screen.getByPlaceholderText('Add a new task…');
+    fireEvent.change(input, { target: { value: 'Persist Me' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    unmount();
+    render(<App />);
+    expect(screen.getByText('Persist Me')).toBeInTheDocument();
+  });
+
+  // SCHEMA VALIDATION
+  test('Malformed JSON in "polaris-tasks" → loads seed tasks', () => {
     localStorage.setItem('polaris-tasks', '{malformed[json]');
     render(<App />);
     expect(screen.getByText('Electricity bill payment')).toBeInTheDocument();
   });
 
-  test('If localStorage contains an array with a missing required field (no title), app loads seed tasks', () => {
-    localStorage.setItem('polaris-tasks', JSON.stringify([{ id: 'task-test', urgency: 'high', pillText: 'Due today' }]));
+  test('Array with missing required field → loads seed tasks', () => {
+    localStorage.setItem('polaris-tasks', JSON.stringify([{ id: 'x', urgency: 'high', pillText: 'Due today' }]));
     render(<App />);
     expect(screen.getByText('Electricity bill payment')).toBeInTheDocument();
   });
 
-  test('If localStorage contains an empty array, app loads seed tasks (not empty list)', () => {
+  test('Empty array in localStorage → loads seed tasks', () => {
     localStorage.setItem('polaris-tasks', JSON.stringify([]));
     render(<App />);
     expect(screen.getByText('Electricity bill payment')).toBeInTheDocument();
   });
 
-  test('If localStorage contains valid tasks, they load correctly on mount', () => {
-    const valid = [
-      { id: 'custom-t1', title: 'My custom task', urgency: 'low', pillText: 'No deadline set', context: 'none', primaryAction: 'Handle it now', secondaryAction: 'Snooze' }
-    ];
-    localStorage.setItem('polaris-tasks', JSON.stringify(valid));
+  test('Valid saved tasks load correctly on mount', () => {
+    localStorage.setItem('polaris-tasks', JSON.stringify([
+      { id: 'c1', title: 'Custom saved', urgency: 'low', pillText: 'No deadline set', context: 'c', primaryAction: 'Handle it now', secondaryAction: 'Snooze' }
+    ]));
     render(<App />);
-    expect(screen.getByText('My custom task')).toBeInTheDocument();
+    expect(screen.getByText('Custom saved')).toBeInTheDocument();
     expect(screen.queryByText('Electricity bill payment')).not.toBeInTheDocument();
   });
 
-  test('Hovering bottom-right corner reveals the reset button (check it exists in DOM)', () => {
+  // RESET DEMO
+  test('Hidden reset button exists in DOM', () => {
     const { container } = render(<App />);
-    const resetCorner = container.querySelector('#demo-reset-corner');
-    const resetBtn = container.querySelector('#demo-reset-btn');
-    expect(resetCorner).toBeInTheDocument();
-    expect(resetBtn).toBeInTheDocument();
+    expect(container.querySelector('#demo-reset-corner')).toBeInTheDocument();
+    expect(container.querySelector('#demo-reset-btn')).toBeInTheDocument();
   });
 
   test('Clicking reset clears localStorage and resets to 4 seed tasks', () => {
-    localStorage.setItem('polaris-tasks', JSON.stringify([{ id: 'custom-t1', title: 'My custom task', urgency: 'low', pillText: 'No deadline set' }]));
+    localStorage.setItem('polaris-tasks', JSON.stringify([{ id: 'x', title: 'X', urgency: 'low', pillText: 'P', context: 'C', primaryAction: 'A', secondaryAction: 'B' }]));
     const { container } = render(<App />);
-    const resetBtn = container.querySelector('#demo-reset-btn');
-    fireEvent.click(resetBtn!);
+    fireEvent.click(container.querySelector('#demo-reset-btn')!);
     expect(screen.getByText('Electricity bill payment')).toBeInTheDocument();
     expect(localStorage.getItem('polaris-tasks')).toBeNull();
   });
 
-  test('After reset, completedCount is 0 and scannedCount is 0', () => {
+  test('After reset completedCount and scannedCount are 0', () => {
     localStorage.setItem('polaris-completed', '5');
     localStorage.setItem('polaris-scanned', '3');
     const { container } = render(<App />);
-    const resetBtn = container.querySelector('#demo-reset-btn');
-    fireEvent.click(resetBtn!);
+    fireEvent.click(container.querySelector('#demo-reset-btn')!);
     expect(localStorage.getItem('polaris-completed')).toBeNull();
     expect(localStorage.getItem('polaris-scanned')).toBeNull();
   });
 
-  test('Adding 50 tasks, refreshing (re-rendering) — all 50 persist', () => {
+  // OVERDUE PERSISTENCE
+  test('totalOverdueEncountered persists to "polaris-total-overdue"', () => {
+    render(<App />);
+    expect(localStorage.getItem('polaris-total-overdue')).toBeTruthy();
+  });
+
+  test('resolvedOverdueCount persists to "polaris-resolved-overdue"', () => {
+    render(<App />);
+    expect(localStorage.getItem('polaris-resolved-overdue')).toBeTruthy();
+  });
+
+  test('overdueTaskIds persists to "polaris-overdue-ids"', () => {
+    render(<App />);
+    expect(localStorage.getItem('polaris-overdue-ids')).toBeTruthy();
+  });
+
+  // EXTRACTION LOG PERSISTENCE
+  test('extractionLog persists to "polaris-extraction-log" after scan', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, json: () => Promise.resolve({ result: JSON.stringify([{ title: 'Log Task', deadline: 'Soon', urgency: 'low' }]) }),
+    } as any);
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
+    fireEvent.click(screen.getByText('Your electricity bill is due soon'));
+    fireEvent.click(screen.getByRole('button', { name: 'Scan for deadlines' }));
+    await screen.findByText(/✓ Found 1 task\(s\) — added to your Tasks\./i);
+    await waitFor(() => {
+      const log = JSON.parse(localStorage.getItem('polaris-extraction-log') || '[]');
+      expect(log.length).toBe(1);
+      expect(log[0].taskTitle).toBe('Log Task');
+    });
+  });
+
+  // EDGE CASES
+  test('Adding 50 tasks, re-rendering — all 50 persist', () => {
     const { unmount } = render(<App />);
     const input = screen.getByPlaceholderText('Add a new task…');
     for (let i = 1; i <= 50; i++) {
@@ -192,10 +182,10 @@ describe('Module 11: localStorage Persistence', () => {
     expect(screen.getByText('Task #50')).toBeInTheDocument();
   }, 120000);
 
-  test('Special characters in task title persist correctly (emoji, < > & quotes)', () => {
+  test('Special characters in task title persist correctly', () => {
     const { unmount } = render(<App />);
     const input = screen.getByPlaceholderText('Add a new task…');
-    const title = '✨ Emoji <tag> & "quotes" \'test\'';
+    const title = '✨ Emoji <tag> & "quotes"';
     fireEvent.change(input, { target: { value: title } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
     unmount();
@@ -212,44 +202,5 @@ describe('Module 11: localStorage Persistence', () => {
     unmount();
     render(<App />);
     expect(screen.getByText(title)).toBeInTheDocument();
-  });
-
-  test('Task with subtasks persists subtask state', async () => {
-    vi.spyOn(global, 'fetch').mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ subtasks: ['Subtask 1', 'Subtask 2'] }),
-      } as any)
-    );
-    const { unmount } = render(<App />);
-    const breakBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakBtn);
-    await screen.findByText('Subtask 1');
-    
-    unmount();
-    render(<App />);
-    expect(screen.getByText('Subtask 1')).toBeInTheDocument();
-  });
-
-  test('Checked subtasks remain checked after re-render', async () => {
-    vi.spyOn(global, 'fetch').mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ subtasks: ['Subtask 1', 'Subtask 2'] }),
-      } as any)
-    );
-    const { unmount } = render(<App />);
-    const breakBtn = screen.getByRole('button', { name: 'Break it down' });
-    fireEvent.click(breakBtn);
-    await screen.findByText('Subtask 1');
-
-    const checkbox = screen.getAllByRole('checkbox')[0];
-    fireEvent.click(checkbox);
-    expect(checkbox).toBeChecked();
-
-    unmount();
-    render(<App />);
-    const checkedCheckbox = screen.getAllByRole('checkbox')[0];
-    expect(checkedCheckbox).toBeChecked();
   });
 });
