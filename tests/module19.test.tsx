@@ -3,7 +3,7 @@ import App from '../src/App';
 
 describe('Module 19: Email Content & Inbox Quality', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   test('Inbox shows at least 50 email rows', () => {

@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import App from '../src/App';
 
 describe('Module 26: Kanban Board', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   test('Three column headers exist: To Do, In Progress, Done', () => {
     render(<App />);

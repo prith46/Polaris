@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('CSV Export Feature', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.restoreAllMocks();
     // Mock URL.createObjectURL and revokeObjectURL
     global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');

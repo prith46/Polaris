@@ -6,7 +6,7 @@ import App from '../src/App';
 
 describe('Module 20: Pre-Deployment Checks', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.restoreAllMocks();
   });
 
@@ -118,7 +118,7 @@ describe('Module 20: Pre-Deployment Checks', () => {
     render(<App />);
     const tabs = ['Tasks', 'Calendar', 'Dashboard', 'Inbox'];
     tabs.forEach(tab => {
-      const btn = screen.getByRole('button', { name: new RegExp(tab, 'i') });
+      const btn = document.querySelector('#tab-' + tab.toLowerCase()) as HTMLButtonElement;
       expect(btn).toBeInTheDocument();
       fireEvent.click(btn);
     });

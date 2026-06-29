@@ -23,7 +23,7 @@ const seedTasks = (tasks: Array<{ id: string; title: string; urgency: string; pi
 };
 
 describe('Smart Task Prioritization', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   // BASIC SORT ORDER
   test('Overdue task appears before non-overdue tasks', () => {

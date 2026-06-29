@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 13: Overdue Task Lifecycle', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.useRealTimers();
     vi.restoreAllMocks();
   });

@@ -1289,6 +1289,14 @@ export default function App() {
   };
 
   const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'dashboard' | 'inbox'>('tasks');
+  const [currentModel, setCurrentModel] = useState<string>('');
+
+  useEffect(() => {
+    fetch('/api/model')
+      .then(r => r.json())
+      .then(data => setCurrentModel(data.model || ''))
+      .catch(() => setCurrentModel(''));
+  }, []);
   const [exitingTaskIds, setExitingTaskIds] = useState<string[]>([]);
   const [tasks, setTasks] = useState<Task[]>(() => {
     const isValidTask = (t: unknown): boolean => {
@@ -2410,7 +2418,7 @@ export default function App() {
         sendNotification('💀 Overdue — ' + t.title, 'This commitment is now overdue. Use Escape Hatch to draft a recovery message.');
         updates[t.id] = [...sent, 'overdue'];
       } else if (t.pointOfNoReturnPassed && !sent.includes('ponr')) {
-        sendNotification('⚠ Act now — ' + t.title, "You've reached the point of no return. Start immediately or you'll miss this.");
+        sendNotification('⚠ Start now — ' + t.title, "You've reached the point of no return. Start immediately or you'll miss this.");
         updates[t.id] = [...(updates[t.id] || sent), 'ponr'];
       } else if (hoursLeft > 0 && hoursLeft <= 1.08 && hoursLeft >= 0.92 && !sent.includes('1hour')) {
         sendNotification('🔴 1 hour left — ' + t.title, 'Deadline in 1 hour. This needs your attention right now.');
@@ -3329,6 +3337,25 @@ export default function App() {
               </div>
             );
           })()}
+          {currentModel && (
+            <span
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 500,
+                fontSize: '11px',
+                padding: '3px 10px',
+                borderRadius: '20px',
+                border: '1px solid rgba(15, 157, 88, 0.2)',
+                backgroundColor: isDarkMode ? 'rgba(46, 204, 113, 0.1)' : 'rgba(15, 157, 88, 0.1)',
+                color: isDarkMode ? '#2ECC71' : '#0F9D58',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              ● {currentModel}
+            </span>
+          )}
           <button type="button" onClick={() => setIsDarkMode(prev => !prev)}
             className="font-sans text-[14px] bg-transparent cursor-pointer transition-colors px-[10px] py-[6px] rounded-[6px]"
             style={{ border: '1px solid var(--border-strong, rgba(14,27,42,0.15))' }}>
@@ -3593,13 +3620,21 @@ export default function App() {
                           const duration = getTaskDurationMinutes(task.title); const ponr = new Date(dl.getTime() - duration * 60 * 1000); const now = nowIST();
                           let percent = 0; let barColor = '#0F9D58'; let textColorClass = 'text-[#0F9D58]'; let countdownText = '';
                           const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime(); const remaining = ponr.getTime() - now.getTime();
-                          const hoursToDeadline = (dl.getTime() - now.getTime()) / 3600000;
-                          if (remaining <= 0 && hoursToDeadline <= 48) { percent = 0; barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; countdownText = '🔴 Point of no return passed — act now.'; }
-                          else { percent = remaining <= 0 ? 0 : Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
-                            if (remaining <= 0) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; }
-                            else if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; } else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; } else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
-                            const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const isTodayVal = ponr.toDateString() === now.toDateString(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
-                            let dayString = ''; if (isTodayVal) dayString = 'today'; else if (isTomorrowVal) dayString = 'tomorrow'; else dayString = ponr.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+
+                          const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const isTodayVal = ponr.toDateString() === now.toDateString(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
+                          let dayString = ''; if (isTodayVal) dayString = 'today'; else if (isTomorrowVal) dayString = 'tomorrow'; else dayString = ponr.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                          const formattedStartTime = `${dayString} at ${timeString} or you'll miss this.`;
+
+                          if (remaining <= 0) {
+                            percent = 0;
+                            countdownText = `Start by ${formattedStartTime}`;
+                            barColor = '#C8893B';
+                            textColorClass = 'text-[#C8893B]';
+                          } else {
+                            percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
+                            if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; }
+                            else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; }
+                            else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
                             countdownText = `⚠ Start by ${dayString} at ${timeString} or you'll miss this.`;
                           }
                           return (<div className="w-full mb-[18px]"><div className="w-full bg-[rgba(14,27,42,0.08)] h-[3px] rounded-[2px] overflow-hidden"><div className="h-full rounded-[2px] transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: barColor }} /></div><div className={`mt-1.5 font-sans font-normal text-[12px] ${textColorClass}`}>{countdownText}</div></div>);
@@ -3766,13 +3801,21 @@ export default function App() {
                           const duration = getTaskDurationMinutes(task.title); const ponr = new Date(dl.getTime() - duration * 60 * 1000); const now = nowIST();
                           let percent = 0; let barColor = '#0F9D58'; let textColorClass = 'text-[#0F9D58]'; let countdownText = '';
                           const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime(); const remaining = ponr.getTime() - now.getTime();
-                          const hoursToDeadline = (dl.getTime() - now.getTime()) / 3600000;
-                          if (remaining <= 0 && hoursToDeadline <= 48) { percent = 0; barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; countdownText = '🔴 Act now'; }
-                          else { percent = remaining <= 0 ? 0 : Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
-                            if (remaining <= 0) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; }
-                            else if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; } else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; } else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
-                            const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const isTodayVal = ponr.toDateString() === now.toDateString(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
-                            let dayString = ''; if (isTodayVal) dayString = 'today'; else if (isTomorrowVal) dayString = 'tomorrow'; else dayString = ponr.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+
+                          const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const isTodayVal = ponr.toDateString() === now.toDateString(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
+                          let dayString = ''; if (isTodayVal) dayString = 'today'; else if (isTomorrowVal) dayString = 'tomorrow'; else dayString = ponr.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+                          const formattedStartTime = `${dayString} ${timeString}`;
+
+                          if (remaining <= 0) {
+                            percent = 0;
+                            countdownText = `Start by ${formattedStartTime}`;
+                            barColor = '#C8893B';
+                            textColorClass = 'text-[#C8893B]';
+                          } else {
+                            percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
+                            if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; }
+                            else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; }
+                            else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
                             countdownText = `⚠ Start by ${dayString} ${timeString}`;
                           }
                           return (<div className="w-full mb-3"><div className="w-full bg-[rgba(14,27,42,0.08)] h-[2px] rounded-[1px] overflow-hidden"><div className="h-full rounded-[1px] transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: barColor }} /></div><div className={`mt-1 font-sans font-normal text-[11px] ${textColorClass}`}>{countdownText}</div></div>);

@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 12: DOM Structure & Mobile', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.useRealTimers();
     vi.restoreAllMocks();
   });

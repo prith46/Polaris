@@ -29,12 +29,17 @@ async function startServer() {
     res.setHeader('Content-Type', 'application/json');
     next();
   });
+  app.use((req, res, next) => {
+    dotenv.config({ override: true });
+    next();
+  });
   const PORT = process.env.PORT || 3000;
   const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
   // Server-side API route for scanning emails using Gemini
   app.post("/api/scan-email", async (req, res) => {
     try {
+      const GEMINI_MODEL = process.env.GEMINI_MODEL;
       const { bodyText } = req.body;
       if (!bodyText) {
         return res.status(400).json({ error: "No email body text provided" });
@@ -76,6 +81,7 @@ async function startServer() {
   // Panic Button Triage Endpoint
   app.post("/api/panic", async (req, res) => {
     try {
+      const GEMINI_MODEL = process.env.GEMINI_MODEL;
       const { tasks } = req.body;
       if (!tasks || !Array.isArray(tasks)) {
         return res.status(400).json({ error: "No tasks list provided" });
@@ -125,6 +131,7 @@ async function startServer() {
   // Escape Hatch Endpoint
   app.post("/api/escape-hatch", async (req, res) => {
     try {
+      const GEMINI_MODEL = process.env.GEMINI_MODEL;
       const { taskTitle, taskContext } = req.body;
       if (!taskTitle) {
         return res.status(400).json({ error: "No taskTitle provided" });
@@ -171,6 +178,7 @@ async function startServer() {
   // Decompose task endpoint
   app.post("/api/decompose", async (req, res) => {
     try {
+      const GEMINI_MODEL = process.env.GEMINI_MODEL;
       const { taskTitle, taskContext } = req.body;
       if (!taskTitle) {
         return res.status(400).json({ error: "No taskTitle provided" });
@@ -219,6 +227,7 @@ async function startServer() {
   // Renegotiate tasks endpoint
   app.post("/api/renegotiate", async (req, res) => {
     try {
+      const GEMINI_MODEL = process.env.GEMINI_MODEL;
       const { tasks } = req.body;
       if (!tasks || !Array.isArray(tasks)) {
         return res.status(400).json({ error: "No tasks list provided" });
@@ -268,6 +277,7 @@ async function startServer() {
   // Scan image endpoint (multimodal)
   app.post("/api/scan-image", async (req, res) => {
     try {
+      const GEMINI_MODEL = process.env.GEMINI_MODEL;
       const { imageBase64, mimeType } = req.body;
       if (!imageBase64 || !mimeType) {
         return res.status(400).json({ error: "Missing imageBase64 or mimeType" });
@@ -334,6 +344,7 @@ async function startServer() {
   // Parse natural language task endpoint
   app.post("/api/parse-task", async (req, res) => {
     try {
+      const GEMINI_MODEL = process.env.GEMINI_MODEL;
       const { input, currentDate } = req.body;
       if (!input) return res.json({ title: input || '', deadline: null, deadlineISO: null, urgency: 'low', description: null });
 
@@ -379,6 +390,7 @@ async function startServer() {
   // Parse natural language date endpoint
   app.post("/api/parse-date", async (req, res) => {
     try {
+      const GEMINI_MODEL = process.env.GEMINI_MODEL;
       const { input, currentDate } = req.body;
       if (!input || !currentDate) {
         return res.status(400).json({ date: null, readable: null, confidence: 'low' });
@@ -415,6 +427,12 @@ async function startServer() {
       console.error("Error in /api/parse-date:", err?.message || err);
       res.json({ date: null, readable: null, confidence: 'low' });
     }
+  });
+
+  // GET /api/model endpoint
+  app.get("/api/model", (req, res) => {
+    const GEMINI_MODEL = process.env.GEMINI_MODEL;
+    res.json({ model: GEMINI_MODEL });
   });
 
   // Vite middleware for development or serving built static files in production

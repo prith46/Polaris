@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import App from '../src/App';
 
 describe('Module 2: Task Cards', () => {
+  beforeEach(() => { localStorage.setItem('polaris-onboarded', 'true'); });
+
   // SEED TASKS
   test('Renders all 4 seed tasks', () => {
     render(<App />);

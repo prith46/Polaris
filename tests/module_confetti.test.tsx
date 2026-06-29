@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import App from '../src/App';
 
 describe('Confetti on All Tasks Complete', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   test('Confetti does NOT trigger on initial load', () => {
     render(<App />);

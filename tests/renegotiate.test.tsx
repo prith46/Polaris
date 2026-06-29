@@ -3,7 +3,7 @@ import App from '../src/App';
 
 describe('Renegotiation Agent Feature', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.restoreAllMocks();
   });
 

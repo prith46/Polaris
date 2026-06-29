@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../src/App';
 
 describe('New Features: Countdown, Calendar, and Dashboard', () => {
+  beforeEach(() => { localStorage.setItem('polaris-onboarded', 'true'); });
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 5, 25, 12, 0, 0, 0));

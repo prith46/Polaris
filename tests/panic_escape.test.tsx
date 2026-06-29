@@ -3,7 +3,7 @@ import App from '../src/App';
 
 describe('Panic Button and Escape Hatch Features', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   test('Renders persistent Panic Button bar in Tasks view', () => {

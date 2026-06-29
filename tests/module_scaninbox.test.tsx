@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import App from '../src/App';
 
 describe('Scan Inbox Feature', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   test('Scan button exists in Inbox tab', () => {
     render(<App />);

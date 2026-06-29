@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 9: Renegotiation Agent', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   test('Renegotiation button renders in Tasks view', () => {

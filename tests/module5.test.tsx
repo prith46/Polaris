@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 5: Email Scanner (mocked)', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   afterEach(() => {
@@ -55,7 +55,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
 
     expect(screen.getByRole('button', { name: /Scan for deadlines/i })).not.toBeDisabled();
 
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     expect(screen.getByText('Pay electricity bill')).toBeInTheDocument();
     expect(screen.getByText('Friday the 27th')).toBeInTheDocument();
     expect(screen.getByText('Found in your inbox — City Power & Utilities')).toBeInTheDocument();
@@ -160,7 +160,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
       expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     expect(screen.getByText('Invalid Urgency Task')).toBeInTheDocument();
   });
 
@@ -203,11 +203,11 @@ describe('Module 5: Email Scanner (mocked)', () => {
       expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     expect(screen.getByText('Persisted Scan Task')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     expect(screen.getByText('Persisted Scan Task')).toBeInTheDocument();
   });
 
@@ -239,7 +239,7 @@ describe('Module 5: Email Scanner (mocked)', () => {
       expect(screen.getByText(/✓ Found 1 deadline\(s\)/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     expect(screen.getByText('First Sequential Task')).toBeInTheDocument();
     expect(screen.getByText('Second Sequential Task')).toBeInTheDocument();
   });

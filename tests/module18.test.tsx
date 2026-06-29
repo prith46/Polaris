@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 18: Loading States, Fallbacks & Visual Consistency', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.restoreAllMocks();
   });
 

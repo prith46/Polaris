@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 8: Task Decomposition (Break it down)', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   test('"Break it down" button exists on "Submit project proposal" card in To Do column', () => {
@@ -167,7 +167,7 @@ describe('Module 8: Task Decomposition (Break it down)', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     expect(screen.getByText('Persist Step')).toBeInTheDocument();
   });
 });

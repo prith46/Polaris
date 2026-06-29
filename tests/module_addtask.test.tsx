@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Add Task Feature', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.restoreAllMocks();
   });
 

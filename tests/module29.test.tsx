@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import App from '../src/App';
 
 describe('Module 29: Task Notes', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   test('Notes feature state exists in source', () => {
     const fs = require('fs');
@@ -150,7 +150,7 @@ describe('Module 29: Task Notes', () => {
     fireEvent.click(saveBtn!);
 
     fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     expect(screen.getByText(/📝 Persist note/)).toBeInTheDocument();
   });
 

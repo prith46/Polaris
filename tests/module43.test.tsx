@@ -7,7 +7,7 @@ import { resolve } from 'path';
 const code = readFileSync(resolve(__dirname, '../src/App.tsx'), 'utf8');
 
 describe('Module 43: Browser Notifications', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   // PERMISSION REQUEST
   test('Notification API checked before requesting (source)', () => {

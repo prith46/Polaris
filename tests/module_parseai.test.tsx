@@ -9,7 +9,7 @@ const openAddModal = () => {
 };
 
 describe('Parse with AI Button', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   // BUTTON EXISTS
   test('"+Add" button exists in toolbar', () => {

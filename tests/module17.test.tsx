@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 17: Habit Roast', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.useRealTimers();
     vi.restoreAllMocks();
   });

@@ -22,7 +22,7 @@ const openFutureYou = () => fireEvent.click(screen.getByRole('button', { name: '
 
 describe('Module 16: Future You', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.useRealTimers();
     vi.restoreAllMocks();
   });

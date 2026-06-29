@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Stress Tests', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   test('Add 100 tasks in a loop', () => {
@@ -25,7 +25,7 @@ describe('Stress Tests', () => {
   test('Switch tabs 50 times rapidly', () => {
     render(<App />);
 
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
+    const tasksTab = document.querySelector('#tab-tasks') as HTMLButtonElement;
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
 
     for (let i = 0; i < 25; i++) {
@@ -61,7 +61,7 @@ describe('Stress Tests', () => {
     }
 
     // Go back to tasks tab and count tasks
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
+    const tasksTab = document.querySelector('#tab-tasks') as HTMLButtonElement;
     fireEvent.click(tasksTab);
 
     const allHeadings = screen.getAllByRole('heading', { level: 2 });
@@ -94,7 +94,7 @@ describe('Stress Tests', () => {
     });
 
     // Go back to tasks tab
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
+    const tasksTab = document.querySelector('#tab-tasks') as HTMLButtonElement;
     fireEvent.click(tasksTab);
 
     // Delete all via Kanban flow

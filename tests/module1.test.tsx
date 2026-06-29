@@ -3,6 +3,8 @@ import { vi } from 'vitest';
 import App from '../src/App';
 
 describe('Module 1: App Shell', () => {
+  beforeEach(() => { localStorage.setItem('polaris-onboarded', 'true'); });
+
   // RENDERING
   test('App mounts without crashing', () => {
     const { container } = render(<App />);
@@ -21,7 +23,7 @@ describe('Module 1: App Shell', () => {
 
   test('Default tab on load is Tasks (not Inbox)', () => {
     render(<App />);
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
+    const tasksTab = document.querySelector('#tab-tasks') as HTMLButtonElement;
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
     expect(tasksTab).toHaveClass('border-polaris-primary');
     expect(inboxTab).not.toHaveClass('border-polaris-primary');
@@ -38,7 +40,7 @@ describe('Module 1: App Shell', () => {
 
   test('Tab bar renders all 4 tabs: Tasks, Calendar, Dashboard, Inbox', () => {
     render(<App />);
-    expect(screen.getByRole('button', { name: /Tasks/i })).toBeInTheDocument();
+    expect(document.querySelector('#tab-tasks') as HTMLButtonElement).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Calendar/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Inbox/i })).toBeInTheDocument();
@@ -84,13 +86,13 @@ describe('Module 1: App Shell', () => {
   test('Clicking Tasks tab returns to tasks view', () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     expect(container.querySelector('#polaris-tasks-container')).toBeInTheDocument();
   });
 
   test('Active tab has visual indicator class', () => {
     render(<App />);
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
+    const tasksTab = document.querySelector('#tab-tasks') as HTMLButtonElement;
     expect(tasksTab).toHaveClass('border-polaris-primary');
 
     fireEvent.click(screen.getByRole('button', { name: /Calendar/i }));
@@ -102,7 +104,7 @@ describe('Module 1: App Shell', () => {
   test('Switching tabs 10 times rapidly does not crash', () => {
     render(<App />);
     const tabs = [
-      screen.getByRole('button', { name: /Tasks/i }),
+      document.querySelector('#tab-tasks') as HTMLButtonElement,
       screen.getByRole('button', { name: /Calendar/i }),
       screen.getByRole('button', { name: /Dashboard/i }),
       screen.getByRole('button', { name: /Inbox/i }),

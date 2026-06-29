@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import App from '../src/App';
 
 describe('Module 32: Confetti on All Tasks Complete', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   test('Confetti state exists in source', () => {
     const fs = require('fs');

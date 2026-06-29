@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../src/App';
 
 describe('Module 4: Gmail Inbox', () => {
+  beforeEach(() => { localStorage.setItem('polaris-onboarded', 'true'); });
   // INBOX TAB
   test('Clicking Inbox tab shows inbox view', () => {
     const { container } = render(<App />);
@@ -112,7 +113,7 @@ describe('Module 4: Gmail Inbox', () => {
 
   test('Tab navigation and rapid switching', () => {
     render(<App />);
-    const tasksTab = screen.getByRole('button', { name: /Tasks/i });
+    const tasksTab = document.querySelector('#tab-tasks') as HTMLButtonElement;
     const inboxTab = screen.getByRole('button', { name: /Inbox/i });
 
     fireEvent.click(inboxTab);
@@ -161,7 +162,7 @@ describe('Module 4: Gmail Inbox', () => {
     fireEvent.click(screen.getByText('Your electricity bill is due soon'));
     expect(screen.getByRole('heading', { name: 'Your electricity bill is due soon' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
     fireEvent.click(screen.getByRole('button', { name: /Inbox/i }));
     // Reading view persists (selectedEmailId not cleared on tab switch)
     expect(screen.getByRole('heading', { name: 'Your electricity bill is due soon' })).toBeInTheDocument();

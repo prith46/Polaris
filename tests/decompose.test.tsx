@@ -3,7 +3,7 @@ import App from '../src/App';
 
 describe('Task Decomposition Feature', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   test('Clicking Break it down button triggers loading state and renders subtask checklist (mocked API success)', async () => {

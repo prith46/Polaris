@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../src/App';
 
 describe('Module 3: Add & Manage Tasks', () => {
+  beforeEach(() => { localStorage.setItem('polaris-onboarded', 'true'); });
   // ADD TASK — BASIC
   test('Input placeholder reads "Add a new task…"', () => {
     render(<App />);

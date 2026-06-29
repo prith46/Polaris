@@ -6,7 +6,7 @@ import App from '../src/App';
 
 describe('Screenshot-based Testing', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   let screenshotsDir = resolve(__dirname, '../screenshots');

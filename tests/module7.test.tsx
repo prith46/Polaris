@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 7: Panic Button & Escape Hatch', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   // PANIC BUTTON

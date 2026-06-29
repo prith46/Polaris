@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import App from '../src/App';
 
 describe('Dark/Light Mode Toggle', () => {
-  beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true'); vi.restoreAllMocks(); });
 
   test('Theme toggle button exists', () => {
     render(<App />);
@@ -54,7 +54,7 @@ describe('Dark/Light Mode Toggle', () => {
     localStorage.setItem('polaris-theme', 'dark');
     render(<App />);
     ['Tasks', 'Calendar', 'Dashboard', 'Inbox'].forEach(tab => {
-      fireEvent.click(screen.getByRole('button', { name: new RegExp(tab, 'i') }));
+      fireEvent.click(document.querySelector('#tab-' + tab.toLowerCase()) as HTMLButtonElement);
     });
     expect(screen.getByText('Polaris')).toBeInTheDocument();
   });

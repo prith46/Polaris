@@ -4,7 +4,7 @@ import App from '../src/App';
 
 describe('Module 14: AI Extraction Ledger', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.clear(); localStorage.setItem('polaris-onboarded', 'true');
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -104,7 +104,7 @@ describe('Module 14: AI Extraction Ledger', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Scan for deadlines' }));
     await waitFor(() => { expect(screen.getAllByText(/✓ Found 1/i).length).toBeGreaterThanOrEqual(1); });
 
-    fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
+    fireEvent.click(document.querySelector('#tab-tasks') as HTMLButtonElement);
 
     // Move the scanned task to In Progress then Mark Done
     const handleBtns = screen.getAllByRole('button', { name: 'Handle it now' });

@@ -4,7 +4,7 @@ import App from '../src/App';
 describe('Multimodal Image Scanning Feature', () => {
   beforeEach(() => {
     vi.useRealTimers();
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   test('Scan image button opens modal with upload interface', () => {

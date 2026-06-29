@@ -8,7 +8,7 @@ const openScanModal = () => {
 
 describe('Module 10: Multimodal Image Scanning', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); localStorage.setItem('polaris-onboarded', 'true');
   });
 
   // SCAN IMAGE IN TASKS
