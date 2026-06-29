@@ -29,7 +29,7 @@ async function startServer() {
     res.setHeader('Content-Type', 'application/json');
     next();
   });
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
   const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
   // Server-side API route for scanning emails using Gemini
