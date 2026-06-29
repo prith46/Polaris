@@ -12,6 +12,7 @@ export default defineConfig(() => {
       },
     },
     server: {
+      allowedHosts: 'all',
       port: 5173,
       proxy: {
         '/api': {
