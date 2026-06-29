@@ -5,4 +5,4 @@ RUN npm ci
 COPY . .
 RUN npm run build
 EXPOSE 8080
-CMD ["node", "server/index.js"]
+CMD ["node", "dist/server.cjs"]
