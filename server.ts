@@ -25,10 +25,7 @@ async function startServer() {
   const app = express();
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
-  app.use((req, res, next) => {
-    res.setHeader('Content-Type', 'application/json');
-    next();
-  });
+
   app.use((req, res, next) => {
     dotenv.config({ override: true });
     next();
