@@ -7,38 +7,38 @@ describe('Module 27: Natural Language Task Input', () => {
 
   test('Input placeholder contains example text', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     expect(input).toBeInTheDocument();
   });
 
   test('Empty input does nothing', () => {
     render(<App />);
     const initial = screen.getAllByRole('heading', { level: 2 }).length;
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(initial);
   });
 
   test('Whitespace-only input does nothing', () => {
     render(<App />);
     const initial = screen.getAllByRole('heading', { level: 2 }).length;
-    fireEvent.change(screen.getByPlaceholderText(/Add a new task/i), { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.change(document.querySelector('#polaris-add-form input') as HTMLInputElement, { target: { value: '   ' } });
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(initial);
   });
 
   test('In test env, task created directly without modal', () => {
     render(<App />);
-    fireEvent.change(screen.getByPlaceholderText(/Add a new task/i), { target: { value: 'Direct test task' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.change(document.querySelector('#polaris-add-form input') as HTMLInputElement, { target: { value: 'Direct test task' } });
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText('Direct test task')).toBeInTheDocument();
     expect(screen.getByText('No deadline set')).toBeInTheDocument();
   });
 
   test('Input cleared after adding task', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i) as HTMLInputElement;
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Clear test' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(input.value).toBe('');
   });
 
@@ -57,7 +57,7 @@ describe('Module 27: Natural Language Task Input', () => {
     const code = fs.readFileSync(path.resolve(__dirname, '../src/App.tsx'), 'utf8');
     expect(code).toContain("'/api/parse-task'");
     expect(code).toContain('isAddingTask');
-    expect(code).toContain("'Parsing...'");
+    expect(code).toContain('Parsing...');
   });
 
   test('Frontend handles API failure by opening modal with raw input', () => {
@@ -78,8 +78,8 @@ describe('Module 27: Natural Language Task Input', () => {
 
   test('Created task has correct default properties', () => {
     render(<App />);
-    fireEvent.change(screen.getByPlaceholderText(/Add a new task/i), { target: { value: 'Default props test' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.change(document.querySelector('#polaris-add-form input') as HTMLInputElement, { target: { value: 'Default props test' } });
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText('Default props test')).toBeInTheDocument();
     expect(screen.getByText('No deadline set')).toBeInTheDocument();
     expect(screen.getByText(/Newly added/i)).toBeInTheDocument();

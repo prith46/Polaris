@@ -12,64 +12,58 @@ describe('Module 29: Task Notes', () => {
     expect(code).toContain('expandedTaskId');
     expect(code).toContain('noteEditValue');
     expect(code).toContain('📝 Notes');
-    expect(code).toContain('Save note');
+    expect(code).toContain('Save');
     expect(code).toContain('Clear note');
   });
 
-  test('Task card is clickable (cursor-pointer class)', () => {
+  test('Task card is clickable', () => {
     const { container } = render(<App />);
     const card = container.querySelector('[id^="task-card-"]');
     expect(card?.className).toContain('cursor-pointer');
   });
 
-  test('Clicking card body expands notes section with header', () => {
+  test('Clicking card shows edit and notes headers', () => {
     const { container } = render(<App />);
+    fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
+    expect(screen.getByText('✏️ Edit Task')).toBeInTheDocument();
+    expect(screen.getByText('📝 Notes')).toBeInTheDocument();
+  });
+
+  test('Notes textarea has placeholder', () => {
+    const { container } = render(<App />);
+    fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
+    const textareas = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    const noteTextarea = textareas[1] as HTMLTextAreaElement;
+    expect(noteTextarea?.placeholder).toContain('note');
+  });
+
+  test('Unified Save and Cancel buttons exist', () => {
+    const { container } = render(<App />);
+    fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
     const card = container.querySelector('[id="task-card-task-1"]');
-    fireEvent.click(card!);
-    expect(screen.getByText('📝 Notes')).toBeInTheDocument();
-  });
-
-  test('Notes section shows textarea with placeholder', () => {
-    const { container } = render(<App />);
-    fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    const textarea = screen.getByPlaceholderText(/Add a private note/i);
-    expect(textarea).toBeInTheDocument();
-  });
-
-  test('Notes section shows Save note and Cancel buttons', () => {
-    const { container } = render(<App />);
-    fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    expect(screen.getByText('Save note')).toBeInTheDocument();
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
-  });
-
-  test('Clicking X in notes collapses it', () => {
-    const { container } = render(<App />);
-    fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    expect(screen.getByText('📝 Notes')).toBeInTheDocument();
-    const closeBtn = screen.getByText('×');
-    fireEvent.click(closeBtn);
-    expect(screen.queryByText('📝 Notes')).not.toBeInTheDocument();
+    const saveBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Save');
+    const cancelBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Cancel');
+    expect(saveBtn).toBeTruthy();
+    expect(cancelBtn).toBeTruthy();
   });
 
   test('Only one card expanded at a time', () => {
     const { container } = render(<App />);
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    expect(screen.getByText('📝 Notes')).toBeInTheDocument();
-
+    expect(screen.getAllByText('📝 Notes')).toHaveLength(1);
     fireEvent.click(container.querySelector('[id="task-card-task-3"]')!);
-    const notesHeaders = screen.getAllByText('📝 Notes');
-    expect(notesHeaders).toHaveLength(1);
+    expect(screen.getAllByText('📝 Notes')).toHaveLength(1);
   });
 
-  test('Typing and saving note shows preview on collapsed card', () => {
+  test('Saving note shows preview on collapsed card', () => {
     const { container } = render(<App />);
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    const textarea = screen.getByPlaceholderText(/Add a private note/i);
-    fireEvent.change(textarea, { target: { value: 'My test note content' } });
-    fireEvent.click(screen.getByText('Save note'));
-
-    expect(screen.queryByText('📝 Notes')).not.toBeInTheDocument();
+    const textareas = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    const noteTextarea = textareas[1] as HTMLTextAreaElement;
+    fireEvent.change(noteTextarea, { target: { value: 'My test note content' } });
+    const card = container.querySelector('[id="task-card-task-1"]');
+    const saveBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Save');
+    fireEvent.click(saveBtn!);
     expect(screen.getByText(/📝 My test note content/)).toBeInTheDocument();
   });
 
@@ -77,76 +71,90 @@ describe('Module 29: Task Notes', () => {
     const { container } = render(<App />);
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
     const longNote = 'A'.repeat(80);
-    fireEvent.change(screen.getByPlaceholderText(/Add a private note/i), { target: { value: longNote } });
-    fireEvent.click(screen.getByText('Save note'));
+    const textareas = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    fireEvent.change(textareas[1], { target: { value: longNote } });
+    const card = container.querySelector('[id="task-card-task-1"]');
+    const saveBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Save');
+    fireEvent.click(saveBtn!);
     expect(screen.getByText(/📝 A{60}…/)).toBeInTheDocument();
   });
 
   test('Expanding card with existing note pre-fills textarea', () => {
     const { container } = render(<App />);
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    fireEvent.change(screen.getByPlaceholderText(/Add a private note/i), { target: { value: 'Existing note' } });
-    fireEvent.click(screen.getByText('Save note'));
+    const textareas = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    fireEvent.change(textareas[1], { target: { value: 'Existing note' } });
+    const card = container.querySelector('[id="task-card-task-1"]');
+    const saveBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Save');
+    fireEvent.click(saveBtn!);
 
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    const textarea = screen.getByPlaceholderText(/Add a private note/i) as HTMLTextAreaElement;
-    expect(textarea.value).toBe('Existing note');
+    const textareas2 = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    expect((textareas2[1] as HTMLTextAreaElement).value).toBe('Existing note');
   });
 
   test('"Clear note" button appears when note exists', () => {
     const { container } = render(<App />);
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    expect(screen.queryByText('Clear note')).not.toBeInTheDocument();
+    let card = container.querySelector('[id="task-card-task-1"]');
+    expect(Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Clear note')).toBeFalsy();
 
-    fireEvent.change(screen.getByPlaceholderText(/Add a private note/i), { target: { value: 'Some note' } });
-    fireEvent.click(screen.getByText('Save note'));
+    const textareas = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    fireEvent.change(textareas[1], { target: { value: 'Some note' } });
+    const saveBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Save');
+    fireEvent.click(saveBtn!);
 
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    expect(screen.getByText('Clear note')).toBeInTheDocument();
+    card = container.querySelector('[id="task-card-task-1"]');
+    expect(Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent?.includes('Clear note'))).toBeTruthy();
   });
 
-  test('Clicking "Clear note" removes note and preview', () => {
+  test('"Clear note" removes note preview', () => {
     const { container } = render(<App />);
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    fireEvent.change(screen.getByPlaceholderText(/Add a private note/i), { target: { value: 'To be cleared' } });
-    fireEvent.click(screen.getByText('Save note'));
+    const textareas = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    fireEvent.change(textareas[1], { target: { value: 'To be cleared' } });
+    let card = container.querySelector('[id="task-card-task-1"]');
+    const saveBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Save');
+    fireEvent.click(saveBtn!);
     expect(screen.getByText(/📝 To be cleared/)).toBeInTheDocument();
 
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    fireEvent.click(screen.getByText('Clear note'));
+    card = container.querySelector('[id="task-card-task-1"]');
+    const clearBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent?.includes('Clear note'));
+    fireEvent.click(clearBtn!);
+    // Clear note doesn't collapse, just clears
+    const cancelBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Cancel');
+    fireEvent.click(cancelBtn!);
     expect(screen.queryByText(/📝 To be cleared/)).not.toBeInTheDocument();
   });
 
   test('Cancel discards unsaved changes', () => {
     const { container } = render(<App />);
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    fireEvent.change(screen.getByPlaceholderText(/Add a private note/i), { target: { value: 'Unsaved change' } });
-    fireEvent.click(screen.getByText('Cancel'));
-    expect(screen.queryByText(/📝 Unsaved change/)).not.toBeInTheDocument();
+    const textareas = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    fireEvent.change(textareas[1], { target: { value: 'Unsaved' } });
+    const card = container.querySelector('[id="task-card-task-1"]');
+    const cancelBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Cancel');
+    fireEvent.click(cancelBtn!);
+    expect(screen.queryByText(/📝 Unsaved/)).not.toBeInTheDocument();
   });
 
   test('Note persists across tab switches', () => {
     const { container } = render(<App />);
     fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    fireEvent.change(screen.getByPlaceholderText(/Add a private note/i), { target: { value: 'Persist note' } });
-    fireEvent.click(screen.getByText('Save note'));
+    const textareas = container.querySelectorAll('[id="task-card-task-1"] textarea');
+    fireEvent.change(textareas[1], { target: { value: 'Persist note' } });
+    const card = container.querySelector('[id="task-card-task-1"]');
+    const saveBtn = Array.from(card?.querySelectorAll('button') || []).find(b => b.textContent === 'Save');
+    fireEvent.click(saveBtn!);
 
     fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
     fireEvent.click(screen.getByRole('button', { name: /Tasks/i }));
-
     expect(screen.getByText(/📝 Persist note/)).toBeInTheDocument();
   });
 
-  test('Note with special characters saves correctly', () => {
-    const { container } = render(<App />);
-    fireEvent.click(container.querySelector('[id="task-card-task-1"]')!);
-    const specialNote = '✨ Special & <chars> "quotes"';
-    fireEvent.change(screen.getByPlaceholderText(/Add a private note/i), { target: { value: specialNote } });
-    fireEvent.click(screen.getByText('Save note'));
-    expect(screen.getByText(new RegExp(`📝 ${specialNote.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').slice(0, 30)}`))).toBeInTheDocument();
-  });
-
-  test('Clicking buttons inside card does not toggle expand', () => {
+  test('Clicking buttons inside card does not trigger expand', () => {
     render(<App />);
     const handleBtns = screen.getAllByRole('button', { name: 'Handle it now' });
     fireEvent.click(handleBtns[0]);

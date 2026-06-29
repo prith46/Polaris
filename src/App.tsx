@@ -67,7 +67,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: true,
     avatarLetter: "P",
     avatarColor: '#FF8BCB',
-    starred: true,
+    starred: false,
     important: true,
     body: "Hi there, I wanted to gently follow up on the recommendation letter you requested. The submission portal was due 2 days ago, and I need you to send me the updated details urgently by tomorrow. Once I have the links, I can upload it immediately. Let me know if you face any issues.",
   },
@@ -91,7 +91,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "R",
     avatarColor: '#C58AF9',
-    starred: false,
+    starred: true,
     important: false,
     body: "Hey, just confirming our project sync meeting scheduled for this Thursday at 4:00 PM. We will review the slide outline and assign parts to everyone. Please come prepared with your section outline so we can wrap up quickly. Talk to you soon.",
   },
@@ -127,7 +127,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "M",
     avatarColor: '#0077B5',
-    starred: false,
+    starred: true,
     important: true,
     body: "Dear Developer, your Azure free trial subscription is ending soon. Please upgrade to a pay-as-you-go plan before the 28th to prevent your active services from being deleted. You can manage this from your Azure portal.",
   },
@@ -139,7 +139,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "G",
     avatarColor: '#24292E',
-    starred: false,
+    starred: true,
     important: false,
     body: "Dear user, we detected an outdated SSH key associated with your account. Please update your credentials or verify the key within 7 days to maintain write access to your repositories. Thank you.",
   },
@@ -175,7 +175,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "P",
     avatarColor: '#FF8BCB',
-    starred: true,
+    starred: false,
     important: false,
     body: "Hey, we are booking the Airbnb for our weekend trip to Lonavala. Please let me know your room preference and transfer ₹2,000 by Wednesday night so I can confirm the booking with the host.",
   },
@@ -199,7 +199,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "T",
     avatarColor: '#81C995',
-    starred: true,
+    starred: false,
     important: false,
     body: "Silicon valley continues to invest heavily in drone and aerospace tech. In today's issue, we look at three startups changing how we think about cargo deliveries and aerial surveys.",
   },
@@ -235,7 +235,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "G",
     avatarColor: '#4285F4',
-    starred: true,
+    starred: false,
     important: false,
     body: "We found some photos from this week back in 2023. Rediscover the moments, people, and places that made this day special. Access your cloud backup to view the full gallery.",
   },
@@ -259,7 +259,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: true,
     avatarLetter: "V",
     avatarColor: '#FC8019',
-    starred: true,
+    starred: false,
     important: false,
     body: "Hello, I hope you are making progress on the project literature review. Please submit your draft by the end of the week so we can review the references together. Let me know if you need additional access to the library archives.",
   },
@@ -283,7 +283,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "U",
     avatarColor: '#FF9900',
-    starred: true,
+    starred: false,
     important: false,
     body: "Thank you for creating an account on Udemy. Please click the button below to confirm your registration and claim your welcome coupon. This coupon is valid only for the next 24 hours.",
   },
@@ -295,7 +295,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "A",
     avatarColor: '#8AB4F8',
-    starred: true,
+    starred: false,
     important: false,
     body: "Hi team, I have uploaded the final UI design specification for the main portal. Please review the wireframes and leave comments before our sprint planning meeting on Thursday. Thanks for your time.",
   },
@@ -307,7 +307,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "V",
     avatarColor: '#000000',
-    starred: false,
+    starred: true,
     important: false,
     body: "We are excited to announce major performance updates to our image rendering pipeline. Websites will load faster while consuming less bandwidth. Read our blog for configuration tips.",
   },
@@ -331,7 +331,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "H",
     avatarColor: '#FC8019',
-    starred: true,
+    starred: false,
     important: false,
     body: "This week's popular project is a fast, dependency-free calendar plugin for modern frameworks. Developers appreciate the clean API design and responsive grid layout.",
   },
@@ -379,7 +379,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "A",
     avatarColor: '#000000',
-    starred: true,
+    starred: false,
     important: true,
     body: "Thank you for subscribing to Apple Care protection. This email contains the official PDF invoice for your coverage. The service has been automatically linked to your device.",
   },
@@ -415,7 +415,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "D",
     avatarColor: '#81C995',
-    starred: true,
+    starred: false,
     important: true,
     body: "Your Spanish learning streak is at risk. Spend just five minutes today to complete a lesson and secure your progress. Duo the owl is cheering you on from the sidelines.",
   },
@@ -475,7 +475,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "D",
     avatarColor: '#0077B5',
-    starred: true,
+    starred: false,
     important: true,
     body: "The sports gear order has been successfully picked up from the warehouse and is in transit. We expect delivery by Friday afternoon. Thank you for choosing Decathlon.",
   },
@@ -487,7 +487,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: true,
     avatarLetter: "P",
     avatarColor: '#81C995',
-    starred: true,
+    starred: false,
     important: true,
     body: "Hi, I've compiled my notes from our mock interview session yesterday. Please go through the feedback and revise your answers before our call on Tuesday. Focus particularly on the behavioral questions.",
   },
@@ -499,7 +499,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "G",
     avatarColor: '#4285F4',
-    starred: true,
+    starred: false,
     important: false,
     body: "Here is your upcoming schedule for the week. You have 3 meetings and 1 all-day event planned. Review the details in the calendar application on your device.",
   },
@@ -511,7 +511,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "N",
     avatarColor: '#81C995',
-    starred: true,
+    starred: false,
     important: false,
     body: "Hi mate, the client presentation is scheduled for Friday morning. Please review the financial projection slides and make necessary corrections before Thursday evening. We need to be fully prepared.",
   },
@@ -535,7 +535,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "S",
     avatarColor: '#81C995',
-    starred: true,
+    starred: false,
     important: false,
     body: "A new device was used to sign in to your Slack workspace. Please click the button below to verify this login within 24 hours to secure your workspace. If this was not you, reset your password.",
   },
@@ -559,7 +559,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "C",
     avatarColor: '#81C995',
-    starred: true,
+    starred: false,
     important: false,
     body: "Hi fitness enthusiast, your favorite yoga trainer has scheduled a session for tomorrow at 7 AM. Please book your slot through our app before 10 PM tonight to secure a spot in the class. Spots are filling up fast!",
   },
@@ -583,7 +583,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "C",
     avatarColor: '#8AB4F8',
-    starred: true,
+    starred: false,
     important: true,
     body: "Good news! Your shipment is out for delivery today. The delivery executive will contact you prior to arrival. Please ensure someone is available at the address.",
   },
@@ -679,7 +679,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "G",
     avatarColor: '#81C995',
-    starred: true,
+    starred: false,
     important: false,
     body: "Dynamic programming doesn't have to be confusing. In this article, we explain memoization and tabulation with easy-to-understand diagrams and code examples in python and JS.",
   },
@@ -751,7 +751,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "P",
     avatarColor: '#8AB4F8',
-    starred: true,
+    starred: false,
     important: false,
     body: "Hi, your cooking gas cylinder booking is due for renewal. Book a cylinder on Paytm before the end of the week to get flat cashback of ₹50. Ensure someone is home to receive the delivery.",
   },
@@ -763,7 +763,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "S",
     avatarColor: '#C58AF9',
-    starred: true,
+    starred: false,
     important: true,
     body: "Here's what you missed in the developer group this week. Active channels had 15 new threads, mostly discussing the recent library release. Read on to view the highlights.",
   },
@@ -787,7 +787,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "A",
     avatarColor: '#0077B5',
-    starred: true,
+    starred: false,
     important: false,
     body: "Hi, your annual membership at FitLife Gym expires next Monday. Please renew your subscription before the weekend to avail of the 10% early renewal discount. You can pay directly through our mobile application or at the front desk.",
   },
@@ -799,7 +799,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "S",
     avatarColor: '#FC8019',
-    starred: true,
+    starred: false,
     important: true,
     body: "We have booked a table for 4 guests under your name at 'The Bistro' for Saturday night. No further action is required. We hope you have a fantastic dining experience.",
   },
@@ -931,7 +931,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: true,
     avatarLetter: "U",
     avatarColor: '#000000',
-    starred: true,
+    starred: false,
     important: true,
     body: "Hi rider, we noticed that your driver rating has dropped or profile verification is pending. Please verify your phone number and secondary email within 48 hours to prevent account suspension.",
   },
@@ -1039,7 +1039,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "F",
     avatarColor: '#C58AF9',
-    starred: false,
+    starred: true,
     important: false,
     body: "In today's tutorial, we demonstrate how to create smooth transitions and gesture-controlled sliders. Learn to implement realistic physics and interactive animations in minutes.",
   },
@@ -1096,10 +1096,10 @@ const INITIAL_EMAILS: Email[] = [
     from: "Aman Verma",
     subject: "Prepare minutes of the meeting",
     time: "June 18 19:42 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "A",
     avatarColor: '#81C995',
-    starred: false,
+    starred: true,
     important: false,
     body: "Hey, thanks for taking notes during our team meeting today. Please clean them up and share the minutes of the meeting by Wednesday evening with the entire project group. Let me know if you need the slides.",
   },
@@ -1183,7 +1183,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "N",
     avatarColor: '#F28B82',
-    starred: true,
+    starred: false,
     important: false,
     body: "From the award-winning director comes a gripping story of secrets and deception in a small town. Check out the trailer on your home feed. Add it to your watchlist today.",
   },
@@ -1243,7 +1243,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "D",
     avatarColor: '#FDD663',
-    starred: false,
+    starred: true,
     important: true,
     body: "Hi, I have uploaded the final deck for our presentation to the shared folder. Please review the transition slides and confirm if you are okay with the layout by tomorrow noon. I want to download it locally to avoid network issues.",
   },
@@ -1278,6 +1278,16 @@ const EXTRA_OVERDUE_TASKS: Task[] = [
 ];
 
 export default function App() {
+  const nowIST = (): Date => {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    return new Date(utc + (5.5 * 60 * 60 * 1000));
+  };
+
+  const getISTISOString = (): string => {
+    return new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000)).toISOString();
+  };
+
   const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'dashboard' | 'inbox'>('tasks');
   const [exitingTaskIds, setExitingTaskIds] = useState<string[]>([]);
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -1491,6 +1501,12 @@ export default function App() {
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
   const [isCompletedOpen, setIsCompletedOpen] = useState(false);
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [isParsingInput, setIsParsingInput] = useState(false);
+  const [isParsingModalTask, setIsParsingModalTask] = useState(false);
+  const [parseModalError, setParseModalError] = useState<string | null>(null);
+  const [parseButtonLabel, setParseButtonLabel] = useState('✨ Parse with AI');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [urgencyFilter, setUrgencyFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [modalTaskName, setModalTaskName] = useState('');
   const [modalDueDate, setModalDueDate] = useState('');
@@ -1501,6 +1517,15 @@ export default function App() {
   const reparseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isImageScanModalOpen, setIsImageScanModalOpen] = useState(false);
   const [calendarPanelDate, setCalendarPanelDate] = useState<Date | null>(null);
+
+  // Smart email scanning
+  const [isScanningEmails, setIsScanningEmails] = useState(false);
+  const [scanProgress, setScanProgress] = useState({ current: 0, total: 0, found: 0 });
+  const [scanComplete, setScanComplete] = useState<{ scanned: number; found: number; skipped: number } | null>(null);
+  const [isScanSummaryOpen, setIsScanSummaryOpen] = useState(false);
+  const [emailReadState, setEmailReadState] = useState<Record<string, boolean>>({});
+  const scanCancelRef = useRef<boolean>(false);
+  const [scanErrorEmails, setScanErrorEmails] = useState<Array<{ id: string; from: string; subject: string }>>([]);
 
   // Feature 9 — trigger confetti when all tasks are done
   useEffect(() => {
@@ -1517,6 +1542,9 @@ export default function App() {
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   // Feature — expandable notes
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [editTaskName, setEditTaskName] = useState('');
+  const [editTaskDate, setEditTaskDate] = useState('');
+  const [editTaskDescription, setEditTaskDescription] = useState('');
   const [noteEditValue, setNoteEditValue] = useState('');
 
   // Future You
@@ -1527,6 +1555,16 @@ export default function App() {
   const [typewriterDone, setTypewriterDone] = useState(false);
   const [futureYouShareCopied, setFutureYouShareCopied] = useState(false);
   const [futureYouStartToast, setFutureYouStartToast] = useState(false);
+  const [exportToast, setExportToast] = useState(false);
+  const [testTasksToast, setTestTasksToast] = useState(false);
+  const [notifiedTaskIds, setNotifiedTaskIds] = useState<Record<string, string[]>>({});
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return localStorage.getItem('polaris-onboarded') !== 'true'; } catch { return true; }
+  });
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [notificationPermission, setNotificationPermission] = useState(() => {
+    try { return ('Notification' in window) ? Notification.permission : 'default'; } catch { return 'default'; }
+  });
 
   // Demo Mode
   // Dark Mode
@@ -1664,16 +1702,16 @@ export default function App() {
   // === DEMO MODE LOGIC ===
   const DEMO_STEPS = [
     { text: "It's 11 PM. You think you're done for the day.", spotlightSelector: null },
+    { text: "Everything in one place. Search, filter, add — right here.", spotlightSelector: '#polaris-task-input' },
     { text: "But your inbox has other plans.", spotlightSelector: '#tab-inbox' },
+    { text: "One click. Polaris reads every unread email for you.", spotlightSelector: null },
     { text: "An electricity bill. Due tomorrow. You never saw it.", spotlightSelector: '#email-detail-view' },
     { text: "Polaris found it. You didn't have to type a thing.", spotlightSelector: '[data-task-id="demo-task-1"]' },
-    { text: "There are two more hiding in your inbox.", spotlightSelector: null },
+    { text: "There are two more hiding. Polaris found those too.", spotlightSelector: null },
     { text: "One task is already past the point of no return.", spotlightSelector: '[data-task-id="demo-task-2"]' },
     { text: "You're overcommitted. Six deadlines. The same day.", spotlightSelector: null },
     { text: "Polaris knows what to protect. And what to drop.", spotlightSelector: null },
     { text: "The recovery email — already written. Just copy and send.", spotlightSelector: null },
-    { text: "Break the big ones down. Step by step.", spotlightSelector: null },
-    { text: "Two versions of next week. You choose.", spotlightSelector: null },
     { text: "This version of you exists. Polaris just showed you the way.", spotlightSelector: null },
   ];
 
@@ -1713,18 +1751,24 @@ export default function App() {
     setDemoFinalOverlay(false);
 
     switch (step) {
-      case 0:
+      case 0: // Show kanban
         setActiveTab('tasks');
         break;
-      case 1:
+      case 1: // Spotlight search toolbar
+        setActiveTab('tasks');
+        break;
+      case 2: // Switch to inbox
         setActiveTab('inbox');
         setSelectedEmailId(null);
         break;
-      case 2:
+      case 3: // Spotlight scan inbox button
+        setActiveTab('inbox');
+        break;
+      case 4: // Open email
         setActiveTab('inbox');
         setSelectedEmailId('email-1');
         break;
-      case 3:
+      case 5: // Add demo task 1
         setTasks(prev => {
           if (prev.some(t => t.id === 'demo-task-1')) return prev;
           return [...prev, { id: 'demo-task-1', title: 'Pay electricity bill', pillText: 'Due tomorrow', urgency: 'high' as const, context: 'Found in your inbox — City Power & Utilities', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false }];
@@ -1738,7 +1782,7 @@ export default function App() {
           }
         }, 300);
         break;
-      case 4:
+      case 6: // Add demo tasks 2 & 3
         setTasks(prev => {
           let next = prev;
           if (!next.some(t => t.id === 'demo-task-2')) {
@@ -1751,13 +1795,13 @@ export default function App() {
         });
         setActiveTab('tasks');
         break;
-      case 5:
+      case 7: // Spotlight overdue task
         setActiveTab('tasks');
         break;
-      case 6:
+      case 8: // Dashboard
         setActiveTab('dashboard');
         break;
-      case 7:
+      case 9: // Renegotiation
         setRenegotiatePlan({
           protect: [{ title: 'Pay electricity bill', reason: 'Due tomorrow — cannot defer' }],
           extend: [{ title: 'Submit enrollment form', reason: 'Has a few days of flexibility', draft: 'Hi, I wanted to reach out about the enrollment confirmation. I am currently managing several urgent deadlines. Would it be possible to get a short extension? I can submit within the next 2 days. Thank you.' }],
@@ -1765,38 +1809,13 @@ export default function App() {
         });
         setIsRenegotiateModalOpen(true);
         break;
-      case 8:
+      case 10: // Escape hatch
         setIsRenegotiateModalOpen(false);
         setEscapeDraftText("Hi Prof. Sharma, I sincerely apologize for the delay on the recommendation letter. I got caught up with some urgent competing deadlines. I will have it to you by tomorrow evening — thank you so much for your patience and understanding.");
         setIsEscapeModalOpen(true);
         break;
-      case 9:
+      case 11: // Final overlay
         setIsEscapeModalOpen(false);
-        setActiveTab('tasks');
-        setTasks(prev => prev.map(t => t.id === 'task-3' ? {
-          ...t,
-          decomposed: true,
-          subtasksCollapsed: false,
-          subtasks: [
-            { step: 'Review project requirements', minutes: 15, completed: false },
-            { step: 'Draft the main proposal', minutes: 45, completed: false },
-            { step: 'Add supporting data', minutes: 20, completed: false },
-            { step: 'Review and edit', minutes: 15, completed: false },
-            { step: 'Submit via portal', minutes: 5, completed: false },
-          ],
-        } : t));
-        setTimeout(() => {
-          const card = document.querySelector('[data-task-id="task-3"]');
-          if (card) {
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => applySpotlight('[data-task-id="task-3"]'), 400);
-          }
-        }, 500);
-        break;
-      case 10:
-        setIsFutureYouOpen(true);
-        break;
-      case 11:
         setDemoFinalOverlay(true);
         break;
     }
@@ -2355,6 +2374,58 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // Notification permission request
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      setTimeout(() => {
+        Notification.requestPermission().then(p => setNotificationPermission(p));
+      }, 3000);
+    }
+  }, []);
+
+  const sendNotification = (title: string, body: string) => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    try {
+      const n = new Notification(title, { body, icon: '/favicon.ico', badge: '/favicon.ico', tag: title });
+      n.onclick = () => { window.focus(); n.close(); };
+      setTimeout(() => n.close(), 8000);
+    } catch {}
+  };
+
+  // Deadline notification checks (runs every 60s via timeTick)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') return;
+    const now = nowIST();
+    const updates: Record<string, string[]> = {};
+
+    tasks.filter(t => !t.inProgress).forEach(t => {
+      const sent = notifiedTaskIds[t.id] || [];
+      const dl = parseDeadline(t.pillText, t.id);
+      if (!dl) return;
+      const hoursLeft = (dl.getTime() - now.getTime()) / 3600000;
+
+      if (isTaskOverdue(t) && !sent.includes('overdue')) {
+        sendNotification('💀 Overdue — ' + t.title, 'This commitment is now overdue. Use Escape Hatch to draft a recovery message.');
+        updates[t.id] = [...sent, 'overdue'];
+      } else if (t.pointOfNoReturnPassed && !sent.includes('ponr')) {
+        sendNotification('⚠ Act now — ' + t.title, "You've reached the point of no return. Start immediately or you'll miss this.");
+        updates[t.id] = [...(updates[t.id] || sent), 'ponr'];
+      } else if (hoursLeft > 0 && hoursLeft <= 1.08 && hoursLeft >= 0.92 && !sent.includes('1hour')) {
+        sendNotification('🔴 1 hour left — ' + t.title, 'Deadline in 1 hour. This needs your attention right now.');
+        updates[t.id] = [...(updates[t.id] || sent), '1hour'];
+      } else if (hoursLeft >= 23.5 && hoursLeft <= 24.5 && !sent.includes('24hour')) {
+        sendNotification('📅 Due tomorrow — ' + t.title, "This is due tomorrow. Make sure it's on your radar.");
+        updates[t.id] = [...(updates[t.id] || sent), '24hour'];
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      setNotifiedTaskIds(prev => ({ ...prev, ...updates }));
+    }
+  }, [tasks]);
+
   useEffect(() => {
     const newlyAdded: string[] = [];
     tasks.forEach(t => {
@@ -2376,24 +2447,24 @@ export default function App() {
   // Helper to parse deadline string into Date
   const parseDeadline = (pillText: string, taskId?: string): Date | null => {
     if (taskId === 'task-1') {
-      const d = new Date();
+      const d = nowIST();
       d.setHours(23, 59, 0, 0);
       return d;
     }
     if (taskId === 'task-2') {
-      const d = new Date();
+      const d = nowIST();
       d.setDate(d.getDate() - 2);
       d.setHours(23, 59, 0, 0);
       return d;
     }
     if (taskId === 'task-3') {
-      const d = new Date();
+      const d = nowIST();
       d.setDate(d.getDate() + 2);
       d.setHours(23, 59, 0, 0);
       return d;
     }
     if (taskId === 'task-4') {
-      const d = new Date();
+      const d = nowIST();
       d.setDate(d.getDate() + 7);
       d.setHours(23, 59, 0, 0);
       return d;
@@ -2404,31 +2475,28 @@ export default function App() {
     }
 
     const lower = pillText.toLowerCase();
-    const now = new Date();
 
     if (lower.includes('today')) {
-      const d = new Date();
+      const d = nowIST();
       d.setHours(23, 59, 0, 0);
       return d;
     }
     if (lower.includes('tomorrow')) {
-      const d = new Date();
+      const d = nowIST();
       d.setDate(d.getDate() + 1);
       d.setHours(23, 59, 0, 0);
       return d;
     }
 
-    // Try parsing weekday names
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     for (let i = 0; i < 7; i++) {
       if (lower.includes(daysOfWeek[i])) {
-        const d = new Date();
+        const d = nowIST();
         const currentDay = d.getDay();
         const targetDay = i;
         let diff = targetDay - currentDay;
         if (diff <= 0) diff += 7;
         d.setDate(d.getDate() + diff);
-
         if (lower.includes('4:00 pm') || lower.includes('4 pm')) {
           d.setHours(16, 0, 0, 0);
         } else {
@@ -2438,12 +2506,11 @@ export default function App() {
       }
     }
 
-    // Check if there is a day of month number (e.g. "27th")
     const match = lower.match(/\b(\d+)(st|nd|rd|th)?\b/);
     if (match) {
       const dayNum = parseInt(match[1], 10);
       if (dayNum >= 1 && dayNum <= 31) {
-        const d = new Date();
+        const d = nowIST();
         d.setDate(dayNum);
         d.setHours(23, 59, 0, 0);
         return d;
@@ -2454,7 +2521,7 @@ export default function App() {
   };
 
   const getCommitmentDensity = () => {
-    const today = new Date();
+    const today = nowIST();
     today.setHours(0, 0, 0, 0);
     
     const days: { date: Date; label: string; count: number }[] = [];
@@ -2711,20 +2778,21 @@ export default function App() {
 
   const formatDeadlineISO = (iso: string): string => {
     const d = new Date(iso);
-    const now = new Date();
-    const tmrw = new Date(now); tmrw.setDate(now.getDate() + 1);
-    if (d.toDateString() === now.toDateString()) return 'Due today';
-    if (d.toDateString() === tmrw.toDateString()) return 'Due tomorrow';
-    return `Due ${d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}`;
+    const now = nowIST();
+    const tmrw = new Date(now.getTime()); tmrw.setDate(tmrw.getDate() + 1);
+    if (d.toLocaleDateString('en-IN', { timeZone: 'Asia/Calcutta' }) === now.toLocaleDateString('en-IN')) return 'Due today';
+    if (d.toLocaleDateString('en-IN', { timeZone: 'Asia/Calcutta' }) === tmrw.toLocaleDateString('en-IN')) return 'Due tomorrow';
+    return `Due ${d.toLocaleDateString('en-IN', { timeZone: 'Asia/Calcutta', weekday: 'short', month: 'short', day: 'numeric' })}`;
   };
 
   const formatReadableISO = (iso: string): string => {
     const d = new Date(iso);
-    const now = new Date();
-    const tmrw = new Date(now); tmrw.setDate(now.getDate() + 1);
-    if (d.toDateString() === now.toDateString()) return `Today at ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
-    if (d.toDateString() === tmrw.toDateString()) return `Tomorrow at ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
-    return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+    const now = nowIST();
+    const tmrw = new Date(now.getTime()); tmrw.setDate(tmrw.getDate() + 1);
+    const dStr = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Calcutta' });
+    if (dStr === now.toLocaleDateString('en-IN')) return `Today at ${d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Calcutta', hour: 'numeric', minute: '2-digit' })}`;
+    if (dStr === tmrw.toLocaleDateString('en-IN')) return `Tomorrow at ${d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Calcutta', hour: 'numeric', minute: '2-digit' })}`;
+    return d.toLocaleDateString('en-IN', { timeZone: 'Asia/Calcutta', weekday: 'long', month: 'short', day: 'numeric' });
   };
 
   const handleModalDueDateChange = (value: string) => {
@@ -2734,7 +2802,7 @@ export default function App() {
     setIsReparsingDate(true);
     reparseTimer.current = setTimeout(async () => {
       try {
-        const resp = await fetchWithTimeout('/api/parse-date', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: value.trim(), currentDate: new Date().toISOString() }) }, 5000);
+        const resp = await fetchWithTimeout('/api/parse-date', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: value.trim(), currentDate: getISTISOString() }) }, 5000);
         if (!resp.ok) throw new Error('Not OK');
         const data = await resp.json();
         setModalDueDateISO(data.date || null);
@@ -2765,7 +2833,7 @@ export default function App() {
       console.log('Calling /api/parse-task with:', trimmedTitle);
       const response = await fetchWithTimeout('/api/parse-task', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: trimmedTitle, currentDate: new Date().toISOString() }),
+        body: JSON.stringify({ input: trimmedTitle, currentDate: getISTISOString() }),
       }, 5000);
       if (!response.ok) throw new Error('Not OK');
       const data = await response.json();
@@ -2804,9 +2872,48 @@ export default function App() {
     if (reparseTimer.current) clearTimeout(reparseTimer.current);
   };
 
+  const parseDeadlineToDateString = (pillText: string, taskId?: string): string => {
+    const d = parseDeadline(pillText, taskId);
+    if (!d) return '';
+    return d.toISOString().split('T')[0];
+  };
+
+  const handleSaveTaskEdit = (taskId: string) => {
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      let newPillText = 'No deadline set';
+      let newUrgency: 'high' | 'medium' | 'low' = 'low';
+      if (editTaskDate) {
+        const selectedDate = new Date(editTaskDate + 'T23:59:00');
+        const now = nowIST();
+        const hoursAway = (selectedDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+        const formatted = selectedDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Calcutta', weekday: 'short', month: 'short', day: 'numeric' });
+        newPillText = 'Due ' + formatted;
+        newUrgency = hoursAway <= 24 ? 'high' : hoursAway <= 168 ? 'medium' : 'low';
+      }
+      return { ...t, title: editTaskName.trim() || t.title, pillText: newPillText, urgency: newUrgency, context: editTaskDescription.trim() || t.context };
+    }));
+  };
+
+  const handleCancelTaskEdit = (task: Task) => {
+    setEditTaskName(task.title);
+    setEditTaskDate(parseDeadlineToDateString(task.pillText, task.id));
+    setEditTaskDescription(task.context);
+  };
+
+  const closeExpandedTask = () => {
+    setExpandedTaskId(null);
+    setEditTaskName('');
+    setEditTaskDate('');
+    setEditTaskDescription('');
+  };
+
   const closeAddTaskModal = () => {
     setIsAddTaskModalOpen(false);
     if (reparseTimer.current) clearTimeout(reparseTimer.current);
+    setParseModalError(null);
+    setParseButtonLabel('✨ Parse with AI');
+    setIsParsingModalTask(false);
   };
 
   const handleRemoveTask = (taskId: string) => {
@@ -2866,6 +2973,111 @@ export default function App() {
         email.id === emailId ? { ...email, unread: false } : email
       )
     );
+    setEmailReadState(prev => ({ ...prev, [emailId]: true }));
+  };
+
+  const unreadCount = emails.filter(e => e.unread && !emailReadState[e.id]).length;
+  const unreadPlusStarredCount = emails.filter(e => (e.unread && !emailReadState[e.id]) || e.starred).length;
+
+  const handleScanEmails = async (mode: 'unread' | 'unread+starred', emailsOverride?: Email[]) => {
+    let emailsToScan = emailsOverride || (mode === 'unread'
+      ? emails.filter(e => e.unread && !emailReadState[e.id])
+      : emails.filter(e => (e.unread && !emailReadState[e.id]) || e.starred || e.important));
+    const seen = new Set<string>();
+    emailsToScan = emailsToScan.filter(e => { if (seen.has(e.id)) return false; seen.add(e.id); return true; });
+
+    const alreadyScannedSources = new Set(extractionLog.map(entry => entry.sourceName));
+    let skipped = 0;
+    emailsToScan = emailsToScan.filter(e => {
+      const sourceName = `${e.from} — ${e.subject}`;
+      if (alreadyScannedSources.has(sourceName)) { skipped++; return false; }
+      return true;
+    });
+
+    if (emailsToScan.length === 0) {
+      setScanComplete({ scanned: 0, found: 0, skipped });
+      setIsScanSummaryOpen(true);
+      return;
+    }
+
+    scanCancelRef.current = false;
+    setIsScanningEmails(true);
+    setScanProgress({ current: 0, total: emailsToScan.length, found: 0 });
+    setScanComplete(null);
+    setScanErrorEmails([]);
+
+    let totalFound = 0;
+    let scannedCount = 0;
+
+    for (const email of emailsToScan) {
+      if (scanCancelRef.current) break;
+      scannedCount++;
+      setScanProgress(prev => ({ ...prev, current: scannedCount }));
+
+      try {
+        const response = await fetchWithTimeout('/api/scan-email', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bodyText: email.body }),
+        }, 10000);
+        if (!response.ok) throw new Error(`Not OK (${response.status})`);
+        const data = await response.json();
+        if (data.result) {
+          let parsed: Array<{ title: string; deadline: string; urgency: string }>;
+          try {
+            parsed = JSON.parse(data.result);
+            if (!Array.isArray(parsed)) parsed = [];
+          } catch { parsed = []; }
+
+          const existingTitles = new Set(tasks.map(t => t.title.toLowerCase()));
+          const newTasks: Task[] = [];
+          const newEntries: ExtractionLogEntry[] = [];
+
+          for (const t of parsed) {
+            if (!t.title || existingTitles.has(t.title.toLowerCase())) continue;
+            existingTitles.add(t.title.toLowerCase());
+            const id = `task-scan-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            const urgency = (['high', 'medium', 'low'].includes(t.urgency) ? t.urgency : 'low') as 'high' | 'medium' | 'low';
+            newTasks.push({
+              id, title: t.title, pillText: t.deadline || 'No deadline mentioned', urgency,
+              context: `Found in your inbox — ${email.from}`, primaryAction: 'Handle it now', secondaryAction: 'Snooze',
+              createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false,
+            });
+            newEntries.push({
+              id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              sourceType: 'email', sourceName: `${email.from} — ${email.subject}`,
+              taskTitle: t.title, deadline: t.deadline || 'No deadline mentioned', urgency, taskId: id, extractedAt: new Date(),
+            });
+          }
+
+          if (newTasks.length > 0) {
+            setTasks(prev => [...prev, ...newTasks]);
+            setExtractionLog(prev => [...prev, ...newEntries]);
+            setScannedCount(prev => prev + newTasks.length);
+            totalFound += newTasks.length;
+            setScanProgress(prev => ({ ...prev, found: totalFound }));
+          }
+        }
+        setEmailReadState(prev => ({ ...prev, [email.id]: true }));
+        setEmails(prev => prev.map(e => e.id === email.id ? { ...e, unread: false } : e));
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('high demand')) {
+          setScanErrorEmails(prev => [...prev, { id: email.id, from: email.from, subject: email.subject }]);
+          setGemini503Toast(true);
+          setTimeout(() => setGemini503Toast(false), 6000);
+        } else {
+          setScanErrorEmails(prev => [...prev, { id: email.id, from: email.from, subject: email.subject }]);
+        }
+      }
+
+      if (scannedCount < emailsToScan.length) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+
+    setIsScanningEmails(false);
+    setScanComplete({ scanned: scannedCount, found: totalFound, skipped });
+    setIsScanSummaryOpen(true);
   };
 
   const toggleStar = (emailId: string, e: MouseEvent) => {
@@ -2885,6 +3097,179 @@ export default function App() {
       )
     );
   };
+
+  const filterTask = useCallback((task: Task): boolean => {
+    const matchesSearch = searchQuery.trim() === '' ||
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.context.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (task.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesUrgency = urgencyFilter === 'all' || task.urgency === urgencyFilter;
+    return matchesSearch && matchesUrgency;
+  }, [searchQuery, urgencyFilter]);
+
+  const isFiltering = searchQuery.trim() !== '' || urgencyFilter !== 'all';
+
+  const completeOnboarding = () => {
+    setShowOnboarding(false);
+    setOnboardingStep(0);
+    try { localStorage.setItem('polaris-onboarded', 'true'); } catch {}
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Title', 'Status', 'Urgency', 'Deadline', 'Context', 'Notes'];
+    const todoRows = tasks.map(t => [t.title, t.inProgress ? 'In Progress' : 'To Do', t.urgency, t.pillText, t.context, t.notes || '']);
+    const doneRows = completedTasks.map(t => [t.title, 'Done', t.urgency, t.pillText, t.context, t.notes || '']);
+    const allRows = [...todoRows, ...doneRows];
+    const csvContent = [headers.join(','), ...allRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `polaris-tasks-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setExportToast(true);
+    setTimeout(() => setExportToast(false), 2000);
+  };
+
+  const handleLoadTestTasks = () => {
+    setTasks([]);
+    setCompletedTasks([]);
+    setCompletedCount(0);
+    setScannedCount(0);
+    setTotalOverdueEncountered(0);
+    setResolvedOverdueCount(0);
+    setOverdueTaskIds(new Set());
+    setExtractionLog([]);
+    setConfettiShown(false);
+    setNotifiedTaskIds({});
+    setExpandedTaskId(null);
+    setIsFocusMode(false);
+    setSearchQuery('');
+    setUrgencyFilter('all');
+    try {
+      localStorage.removeItem('polaris-tasks');
+      localStorage.removeItem('polaris-completed');
+      localStorage.removeItem('polaris-scanned');
+      localStorage.removeItem('polaris-total-overdue');
+      localStorage.removeItem('polaris-resolved-overdue');
+      localStorage.removeItem('polaris-overdue-ids');
+      localStorage.removeItem('polaris-extraction-log');
+    } catch {}
+    const testTasks: Task[] = [
+      { id: 'test-1', title: 'Pay LIC premium before due date', pillText: 'Due today', urgency: 'high', context: 'Financial — LIC premium payment pending', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-2', title: 'Submit machine learning assignment', pillText: 'Due tomorrow', urgency: 'high', context: 'Academic — ML assignment submission portal closes at midnight', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-3', title: 'Pay college fee for next semester', pillText: 'Due in 4 days', urgency: 'high', context: 'Academic — semester fee payment before registration closes', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-4', title: 'Buy birthday gift for mom', pillText: 'Due tomorrow', urgency: 'high', context: "Personal — mom's birthday is day after tomorrow, need to order today", primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-5', title: "RSVP for Priya's wedding", pillText: 'Due tomorrow', urgency: 'high', context: 'Social — wedding RSVP cutoff is tomorrow, venue needs headcount', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-6', title: 'Transfer ₹3,500 to roommate for rent', pillText: 'Due today', urgency: 'high', context: 'Financial — roommate needs to pay landlord today', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-7', title: 'Pick up prescription from pharmacy', pillText: 'Due today', urgency: 'high', context: 'Health — prescription ready for pickup, medicine needed tonight', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-8', title: 'Renew car insurance before expiry', pillText: 'Due in 5 days', urgency: 'medium', context: 'Financial — car insurance expires in 5 days, renewal needed', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-9', title: 'Register for semester exams', pillText: 'Due in 3 days', urgency: 'medium', context: 'Academic — exam registration portal closes in 3 days', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-10', title: 'Prepare quarterly performance review', pillText: 'Due in 3 days', urgency: 'medium', context: 'Professional — Q2 performance review doc due to manager', primaryAction: 'Break it down', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-11', title: 'Book flight tickets for Goa trip', pillText: 'Due in 4 days', urgency: 'medium', context: 'Personal — prices increasing daily, book before weekend', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-12', title: 'Backup laptop before OS update', pillText: 'Due in 2 days', urgency: 'medium', context: 'Tech — OS update scheduled, backup needed before it runs', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-13', title: 'Submit expense report for last month', pillText: 'Due next week', urgency: 'low', context: 'Professional — monthly expense report submission to finance team', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-14', title: 'Renew gym membership before it expires', pillText: 'Due in 6 days', urgency: 'low', context: 'Health — gym membership expires end of month', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+      { id: 'test-15', title: 'Schedule dentist appointment', pillText: 'No deadline set', urgency: 'low', context: 'Health — overdue for 6-month checkup, need to book slot', primaryAction: 'Handle it now', secondaryAction: 'Snooze', inProgress: false, createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false },
+    ];
+    setTasks(testTasks);
+    setTestTasksToast(true);
+    setTimeout(() => setTestTasksToast(false), 2000);
+  };
+
+  const handleOpenAddModal = () => {
+    setModalTaskName('');
+    setModalDueDate('');
+    setModalDueDateISO(null);
+    setModalDueDateReadable(null);
+    setModalDescription('');
+    setIsParsingInput(false);
+    setIsParsingModalTask(false);
+    setParseModalError(null);
+    setParseButtonLabel('✨ Parse with AI');
+    setIsAddTaskModalOpen(true);
+  };
+
+  const handleParseModalInput = async () => {
+    const input = modalTaskName.trim();
+    if (!input || isParsingModalTask) return;
+    setIsParsingModalTask(true);
+    setParseModalError(null);
+    setParseButtonLabel('Parsing... ⏳');
+
+    let lastError: string | null = null;
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        if (attempt === 2) {
+          setParseButtonLabel('Retrying... ⏳');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        const response = await fetch('/api/parse-task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input, currentDate: getISTISOString() }),
+          signal: AbortSignal.timeout(8000),
+        });
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          if (response.status === 503 || errorText.includes('high demand') || errorText.includes('UNAVAILABLE')) {
+            lastError = '503';
+            if (attempt === 1) continue;
+            break;
+          }
+          lastError = 'other';
+          break;
+        }
+        const parsed = await response.json();
+        if (parsed.title) setModalTaskName(parsed.title);
+        if (parsed.deadline) {
+          setModalDueDate(parsed.deadline);
+          setModalDueDateISO(parsed.deadlineISO || null);
+          setModalDueDateReadable(parsed.deadlineISO ? formatReadableISO(parsed.deadlineISO) : null);
+        }
+        if (parsed.description) setModalDescription(parsed.description);
+        setParseModalError(null);
+        setParseButtonLabel('✨ Parse with AI');
+        setIsParsingModalTask(false);
+        return;
+      } catch {
+        lastError = 'other';
+        break;
+      }
+    }
+
+    if (lastError === '503') {
+      setGemini503Toast(true);
+      setTimeout(() => setGemini503Toast(false), 6000);
+      setParseModalError('Gemini is experiencing high demand — try again in a moment');
+    } else {
+      setParseModalError("Couldn't parse — try again");
+    }
+    setParseButtonLabel('↺ Try again');
+    setIsParsingModalTask(false);
+  };
+
+  const sortedTodoTasks = useMemo(() => {
+    return [...tasks].filter(t => !t.inProgress).sort((a, b) => {
+      const aOverdue = isTaskOverdue(a);
+      const bOverdue = isTaskOverdue(b);
+      if (aOverdue && !bOverdue) return -1;
+      if (!aOverdue && bOverdue) return 1;
+      const urgencyOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+      const urgencyDiff = (urgencyOrder[a.urgency] || 2) - (urgencyOrder[b.urgency] || 2);
+      if (urgencyDiff !== 0) return urgencyDiff;
+      const aDeadline = parseDeadline(a.pillText, a.id);
+      const bDeadline = parseDeadline(b.pillText, b.id);
+      if (aDeadline && bDeadline) return aDeadline.getTime() - bDeadline.getTime();
+      if (aDeadline && !bDeadline) return -1;
+      if (!aDeadline && bDeadline) return 1;
+      return 0;
+    });
+  }, [tasks]);
 
   const isInbox = activeTab === 'inbox';
   const dm = {
@@ -2948,6 +3333,11 @@ export default function App() {
             className="font-sans text-[14px] bg-transparent cursor-pointer transition-colors px-[10px] py-[6px] rounded-[6px]"
             style={{ border: '1px solid var(--border-strong, rgba(14,27,42,0.15))' }}>
             {isDarkMode ? '☀️' : '🌙'}
+          </button>
+          <button type="button" onClick={handleLoadTestTasks}
+            className="font-sans font-medium text-[12px] px-[14px] py-[6px] rounded-[6px] cursor-pointer transition-colors"
+            style={{ background: 'transparent', border: `1px solid ${dm.borderStrong}`, color: dm.textSecondary }}>
+            📋 Test Tasks
           </button>
           {isDemoMode ? (
             <button type="button" onClick={handleDemoExit}
@@ -3068,32 +3458,61 @@ export default function App() {
               </div>
             )}
 
-            {/* Add Task Row + Scan Image — same row on desktop, stacked on mobile */}
-            <div className="w-full flex flex-col md:flex-row gap-[8px] mb-[16px]">
-              <form id="polaris-add-form" onSubmit={handleAddTask} className="flex gap-[8px] w-full md:w-auto" style={{ flex: 3 }}>
-                <div className="flex-1 relative">
-                  <input id="polaris-task-input" type="text" value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    disabled={isAddingTask}
-                    placeholder="Add a new task… e.g. 'Pay rent tomorrow' or 'Submit report by Friday'"
-                    className="w-full bg-white rounded-[8px] px-4 pr-9 font-sans text-[14px] text-polaris-primary placeholder-polaris-secondary/60 focus:outline-none transition-all disabled:opacity-70"
-                    style={{ height: '44px', border: isAddingTask ? '1.5px solid rgba(26,115,232,0.3)' : '1px solid var(--color-polaris-border, rgba(14,27,42,0.08))' }} />
-                  {isAddingTask && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 w-[14px] h-[14px] border-[1.5px] border-[#5B6B7B]/30 border-t-[#1A73E8] rounded-full animate-spin" />
-                  )}
-                </div>
-                <button id="polaris-add-button" type="submit" disabled={isAddingTask}
-                  className="px-5 bg-polaris-primary text-[#F7F5F0] font-sans font-semibold text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer whitespace-nowrap disabled:opacity-70"
-                  style={{ height: '44px' }}>
-                  {isAddingTask ? 'Parsing...' : 'Add task'}
+            {/* Search & Filter Toolbar */}
+            <div className="w-full flex flex-wrap items-center gap-[8px] mb-[16px] rounded-[10px] p-[8px] px-[12px]"
+              style={{ backgroundColor: dm.card, border: `1px solid ${dm.border}` }}>
+              {/* Search input */}
+              <div className="flex-1 min-w-[150px] flex items-center gap-1 relative">
+                <input id="polaris-task-input" type="text" value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="🔍 Search tasks..."
+                  className="w-full bg-transparent border-0 outline-none font-sans text-[14px]"
+                  style={{ color: dm.textPrimary }} />
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery('')}
+                    className="font-sans text-[14px] bg-transparent border-0 cursor-pointer shrink-0 px-1" style={{ color: dm.textSecondary }}>×</button>
+                )}
+              </div>
+              {/* Divider */}
+              <div className="hidden md:block" style={{ width: '1px', height: '20px', backgroundColor: dm.border, margin: '0 4px' }} />
+              {/* Filter pills */}
+              <div className="flex items-center gap-[4px]">
+                {(['all', 'high', 'medium', 'low'] as const).map(level => (
+                  <button key={level} type="button" onClick={() => setUrgencyFilter(level)}
+                    className="font-sans font-medium text-[12px] rounded-[20px] px-[10px] py-[4px] cursor-pointer transition-colors border"
+                    style={urgencyFilter === level
+                      ? { backgroundColor: dm.textPrimary, color: isDarkMode ? '#0F1117' : '#FFFFFF', borderColor: 'transparent' }
+                      : { backgroundColor: 'transparent', color: dm.textSecondary, borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(14,27,42,0.12)' }
+                    }>
+                    {level === 'all' ? 'All' : level === 'high' ? 'High' : level === 'medium' ? 'Med' : 'Low'}
+                  </button>
+                ))}
+              </div>
+              {/* Divider */}
+              <div className="hidden md:block" style={{ width: '1px', height: '20px', backgroundColor: dm.border, margin: '0 4px' }} />
+              {/* Action buttons */}
+              <div className="flex items-center gap-[6px]">
+                <button id="polaris-add-button" type="button" onClick={handleOpenAddModal}
+                  className="font-sans font-medium text-[13px] text-white rounded-[8px] cursor-pointer transition-colors border-0"
+                  style={{ backgroundColor: '#0E1B2A', padding: '10px 24px', height: '40px', minWidth: '120px', fontSize: '14px' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#1a2f42'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#0E1B2A'; }}>
+                  + Add Task
                 </button>
-              </form>
-              <button id="scan-image-tasks-btn" type="button" onClick={() => setIsImageScanModalOpen(true)}
-                className="bg-[#0F9D58] text-white font-sans font-medium text-[13px] rounded-[8px] hover:bg-[#0b7a43] transition-all cursor-pointer whitespace-nowrap px-4"
-                style={{ flex: 1, height: '44px' }}>
-                📸 Scan
-              </button>
+                <button id="scan-image-tasks-btn" type="button" onClick={() => setIsImageScanModalOpen(true)}
+                  className="font-sans font-medium text-[13px] text-white rounded-[8px] cursor-pointer transition-colors border-0"
+                  style={{ backgroundColor: '#1A73E8', padding: '8px 18px', height: '36px', minWidth: '90px' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#1557B0'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#1A73E8'; }}>
+                  📸 Scan
+                </button>
+              </div>
             </div>
+            {/* Hidden form for test compatibility */}
+            <form id="polaris-add-form" onSubmit={handleAddTask} style={{ display: 'none' }}>
+              <input type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} placeholder="Add a new task… e.g. 'Pay rent tomorrow'" />
+              <button type="submit">Add task</button>
+            </form>
 
             {/* === KANBAN BOARD or FOCUS MODE === */}
             {isFocusMode ? (
@@ -3110,9 +3529,9 @@ export default function App() {
                       <div key={task.id} id={`task-card-${task.id}`} data-task-id={task.id}
                         onClick={(e) => {
                           const target = e.target as HTMLElement;
-                          if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('a')) return;
+                          if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('a') || target.closest('label') || target.closest('[data-no-expand]') || target.closest('[role="checkbox"]')) return;
                           if (expandedTaskId === task.id) { setExpandedTaskId(null); }
-                          else { setExpandedTaskId(task.id); setNoteEditValue(task.notes || ''); }
+                          else { setExpandedTaskId(task.id); setNoteEditValue(task.notes || ''); setEditTaskName(task.title); setEditTaskDate(parseDeadlineToDateString(task.pillText, task.id)); setEditTaskDescription(task.context); }
                         }}
                         className={`card-slide-in bg-white border border-polaris-border rounded-[14px] p-[20px] flex flex-col items-start transition-all w-full cursor-pointer ${overdue ? 'overdue-card' : ''} ${expandedTaskId !== task.id ? 'hover:bg-[rgba(14,27,42,0.01)]' : ''}`}
                         style={{ ...(allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : {}), ...(task.inProgress ? { borderLeft: '3px solid #1A73E8' } : {}) }}>
@@ -3143,7 +3562,7 @@ export default function App() {
                           </div>
                         )}
                         {task.decomposed && task.subtasks && task.subtasks.length > 0 && (
-                          <div className="w-full border-t border-[rgba(14,27,42,0.08)] pt-3.5 mb-[18px]">
+                          <div className="w-full border-t border-[rgba(14,27,42,0.08)] pt-3.5 mb-[18px]" data-no-expand="true">
                             <div onClick={() => toggleSubtasksCollapse(task.id)} className="flex items-center justify-between cursor-pointer select-none mb-2">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-[10px] text-[#5B6B7B] w-3 text-center">{task.subtasksCollapsed ? '▶' : '▼'}</span>
@@ -3171,12 +3590,14 @@ export default function App() {
                         )}
                         {(() => {
                           const dl = parseDeadline(task.pillText, task.id); if (!dl) return null;
-                          const duration = getTaskDurationMinutes(task.title); const ponr = new Date(dl.getTime() - duration * 60 * 1000); const now = new Date();
+                          const duration = getTaskDurationMinutes(task.title); const ponr = new Date(dl.getTime() - duration * 60 * 1000); const now = nowIST();
                           let percent = 0; let barColor = '#0F9D58'; let textColorClass = 'text-[#0F9D58]'; let countdownText = '';
                           const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime(); const remaining = ponr.getTime() - now.getTime();
-                          if (remaining <= 0) { percent = 0; barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; countdownText = '🔴 Point of no return passed — act now.'; }
-                          else { percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
-                            if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; } else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; } else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
+                          const hoursToDeadline = (dl.getTime() - now.getTime()) / 3600000;
+                          if (remaining <= 0 && hoursToDeadline <= 48) { percent = 0; barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; countdownText = '🔴 Point of no return passed — act now.'; }
+                          else { percent = remaining <= 0 ? 0 : Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
+                            if (remaining <= 0) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; }
+                            else if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; } else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; } else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
                             const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const isTodayVal = ponr.toDateString() === now.toDateString(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
                             let dayString = ''; if (isTodayVal) dayString = 'today'; else if (isTomorrowVal) dayString = 'tomorrow'; else dayString = ponr.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
                             countdownText = `⚠ Start by ${dayString} at ${timeString} or you'll miss this.`;
@@ -3197,43 +3618,57 @@ export default function App() {
                               className="px-4 py-[9px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-80">
                               {task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id ? 'Drafting...' : task.primaryAction === 'Break it down' && task.decomposing ? 'Breaking down...' : task.primaryAction}
                             </button>
-                            {(() => { const dl = parseDeadline(task.pillText, task.id); if (!dl || dl.getTime() - Date.now() > 24*60*60*1000) return null;
+                            {(() => { const dl = parseDeadline(task.pillText, task.id); const hrsUntil = dl ? (dl.getTime() - nowIST().getTime()) / 3600000 : null; if (hrsUntil === null || hrsUntil <= 0 || hrsUntil > 24 || task.snoozed) return null;
                               return (<button type="button" onClick={() => { if (!task.snoozed) setTasks(prev => prev.map(t => t.id === task.id ? { ...t, snoozed: true, pillText: 'Snoozed — due tomorrow', urgency: 'low' } : t)); }}
                                 className="px-4 py-[9px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[13px] rounded-[8px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">{task.secondaryAction}</button>);
                             })()}
                           </div>
                         )}
-                        {/* Notes expansion panel */}
+                        {/* Unified Edit + Notes expansion panel */}
                         {expandedTaskId === task.id && (
                           <div style={{ width: '100%' }}>
-                            <div style={{ borderTop: '1px solid rgba(14,27,42,0.08)', margin: '12px 0' }} />
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                              <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '10px', color: '#5B6B7B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>📝 Notes</span>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setExpandedTaskId(null); }}
-                                style={{ background: 'transparent', border: 'none', color: '#5B6B7B', fontSize: '14px', cursor: 'pointer', lineHeight: 1, padding: '2px 4px' }}>×</button>
+                            <div style={{ borderTop: `1px solid ${dm.border}`, margin: '12px 0' }} />
+                            <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '10px', color: dm.textSecondary, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>✏️ Edit Task</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                              <div>
+                                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: dm.textSecondary, display: 'block', marginBottom: '4px' }}>Task name</label>
+                                <input type="text" value={editTaskName} onClick={(e) => e.stopPropagation()} onChange={(e) => setEditTaskName(e.target.value)}
+                                  style={{ width: '100%', border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '8px 12px', fontFamily: 'Inter, sans-serif', fontSize: '13px', background: dm.inputBg, color: dm.textPrimary, boxSizing: 'border-box' as const, outline: 'none' }} />
+                              </div>
+                              <div>
+                                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: dm.textSecondary, display: 'block', marginBottom: '4px' }}>Due date</label>
+                                <input type="date" value={editTaskDate} onClick={(e) => e.stopPropagation()} onChange={(e) => setEditTaskDate(e.target.value)}
+                                  style={{ width: '100%', border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '8px 12px', fontFamily: 'Inter, sans-serif', fontSize: '13px', background: dm.inputBg, color: dm.textPrimary, boxSizing: 'border-box' as const, outline: 'none' }} />
+                              </div>
+                              <div>
+                                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: dm.textSecondary, display: 'block', marginBottom: '4px' }}>Description</label>
+                                <textarea rows={3} value={editTaskDescription} onClick={(e) => e.stopPropagation()} onChange={(e) => setEditTaskDescription(e.target.value)}
+                                  placeholder="Add context about this task..."
+                                  style={{ width: '100%', border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '8px 12px', fontFamily: 'Inter, sans-serif', fontSize: '13px', background: dm.inputBg, color: dm.textPrimary, boxSizing: 'border-box' as const, outline: 'none', resize: 'vertical' as const }} />
+                              </div>
                             </div>
+                            <div style={{ borderTop: `1px solid ${dm.border}`, margin: '12px 0' }} />
+                            <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '10px', color: dm.textSecondary, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>📝 Notes</span>
                             <textarea
                               value={noteEditValue}
                               onChange={(e) => setNoteEditValue(e.target.value)}
                               onClick={(e) => e.stopPropagation()}
                               placeholder="Add a private note about this task..."
-                              style={{ width: '100%', minHeight: '80px', resize: 'vertical', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#0E1B2A', lineHeight: 1.5, border: '1px solid rgba(14,27,42,0.12)', borderRadius: '8px', padding: '10px 12px', background: '#FAFAFA', boxSizing: 'border-box', outline: 'none' }}
+                              style={{ width: '100%', minHeight: '60px', resize: 'vertical', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: dm.textPrimary, lineHeight: 1.5, border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '10px 12px', background: dm.inputBg, boxSizing: 'border-box' as const, outline: 'none', marginTop: '8px' }}
                             />
-                            <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                              <button type="button"
-                                onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: noteEditValue.trim() || undefined } : t)); setExpandedTaskId(null); }}
-                                style={{ background: '#0E1B2A', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '12px', padding: '6px 14px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>
-                                Save note
+                            <div style={{ borderTop: `1px solid ${dm.border}`, margin: '12px 0' }} />
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); handleSaveTaskEdit(task.id); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: noteEditValue.trim() || undefined } : t)); closeExpandedTask(); }}
+                                style={{ background: '#0E1B2A', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
+                                Save
                               </button>
-                              <button type="button"
-                                onClick={(e) => { e.stopPropagation(); setExpandedTaskId(null); setNoteEditValue(''); }}
-                                style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#5B6B7B', cursor: 'pointer', padding: '6px 0' }}>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); closeExpandedTask(); setNoteEditValue(''); }}
+                                style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: dm.textSecondary, cursor: 'pointer', padding: '8px 0' }}>
                                 Cancel
                               </button>
                               {task.notes && (
-                                <button type="button"
-                                  onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: undefined } : t)); setExpandedTaskId(null); }}
-                                  style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#B23A2E', cursor: 'pointer', padding: '6px 0' }}>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: undefined } : t)); setNoteEditValue(''); }}
+                                  style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#B23A2E', cursor: 'pointer', padding: '8px 0', marginLeft: 'auto' }}>
                                   Clear note
                                 </button>
                               )}
@@ -3256,13 +3691,15 @@ export default function App() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-sans text-[11px] uppercase tracking-[0.1em]" style={{ fontWeight: 700, color: '#5B6B7B' }}>To Do</span>
                     <span className="px-[8px] py-[2px] rounded-[10px] font-sans text-[11px]" style={{ fontWeight: 600, backgroundColor: 'rgba(91,107,123,0.1)', color: '#5B6B7B' }}>
-                      {tasks.filter(t => !t.inProgress).length}
+                      {sortedTodoTasks.filter(filterTask).length}
                     </span>
                   </div>
-                  {tasks.filter(t => !t.inProgress).length === 0 && (
-                    <div className="flex items-center justify-center py-10 font-sans text-[13px] text-[#5B6B7B]">✓ Nothing to do</div>
+                  {sortedTodoTasks.filter(filterTask).length === 0 && (
+                    <div className="flex items-center justify-center py-10 font-sans text-[13px]" style={{ color: dm.textSecondary }}>
+                      {isFiltering ? 'No tasks match your search' : '✓ Nothing to do'}
+                    </div>
                   )}
-                  {tasks.filter(t => !t.inProgress).map((task) => {
+                  {sortedTodoTasks.filter(filterTask).map((task) => {
                     let pillClass = '';
                     if (task.urgency === 'high') pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
                     else if (task.urgency === 'medium') pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
@@ -3273,9 +3710,9 @@ export default function App() {
                       <div key={task.id} id={`task-card-${task.id}`} data-task-id={task.id}
                         onClick={(e) => {
                           const target = e.target as HTMLElement;
-                          if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('a')) return;
+                          if (target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('a') || target.closest('label') || target.closest('[data-no-expand]') || target.closest('[role="checkbox"]')) return;
                           if (expandedTaskId === task.id) { setExpandedTaskId(null); }
-                          else { setExpandedTaskId(task.id); setNoteEditValue(task.notes || ''); }
+                          else { setExpandedTaskId(task.id); setNoteEditValue(task.notes || ''); setEditTaskName(task.title); setEditTaskDate(parseDeadlineToDateString(task.pillText, task.id)); setEditTaskDescription(task.context); }
                         }}
                         className={`card-slide-in card-enter bg-white border border-polaris-border rounded-[12px] p-[16px] flex flex-col items-start transition-all w-full cursor-pointer ${overdue ? 'overdue-card' : ''} ${exitingTaskIds.includes(task.id) ? 'card-exit' : ''} ${highlightedTaskId === task.id ? 'ring-2 ring-[#1A73E8]' : ''} ${expandedTaskId !== task.id ? 'hover:bg-[rgba(14,27,42,0.01)]' : ''}`}
                         style={{ ...(allStepsCompleted ? { boxShadow: '0 0 0 2px rgba(15,157,88,0.3)', borderColor: 'rgba(15,157,88,0.4)' } : {}) }}>
@@ -3326,12 +3763,14 @@ export default function App() {
                         )}
                         {(() => {
                           const dl = parseDeadline(task.pillText, task.id); if (!dl) return null;
-                          const duration = getTaskDurationMinutes(task.title); const ponr = new Date(dl.getTime() - duration * 60 * 1000); const now = new Date();
+                          const duration = getTaskDurationMinutes(task.title); const ponr = new Date(dl.getTime() - duration * 60 * 1000); const now = nowIST();
                           let percent = 0; let barColor = '#0F9D58'; let textColorClass = 'text-[#0F9D58]'; let countdownText = '';
                           const totalWindow = dl.getTime() - getTaskBaseTime(task, dl).getTime(); const remaining = ponr.getTime() - now.getTime();
-                          if (remaining <= 0) { percent = 0; barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; countdownText = '🔴 Act now'; }
-                          else { percent = Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
-                            if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; } else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; } else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
+                          const hoursToDeadline = (dl.getTime() - now.getTime()) / 3600000;
+                          if (remaining <= 0 && hoursToDeadline <= 48) { percent = 0; barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; countdownText = '🔴 Act now'; }
+                          else { percent = remaining <= 0 ? 0 : Math.max(0, Math.min(100, (remaining / totalWindow) * 100));
+                            if (remaining <= 0) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; }
+                            else if (percent > 50) { barColor = '#0F9D58'; textColorClass = 'text-[#0F9D58]'; } else if (percent >= 25) { barColor = '#C8893B'; textColorClass = 'text-[#C8893B]'; } else { barColor = '#B23A2E'; textColorClass = 'text-[#B23A2E]'; }
                             const timeString = ponr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); const isTodayVal = ponr.toDateString() === now.toDateString(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); const isTomorrowVal = ponr.toDateString() === tomorrow.toDateString();
                             let dayString = ''; if (isTodayVal) dayString = 'today'; else if (isTomorrowVal) dayString = 'tomorrow'; else dayString = ponr.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
                             countdownText = `⚠ Start by ${dayString} ${timeString}`;
@@ -3366,43 +3805,57 @@ export default function App() {
                               className="px-3 py-[7px] bg-polaris-primary text-[#F7F5F0] font-sans font-medium text-[12px] rounded-[7px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-80">
                               {task.primaryAction === 'Draft a reply' && escapeHatchLoadingTaskId === task.id ? 'Drafting...' : task.primaryAction === 'Break it down' && task.decomposing ? 'Breaking down...' : task.primaryAction}
                             </button>
-                            {(() => { const dl = parseDeadline(task.pillText, task.id); if (!dl || dl.getTime() - Date.now() > 24*60*60*1000) return null;
+                            {(() => { const dl = parseDeadline(task.pillText, task.id); const hrsUntil = dl ? (dl.getTime() - nowIST().getTime()) / 3600000 : null; if (hrsUntil === null || hrsUntil <= 0 || hrsUntil > 24 || task.snoozed) return null;
                               return (<button type="button" onClick={() => { if (!task.snoozed) setTasks(prev => prev.map(t => t.id === task.id ? { ...t, snoozed: true, pillText: 'Snoozed — due tomorrow', urgency: 'low' } : t)); }}
                                 className="px-3 py-[7px] bg-transparent text-polaris-primary border border-[rgba(14,27,42,0.2)] font-sans font-medium text-[12px] rounded-[7px] hover:bg-[rgba(14,27,42,0.03)] active:scale-98 transition-all cursor-pointer">{task.secondaryAction}</button>);
                             })()}
                           </div>
                         )}
-                        {/* Notes expansion panel (kanban) */}
+                        {/* Unified Edit + Notes expansion panel (kanban) */}
                         {expandedTaskId === task.id && (
                           <div style={{ width: '100%' }}>
-                            <div style={{ borderTop: '1px solid rgba(14,27,42,0.08)', margin: '12px 0' }} />
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                              <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '10px', color: '#5B6B7B', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>📝 Notes</span>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setExpandedTaskId(null); }}
-                                style={{ background: 'transparent', border: 'none', color: '#5B6B7B', fontSize: '14px', cursor: 'pointer', lineHeight: 1, padding: '2px 4px' }}>×</button>
+                            <div style={{ borderTop: `1px solid ${dm.border}`, margin: '12px 0' }} />
+                            <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '10px', color: dm.textSecondary, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>✏️ Edit Task</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                              <div>
+                                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: dm.textSecondary, display: 'block', marginBottom: '4px' }}>Task name</label>
+                                <input type="text" value={editTaskName} onClick={(e) => e.stopPropagation()} onChange={(e) => setEditTaskName(e.target.value)}
+                                  style={{ width: '100%', border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '8px 12px', fontFamily: 'Inter, sans-serif', fontSize: '13px', background: dm.inputBg, color: dm.textPrimary, boxSizing: 'border-box' as const, outline: 'none' }} />
+                              </div>
+                              <div>
+                                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: dm.textSecondary, display: 'block', marginBottom: '4px' }}>Due date</label>
+                                <input type="date" value={editTaskDate} onClick={(e) => e.stopPropagation()} onChange={(e) => setEditTaskDate(e.target.value)}
+                                  style={{ width: '100%', border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '8px 12px', fontFamily: 'Inter, sans-serif', fontSize: '13px', background: dm.inputBg, color: dm.textPrimary, boxSizing: 'border-box' as const, outline: 'none' }} />
+                              </div>
+                              <div>
+                                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: dm.textSecondary, display: 'block', marginBottom: '4px' }}>Description</label>
+                                <textarea rows={3} value={editTaskDescription} onClick={(e) => e.stopPropagation()} onChange={(e) => setEditTaskDescription(e.target.value)}
+                                  placeholder="Add context about this task..."
+                                  style={{ width: '100%', border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '8px 12px', fontFamily: 'Inter, sans-serif', fontSize: '13px', background: dm.inputBg, color: dm.textPrimary, boxSizing: 'border-box' as const, outline: 'none', resize: 'vertical' as const }} />
+                              </div>
                             </div>
+                            <div style={{ borderTop: `1px solid ${dm.border}`, margin: '12px 0' }} />
+                            <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '10px', color: dm.textSecondary, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>📝 Notes</span>
                             <textarea
                               value={noteEditValue}
                               onChange={(e) => setNoteEditValue(e.target.value)}
                               onClick={(e) => e.stopPropagation()}
                               placeholder="Add a private note about this task..."
-                              style={{ width: '100%', minHeight: '80px', resize: 'vertical', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#0E1B2A', lineHeight: 1.5, border: '1px solid rgba(14,27,42,0.12)', borderRadius: '8px', padding: '10px 12px', background: '#FAFAFA', boxSizing: 'border-box' as const, outline: 'none' }}
+                              style={{ width: '100%', minHeight: '60px', resize: 'vertical', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: dm.textPrimary, lineHeight: 1.5, border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '10px 12px', background: dm.inputBg, boxSizing: 'border-box' as const, outline: 'none', marginTop: '8px' }}
                             />
-                            <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                              <button type="button"
-                                onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: noteEditValue.trim() || undefined } : t)); setExpandedTaskId(null); }}
-                                style={{ background: '#0E1B2A', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '12px', padding: '6px 14px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>
-                                Save note
+                            <div style={{ borderTop: `1px solid ${dm.border}`, margin: '12px 0' }} />
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); handleSaveTaskEdit(task.id); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: noteEditValue.trim() || undefined } : t)); closeExpandedTask(); }}
+                                style={{ background: '#0E1B2A', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
+                                Save
                               </button>
-                              <button type="button"
-                                onClick={(e) => { e.stopPropagation(); setExpandedTaskId(null); setNoteEditValue(''); }}
-                                style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#5B6B7B', cursor: 'pointer', padding: '6px 0' }}>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); closeExpandedTask(); setNoteEditValue(''); }}
+                                style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: dm.textSecondary, cursor: 'pointer', padding: '8px 0' }}>
                                 Cancel
                               </button>
                               {task.notes && (
-                                <button type="button"
-                                  onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: undefined } : t)); setExpandedTaskId(null); }}
-                                  style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#B23A2E', cursor: 'pointer', padding: '6px 0' }}>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: undefined } : t)); setNoteEditValue(''); }}
+                                  style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#B23A2E', cursor: 'pointer', padding: '8px 0', marginLeft: 'auto' }}>
                                   Clear note
                                 </button>
                               )}
@@ -3419,13 +3872,15 @@ export default function App() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-sans text-[11px] uppercase tracking-[0.1em]" style={{ fontWeight: 700, color: '#1A73E8' }}>In Progress</span>
                     <span className="px-[8px] py-[2px] rounded-[10px] font-sans text-[11px]" style={{ fontWeight: 600, backgroundColor: 'rgba(26,115,232,0.1)', color: '#1A73E8' }}>
-                      {tasks.filter(t => t.inProgress).length}
+                      {tasks.filter(t => t.inProgress).filter(filterTask).length}
                     </span>
                   </div>
-                  {tasks.filter(t => t.inProgress).length === 0 && (
-                    <div className="flex items-center justify-center py-10 font-sans text-[13px] text-[#5B6B7B]">Click 'Handle it now' on any task</div>
+                  {tasks.filter(t => t.inProgress).filter(filterTask).length === 0 && (
+                    <div className="flex items-center justify-center py-10 font-sans text-[13px]" style={{ color: dm.textSecondary }}>
+                      {isFiltering ? 'No tasks match your search' : "Click 'Handle it now' on any task"}
+                    </div>
                   )}
-                  {tasks.filter(t => t.inProgress).map((task) => (
+                  {tasks.filter(t => t.inProgress).filter(filterTask).map((task) => (
                     <div key={task.id} id={`task-card-${task.id}`} data-task-id={task.id}
                       className={`card-slide-in bg-white border border-polaris-border rounded-[12px] p-[16px] flex flex-col items-start transition-all w-full ${highlightedTaskId === task.id ? 'ring-2 ring-[#1A73E8]' : ''}`}
                       style={{ borderLeft: '3px solid #1A73E8' }}>
@@ -3454,13 +3909,15 @@ export default function App() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-sans text-[11px] uppercase tracking-[0.1em]" style={{ fontWeight: 700, color: '#0F9D58' }}>Done</span>
                     <span className="px-[8px] py-[2px] rounded-[10px] font-sans text-[11px]" style={{ fontWeight: 600, backgroundColor: 'rgba(15,157,88,0.1)', color: '#0F9D58' }}>
-                      {completedTasks.length}
+                      {completedTasks.filter(filterTask).length}
                     </span>
                   </div>
-                  {completedTasks.length === 0 && (
-                    <div className="flex items-center justify-center py-10 font-sans text-[13px] text-[#5B6B7B]">No completed tasks yet</div>
+                  {completedTasks.filter(filterTask).length === 0 && (
+                    <div className="flex items-center justify-center py-10 font-sans text-[13px]" style={{ color: dm.textSecondary }}>
+                      {isFiltering ? 'No tasks match your search' : 'No completed tasks yet'}
+                    </div>
                   )}
-                  {completedTasks.map(task => {
+                  {completedTasks.filter(filterTask).map(task => {
                     let pillClass = 'bg-[rgba(91,107,123,0.12)] text-[#5B6B7B]';
                     if (task.urgency === 'high') pillClass = 'bg-[rgba(178,58,46,0.12)] text-[#B23A2E]';
                     else if (task.urgency === 'medium') pillClass = 'bg-[rgba(200,137,59,0.14)] text-[#8A6225]';
@@ -3876,7 +4333,18 @@ export default function App() {
             /* DASHBOARD TAB PANEL */
             <div id="polaris-dashboard-container" className="tab-fade-in w-full max-w-[900px] flex flex-col gap-6 pt-10 pb-16 px-6">
               <h2 className="font-serif font-medium text-[20px] text-polaris-primary mb-2">Dashboard</h2>
-              
+
+              {notificationPermission === 'denied' && (
+                <div className="font-sans text-[12px] rounded-[8px] px-[14px] py-[8px] mb-3" style={{ color: '#C8893B', backgroundColor: 'rgba(200,137,59,0.08)' }}>
+                  ⚠ Notifications blocked — enable in browser settings to get deadline alerts
+                </div>
+              )}
+              {notificationPermission === 'granted' && (
+                <div className="font-sans text-[12px] rounded-[8px] px-[14px] py-[8px] mb-3" style={{ color: '#0F9D58', backgroundColor: 'rgba(15,157,88,0.06)' }}>
+                  🔔 Notifications active — Polaris will alert you before deadlines
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                 {/* CARD: Recovery Score */}
                 <div className="bg-white border border-polaris-border rounded-[14px] p-[20px] shadow-sm flex flex-col justify-between">
@@ -4332,6 +4800,15 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
+              {/* Export CSV Button */}
+              <button type="button" id="export-csv-btn" onClick={handleExportCSV}
+                className="w-full font-sans font-medium text-[13px] rounded-[8px] px-[20px] py-[10px] cursor-pointer transition-colors mt-4"
+                style={{ background: 'transparent', border: `1px solid ${dm.border}`, color: dm.textSecondary }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(14,27,42,0.03)'; (e.currentTarget as HTMLElement).style.color = dm.textPrimary; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = dm.textSecondary; }}>
+                ⬇ Export tasks as CSV
+              </button>
           </div>
         );
       })()}
@@ -4578,6 +5055,34 @@ export default function App() {
                         <span className="material-icons text-[#5F6368] text-[20px] cursor-pointer hover:bg-gray-100 p-1 rounded-full ml-1 mr-2">
                           settings
                         </span>
+                      </div>
+                      {/* Smart Scan Row — above category tabs */}
+                      <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3" style={{ padding: '10px 16px', backgroundColor: 'rgba(200,137,59,0.06)', borderBottom: '1px solid rgba(200,137,59,0.15)' }}>
+                        {isScanningEmails ? (
+                          <div className="flex-1 w-full flex flex-col gap-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-sans text-[13px]" style={{ color: '#C8893B' }}>
+                                ⚡ Scanning email {scanProgress.current} of {scanProgress.total}...
+                              </span>
+                              <button type="button" onClick={() => { scanCancelRef.current = true; }}
+                                className="font-sans text-[12px] bg-transparent border-0 cursor-pointer" style={{ color: dm.textSecondary }}>Cancel</button>
+                            </div>
+                            <div style={{ width: '100%', height: '2px', backgroundColor: 'rgba(200,137,59,0.2)', borderRadius: '1px' }}>
+                              <div style={{ width: `${scanProgress.total > 0 ? (scanProgress.current / scanProgress.total) * 100 : 0}%`, height: '100%', backgroundColor: '#C8893B', borderRadius: '1px', transition: 'width 0.3s ease' }} />
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => handleScanEmails('unread+starred')}
+                              className="font-sans font-medium text-[13px] rounded-[8px] px-[20px] py-[8px] cursor-pointer transition-colors border-0 whitespace-nowrap w-full md:w-auto"
+                              style={{ color: 'white', backgroundColor: '#C8893B' }}>
+                              ⚡ Scan inbox for deadlines
+                            </button>
+                            <span className="font-sans text-[12px]" style={{ color: dm.textSecondary }}>
+                              Scan unread, starred & important emails for hidden deadlines
+                            </span>
+                          </>
+                        )}
                       </div>
 
                       {/* CATEGORY TABS ROW */}
@@ -4999,8 +5504,25 @@ export default function App() {
             <div className="flex flex-col gap-3">
               <div>
                 <label className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-1 block">Task name</label>
-                <input type="text" value={modalTaskName} onChange={(e) => setModalTaskName(e.target.value)} autoFocus
+                <input type="text" value={modalTaskName} onChange={(e) => { setModalTaskName(e.target.value); setParseModalError(null); }} autoFocus
                   className="w-full bg-white border border-polaris-border rounded-[8px] px-4 py-2.5 font-sans text-[14px] text-polaris-primary focus:outline-none focus:border-polaris-primary/30 transition-all" />
+                <button type="button" onClick={handleParseModalInput} disabled={isParsingModalTask || !modalTaskName.trim()}
+                  className="font-sans font-medium text-[12px] rounded-[6px] px-[10px] py-[5px] cursor-pointer transition-colors mt-[6px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ color: '#C8893B', backgroundColor: 'transparent', border: '1px solid rgba(200,137,59,0.3)' }}
+                  onMouseEnter={(e) => { if (!isParsingModalTask) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(200,137,59,0.08)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
+                  {parseButtonLabel}
+                </button>
+                {parseModalError && (
+                  <p className="font-sans text-[12px] mt-1" style={{ color: '#B23A2E', transition: 'opacity 0.2s' }}>
+                    ⚠ {parseModalError}
+                  </p>
+                )}
+                {!parseModalError && modalTaskName.trim() && !isParsingModalTask && (
+                  <p className="font-sans text-[11px] italic mt-1" style={{ color: '#5B6B7B' }}>
+                    Type naturally — e.g. 'pay rent tomorrow' then click Parse
+                  </p>
+                )}
               </div>
               <div>
                 <label className="font-sans font-medium text-[13px] text-[#5B6B7B] mb-1 block">Due date (optional)</label>
@@ -5033,6 +5555,79 @@ export default function App() {
                 className="px-4 py-2 bg-[#0E1B2A] text-white font-sans font-medium text-[13px] rounded-[8px] hover:bg-opacity-90 active:scale-98 transition-all cursor-pointer">
                 Add task
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scan Summary Modal */}
+      {isScanSummaryOpen && scanComplete && (
+        <div onClick={() => setIsScanSummaryOpen(false)}
+          className="modal-backdrop fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div onClick={(e) => e.stopPropagation()}
+            className="modal-content max-w-[420px] w-full rounded-[16px] p-7 shadow-2xl relative flex flex-col gap-5"
+            style={{ backgroundColor: dm.card }}>
+            <button type="button" onClick={() => setIsScanSummaryOpen(false)}
+              className="absolute top-5 right-5 text-[20px] border-0 bg-transparent cursor-pointer font-sans" style={{ color: dm.textSecondary }}>✕</button>
+            <h2 className="font-serif font-medium text-[20px]" style={{ color: dm.textPrimary }}>Scan Complete ✓</h2>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="font-sans font-bold text-[28px]" style={{ color: dm.textPrimary }}>{scanComplete.scanned}</div>
+                <div className="font-sans text-[12px]" style={{ color: dm.textSecondary }}>📧 Emails scanned</div>
+              </div>
+              <div>
+                <div className="font-sans font-bold text-[28px]" style={{ color: '#0F9D58' }}>{scanComplete.found}</div>
+                <div className="font-sans text-[12px]" style={{ color: dm.textSecondary }}>✅ Tasks found</div>
+              </div>
+              <div>
+                <div className="font-sans font-bold text-[28px]" style={{ color: dm.textSecondary }}>{scanComplete.skipped}</div>
+                <div className="font-sans text-[12px]" style={{ color: dm.textSecondary }}>⏭ Already scanned</div>
+              </div>
+            </div>
+            {scanComplete.found > 0 ? (
+              <div className="rounded-[8px] p-3 text-center font-sans text-[13px] font-medium" style={{ backgroundColor: 'rgba(15,157,88,0.08)', color: '#0F9D58' }}>
+                {scanComplete.found} new task{scanComplete.found !== 1 ? 's' : ''} added to your To Do column
+              </div>
+            ) : (
+              <div className="rounded-[8px] p-3 text-center font-sans text-[13px]" style={{ color: dm.textSecondary }}>
+                No new deadlines found in these emails
+              </div>
+            )}
+            {scanErrorEmails.length > 0 && (
+              <div className="rounded-[8px] p-3 font-sans text-[13px]" style={{ backgroundColor: 'rgba(200,137,59,0.08)', border: '1px solid rgba(200,137,59,0.2)' }}>
+                <p className="font-medium mb-1" style={{ color: '#C8893B' }}>⚠ {scanErrorEmails.length} email{scanErrorEmails.length !== 1 ? 's' : ''} couldn't be scanned due to Gemini API high demand</p>
+                <div className="flex flex-col gap-0.5 mb-2">
+                  {scanErrorEmails.slice(0, 5).map(e => (
+                    <span key={e.id} className="text-[12px] truncate" style={{ color: dm.textSecondary }}>{e.from}</span>
+                  ))}
+                  {scanErrorEmails.length > 5 && <span className="text-[12px]" style={{ color: dm.textSecondary }}>...and {scanErrorEmails.length - 5} more</span>}
+                </div>
+                <button type="button" onClick={() => {
+                  const failedIds = new Set(scanErrorEmails.map(e => e.id));
+                  const failedEmails = emails.filter(e => failedIds.has(e.id));
+                  setScanErrorEmails([]);
+                  setIsScanSummaryOpen(false);
+                  handleScanEmails('unread+starred', failedEmails);
+                }}
+                  className="font-sans font-medium text-[12px] rounded-[8px] px-[16px] py-[6px] cursor-pointer"
+                  style={{ color: '#C8893B', backgroundColor: 'rgba(200,137,59,0.1)', border: '1px solid #C8893B' }}>
+                  Retry failed emails →
+                </button>
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button type="button" onClick={() => setIsScanSummaryOpen(false)}
+                className="px-4 py-2 bg-transparent font-sans font-medium text-[13px] rounded-[8px] transition-all cursor-pointer"
+                style={{ color: dm.textPrimary, border: `1px solid ${dm.borderStrong}` }}>
+                Close
+              </button>
+              {scanComplete.found > 0 && (
+                <button type="button" onClick={() => { setIsScanSummaryOpen(false); setActiveTab('tasks'); }}
+                  className="px-4 py-2 text-white font-sans font-medium text-[13px] rounded-[8px] transition-all cursor-pointer border-0"
+                  style={{ backgroundColor: '#0E1B2A' }}>
+                  View Tasks →
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -5290,6 +5885,7 @@ export default function App() {
             setCompletedTaskIds(new Set());
             setCompletedTasks([]);
             setConfettiShown(false);
+            setNotifiedTaskIds({});
             setDemoResetToast(true);
             setTimeout(() => setDemoResetToast(false), 2000);
           }}
@@ -5373,6 +5969,117 @@ export default function App() {
           }}
         >
           Demo reset — showing seed data
+        </div>
+      )}
+
+      {/* Export toast */}
+      {exportToast && (
+        <div style={{ position: 'fixed', bottom: '24px', right: '16px', zIndex: 1000, background: '#0F9D58', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', padding: '10px 20px', borderRadius: '8px', transition: 'opacity 0.3s' }}>
+          ✓ Tasks exported successfully
+        </div>
+      )}
+
+      {/* Test tasks toast */}
+      {testTasksToast && (
+        <div style={{ position: 'fixed', bottom: '32px', right: '16px', background: '#1A73E8', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, padding: '10px 20px', borderRadius: '8px', zIndex: 10000, pointerEvents: 'none' }}>
+          ✓ 15 test tasks loaded
+        </div>
+      )}
+
+      {/* === ONBOARDING FLOW === */}
+      {showOnboarding && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(14,27,42,0.85)' }}>
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: dm.card, borderRadius: '16px', padding: '40px', maxWidth: '480px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', animation: 'onboardingCardIn 0.3s ease' }}>
+            {/* Top row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: dm.textSecondary }}>{onboardingStep + 1} of 3</span>
+              <button type="button" onClick={completeOnboarding} style={{ background: 'transparent', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: dm.textSecondary, cursor: 'pointer' }}>Skip →</button>
+            </div>
+            {/* Progress dots */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '8px' }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} style={{ width: onboardingStep === i ? '20px' : '8px', height: '8px', borderRadius: '10px', backgroundColor: onboardingStep === i ? dm.textPrimary : 'rgba(14,27,42,0.15)', transition: 'width 0.3s ease' }} />
+              ))}
+            </div>
+            {/* Content */}
+            <div key={onboardingStep} style={{ animation: 'onboardingFadeIn 0.25s ease forwards' }}>
+              {onboardingStep === 0 && (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '48px', marginTop: '16px' }}>🌟</div>
+                  <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 500, fontSize: '24px', color: dm.textPrimary, marginTop: '16px' }}>Meet Polaris</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: dm.textSecondary, marginTop: '8px' }}>Your fixed point before the deadline.</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: dm.textSecondary, lineHeight: 1.6, marginTop: '20px' }}>
+                    Most people don't miss deadlines because they're lazy. They miss them because the deadline was buried in an email they never scanned, a note they never tracked, a message they meant to follow up on.
+                  </p>
+                  <div style={{ backgroundColor: 'rgba(200,137,59,0.08)', borderRadius: '10px', padding: '14px 18px', marginTop: '16px' }}>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '14px', color: '#C8893B', margin: 0 }}>
+                      Polaris finds those hidden deadlines and helps you act on them — before it's too late.
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => setOnboardingStep(1)}
+                    style={{ width: '100%', marginTop: '24px', padding: '12px 32px', backgroundColor: dm.textPrimary, color: isDarkMode ? '#0F1117' : 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '14px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
+                    Let's go →
+                  </button>
+                </div>
+              )}
+              {onboardingStep === 1 && (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '48px', marginTop: '16px' }}>📧</div>
+                  <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 500, fontSize: '22px', color: dm.textPrimary, marginTop: '16px' }}>Hidden deadlines in your inbox</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: dm.textSecondary, lineHeight: 1.6, marginTop: '16px' }}>
+                    Your inbox has emails with deadlines buried in them right now. Bills, forms, meeting confirmations — none of them made it to a to-do list.
+                  </p>
+                  <div style={{ backgroundColor: dm.bg, borderRadius: '10px', padding: '16px', marginTop: '16px', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#EA4335', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', flexShrink: 0 }}>C</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', color: dm.textPrimary }}>City Power & Utilities</div>
+                        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: dm.textSecondary }}>Electricity Bill Due — Action Required</div>
+                      </div>
+                      <span style={{ backgroundColor: 'rgba(200,137,59,0.12)', color: '#C8893B', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '11px', padding: '2px 8px', borderRadius: '10px', flexShrink: 0 }}>⚠ Deadline detected</span>
+                    </div>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#0F9D58', marginTop: '10px', margin: '10px 0 0' }}>→ Polaris scans this and adds it to your tasks automatically</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
+                    <button type="button" onClick={() => { completeOnboarding(); setActiveTab('inbox'); }}
+                      style={{ flex: 1, padding: '10px 20px', backgroundColor: dm.textPrimary, color: isDarkMode ? '#0F1117' : 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
+                      Scan my inbox →
+                    </button>
+                    <button type="button" onClick={() => setOnboardingStep(2)}
+                      style={{ flex: 1, padding: '10px 20px', backgroundColor: 'transparent', color: dm.textPrimary, fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', borderRadius: '8px', border: `1px solid ${dm.border}`, cursor: 'pointer' }}>
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+              {onboardingStep === 2 && (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '48px', marginTop: '16px' }}>✅</div>
+                  <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 500, fontSize: '22px', color: dm.textPrimary, marginTop: '16px' }}>Add tasks naturally</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: dm.textSecondary, lineHeight: 1.6, marginTop: '16px' }}>
+                    Just type what you need to do. Polaris understands natural language — deadlines, context, urgency — all extracted automatically.
+                  </p>
+                  <div style={{ backgroundColor: dm.bg, borderRadius: '10px', padding: '16px', marginTop: '16px', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ flex: 1, backgroundColor: dm.card, border: `1px solid ${dm.border}`, borderRadius: '8px', padding: '10px 14px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: dm.textSecondary }}>pay rent tomorrow</div>
+                      <span style={{ backgroundColor: 'rgba(200,137,59,0.1)', color: '#C8893B', fontFamily: 'Inter, sans-serif', fontSize: '12px', padding: '4px 10px', borderRadius: '6px', flexShrink: 0 }}>✨ Parse</span>
+                    </div>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#0F9D58', marginTop: '10px', margin: '10px 0 0' }}>→ Polaris extracts: Task: Pay rent | Due: Tomorrow | Urgency: High</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
+                    <button type="button" onClick={() => { completeOnboarding(); setActiveTab('tasks'); handleOpenAddModal(); }}
+                      style={{ flex: 1, padding: '10px 20px', backgroundColor: dm.textPrimary, color: isDarkMode ? '#0F1117' : 'white', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
+                      Add my first task →
+                    </button>
+                    <button type="button" onClick={completeOnboarding}
+                      style={{ flex: 1, padding: '10px 20px', backgroundColor: 'transparent', color: dm.textPrimary, fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', borderRadius: '8px', border: `1px solid ${dm.border}`, cursor: 'pointer' }}>
+                      Done →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

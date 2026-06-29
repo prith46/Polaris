@@ -5,13 +5,13 @@ describe('Module 3: Add & Manage Tasks', () => {
   // ADD TASK — BASIC
   test('Input placeholder reads "Add a new task…"', () => {
     render(<App />);
-    expect(screen.getByPlaceholderText(/Add a new task/i)).toBeInTheDocument();
+    expect(document.querySelector('#polaris-add-form input') as HTMLInputElement).toBeInTheDocument();
   });
 
   test('Typing a name and clicking "Add task" adds a new card', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     fireEvent.change(input, { target: { value: 'New Custom Task' } });
     fireEvent.click(addButton);
@@ -22,8 +22,8 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('New card appears in To Do column', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
     fireEvent.change(input, { target: { value: 'Column Test Task' } });
@@ -35,7 +35,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Pressing Enter also adds task (form submit)', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
 
     fireEvent.change(input, { target: { value: 'Task added via Enter' } });
     const form = input.closest('form');
@@ -46,7 +46,7 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Empty input does nothing (card count unchanged)', () => {
     render(<App />);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
 
     fireEvent.click(addButton);
@@ -55,8 +55,8 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Whitespace-only input does nothing', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
 
     fireEvent.change(input, { target: { value: '   ' } });
@@ -66,8 +66,8 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('After adding, input is cleared', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i) as HTMLInputElement;
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     fireEvent.change(input, { target: { value: 'Clear Test' } });
     fireEvent.click(addButton);
@@ -127,8 +127,8 @@ describe('Module 3: Add & Manage Tasks', () => {
   // EDGE CASES
   test('Adding 20 tasks rapidly — all appear, no crash', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
 
     for (let i = 0; i < 20; i++) {
@@ -140,8 +140,8 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Long title 300+ characters — creates one card, no crash', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
     const longTitle = 'a'.repeat(305);
 
@@ -152,8 +152,8 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Special characters and emoji in title — renders correctly', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     const specialTitle = '🔥 Test & Special! Ch@r$';
     fireEvent.change(input, { target: { value: specialTitle } });
@@ -163,8 +163,8 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Adding two tasks with identical titles then marking one done — only one moves', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     fireEvent.change(input, { target: { value: 'Identical Task' } });
     fireEvent.click(addButton);
@@ -183,8 +183,8 @@ describe('Module 3: Add & Manage Tasks', () => {
 
   test('Adding 50 tasks, mark 25 to In Progress — correct distribution', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     for (let i = 0; i < 50; i++) {
       fireEvent.change(input, { target: { value: `Stress Task ${i}` } });

@@ -9,8 +9,8 @@ describe('Stress Tests', () => {
 
   test('Add 100 tasks in a loop', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
 
@@ -33,7 +33,7 @@ describe('Stress Tests', () => {
       fireEvent.click(tasksTab);
     }
 
-    expect(screen.getByPlaceholderText(/Add a new task/i)).toBeInTheDocument();
+    expect(document.querySelector('#polaris-add-form input') as HTMLInputElement).toBeInTheDocument();
     expect(screen.queryByText('Primary')).not.toBeInTheDocument();
   });
 
@@ -125,8 +125,8 @@ describe('Stress Tests', () => {
 
   test('Add task with 1000 character title', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     const longTitle = 'x'.repeat(1000);
     fireEvent.change(input, { target: { value: longTitle } });
@@ -137,8 +137,8 @@ describe('Stress Tests', () => {
 
   test('Inject script tag as task title renders as text', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
 
     const scriptTitle = '<script>alert("hack")</script>';
     fireEvent.change(input, { target: { value: scriptTitle } });

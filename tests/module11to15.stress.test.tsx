@@ -24,9 +24,9 @@ describe('Modules 11-15 Stress & Robustness Tests', () => {
     }
     localStorage.setItem('polaris-tasks', JSON.stringify(list));
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Stress Task #200' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
 
     const stored = localStorage.getItem('polaris-tasks') || '';
     const sizeBytes = new Blob([stored]).size;
@@ -35,11 +35,11 @@ describe('Modules 11-15 Stress & Robustness Tests', () => {
 
   test('Rapid add/remove 50 tasks alternating — state stays consistent', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
 
     for (let i = 1; i <= 50; i++) {
       fireEvent.change(input, { target: { value: `Alt Task ${i}` } });
-      fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+      fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
 
       const handleBtns = screen.queryAllByRole('button', { name: 'Handle it now' });
       if (handleBtns.length > 0) {

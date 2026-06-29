@@ -17,13 +17,13 @@ describe('Module 10: Multimodal Image Scanning', () => {
     expect(screen.getByRole('button', { name: /📸 Scan/i })).toBeInTheDocument();
   });
 
-  test('Scan button is in same row as Add task input', () => {
+  test('Scan button and Add button are in the toolbar', () => {
     const { container } = render(<App />);
     const scanBtn = container.querySelector('#scan-image-tasks-btn');
-    const addForm = container.querySelector('#polaris-add-form');
+    const addBtn = container.querySelector('#polaris-add-button');
     expect(scanBtn).toBeInTheDocument();
-    expect(addForm).toBeInTheDocument();
-    expect(scanBtn?.parentElement).toBe(addForm?.parentElement);
+    expect(addBtn).toBeInTheDocument();
+    expect(scanBtn?.parentElement).toBe(addBtn?.parentElement);
   });
 
   test('Clicking Scan opens a modal overlay', () => {

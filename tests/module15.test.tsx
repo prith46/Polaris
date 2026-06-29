@@ -94,9 +94,9 @@ describe('Module 15: Commitment Density & Proactive Warning', () => {
   // INTEGRATION
   test('Commitment density updates when tasks added', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Density Test' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
 
     fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
     expect(screen.getByText('Commitment Density')).toBeInTheDocument();

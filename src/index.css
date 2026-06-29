@@ -360,6 +360,16 @@ html.dark [style*="fontSize: '13px'"][style*="color: '#444746'"] { color: #9AA5B
   to { opacity: 1; }
 }
 
+/* Onboarding animations */
+@keyframes onboardingCardIn {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes onboardingFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Demo text fade animation */
 @keyframes demo-text-fade {
   from { opacity: 0; }
@@ -569,6 +579,33 @@ html.dark [style*="fontSize: '13px'"][style*="color: '#444746'"] { color: #9AA5B
   /* Success/error messages: full width */
   #image-scan-error {
     max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* PART 9: NEW FEATURES MOBILE */
+  /* Search/filter toolbar: wrap to two rows */
+  #polaris-tasks-container > div:first-child {
+    flex-wrap: wrap !important;
+  }
+
+  /* Progress bar: shrink on mobile */
+  .group[style*="width: 120px"] {
+    min-width: 80px !important;
+  }
+
+  /* Expanded card edit fields: full width */
+  [style*="flexDirection: column"][style*="gap: '8px'"] input,
+  [style*="flexDirection: column"][style*="gap: '8px'"] textarea {
+    width: 100% !important;
+  }
+
+  /* Future You lanes: stacked vertically by flex-col */
+  #future-you-screen .max-w-\[900px\] {
+    padding: 16px !important;
+  }
+
+  /* Scan inbox row: button full width on mobile */
+  [style*="Scan inbox"] {
     width: 100% !important;
   }
 }

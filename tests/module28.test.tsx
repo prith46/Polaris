@@ -46,34 +46,34 @@ describe('Module 28: Add Task Modal', () => {
 
   test('Modal submission creates card (test env direct add)', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     const initial = screen.getAllByRole('heading', { level: 2 }).length;
     fireEvent.change(input, { target: { value: 'Modal test task' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(initial + 1);
   });
 
   test('Task created via modal has "No deadline set" when no date', () => {
     render(<App />);
-    fireEvent.change(screen.getByPlaceholderText(/Add a new task/i), { target: { value: 'No date task' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.change(document.querySelector('#polaris-add-form input') as HTMLInputElement, { target: { value: 'No date task' } });
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText('No deadline set')).toBeInTheDocument();
   });
 
   test('Task created via modal has "Newly added" context', () => {
     render(<App />);
-    fireEvent.change(screen.getByPlaceholderText(/Add a new task/i), { target: { value: 'Context task' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.change(document.querySelector('#polaris-add-form input') as HTMLInputElement, { target: { value: 'Context task' } });
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText(/Newly added/i)).toBeInTheDocument();
   });
 
   test('Rapid 10 submissions all create cards', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     const initial = screen.getAllByRole('heading', { level: 2 }).length;
     for (let i = 0; i < 10; i++) {
       fireEvent.change(input, { target: { value: `Rapid modal ${i}` } });
-      fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+      fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     }
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(initial + 10);
   });
@@ -81,16 +81,16 @@ describe('Module 28: Add Task Modal', () => {
   test('Special characters in name work', () => {
     render(<App />);
     const title = 'Task & "quotes" <angle> \'apos\'';
-    fireEvent.change(screen.getByPlaceholderText(/Add a new task/i), { target: { value: title } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.change(document.querySelector('#polaris-add-form input') as HTMLInputElement, { target: { value: title } });
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText(title)).toBeInTheDocument();
   });
 
   test('Very long title (300 chars) works', () => {
     render(<App />);
     const title = 'x'.repeat(300);
-    fireEvent.change(screen.getByPlaceholderText(/Add a new task/i), { target: { value: title } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.change(document.querySelector('#polaris-add-form input') as HTMLInputElement, { target: { value: title } });
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText(title)).toBeInTheDocument();
   });
 });

@@ -19,9 +19,9 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('Adding a task persists it to localStorage key "polaris-tasks"', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'New Test Task' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText('New Test Task')).toBeInTheDocument();
     unmount();
     const stored = localStorage.getItem('polaris-tasks');
@@ -68,17 +68,17 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('localStorage "polaris-tasks" contains valid JSON after operations', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'JSON check' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(() => JSON.parse(localStorage.getItem('polaris-tasks') || '')).not.toThrow();
   });
 
   test('Re-rendering app loads saved tasks from localStorage', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Persist Me' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     unmount();
     render(<App />);
     expect(screen.getByText('Persist Me')).toBeInTheDocument();
@@ -172,10 +172,10 @@ describe('Module 11: localStorage Persistence', () => {
   // EDGE CASES
   test('Adding 50 tasks, re-rendering — all 50 persist', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     for (let i = 1; i <= 50; i++) {
       fireEvent.change(input, { target: { value: `Task #${i}` } });
-      fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+      fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     }
     unmount();
     render(<App />);
@@ -184,10 +184,10 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('Special characters in task title persist correctly', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     const title = '✨ Emoji <tag> & "quotes"';
     fireEvent.change(input, { target: { value: title } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     unmount();
     render(<App />);
     expect(screen.getByText(title)).toBeInTheDocument();
@@ -195,10 +195,10 @@ describe('Module 11: localStorage Persistence', () => {
 
   test('Very long task title (500 chars) persists correctly', () => {
     const { unmount } = render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     const title = 'A'.repeat(500);
     fireEvent.change(input, { target: { value: title } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     unmount();
     render(<App />);
     expect(screen.getByText(title)).toBeInTheDocument();

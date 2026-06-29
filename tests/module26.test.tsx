@@ -91,10 +91,10 @@ describe('Module 26: Kanban Board', () => {
 
   test('Moving 10 tasks to In Progress rapidly', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     for (let i = 0; i < 10; i++) {
       fireEvent.change(input, { target: { value: `Rapid ${i}` } });
-      fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+      fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     }
     let btns = screen.queryAllByRole('button', { name: 'Handle it now' });
     const moved = Math.min(btns.length, 5);

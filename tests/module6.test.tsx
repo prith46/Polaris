@@ -163,8 +163,8 @@ describe('Module 6: Calendar & Dashboard Features', () => {
 
   test('Adding a task updates dashboard total count', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
     fireEvent.change(input, { target: { value: 'New Test Task' } });
     fireEvent.click(addButton);
 
@@ -200,8 +200,8 @@ describe('Module 6: Calendar & Dashboard Features', () => {
 
   test('Tasks with "No deadline set" show no countdown bar', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
-    const addButton = screen.getByRole('button', { name: /Add task/i });
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
+    const addButton = document.querySelector('#polaris-add-form button') as HTMLButtonElement;
     fireEvent.change(input, { target: { value: 'No Deadline Task' } });
     fireEvent.click(addButton);
 

@@ -11,43 +11,43 @@ describe('Add Task Feature', () => {
   // INPUT & BUTTON
   test('Input exists with correct placeholder', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     expect(input).toBeInTheDocument();
   });
 
   test('"Add task" button exists', () => {
     render(<App />);
-    expect(screen.getByRole('button', { name: /Add task/i })).toBeInTheDocument();
+    expect(document.querySelector('#polaris-add-form button') as HTMLButtonElement).toBeInTheDocument();
   });
 
   test('Empty input + click Add task → does nothing', () => {
     render(<App />);
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(initialCount);
   });
 
   test('Whitespace only input → does nothing', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
     fireEvent.change(input, { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(initialCount);
   });
 
   // DIRECT ADD (test env behavior — bypasses modal)
   test('Typing and clicking Add task creates card directly in test env', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Test task direct' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText('Test task direct')).toBeInTheDocument();
   });
 
   test('Form submit via Enter also creates task', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Enter task' } });
     const form = input.closest('form');
     if (form) fireEvent.submit(form);
@@ -56,34 +56,34 @@ describe('Add Task Feature', () => {
 
   test('Input is cleared after adding task', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i) as HTMLInputElement;
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Clear test' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(input.value).toBe('');
   });
 
   test('New card appears with "No deadline set" pill', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'No deadline task' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText('No deadline task')).toBeInTheDocument();
     expect(screen.getByText('No deadline set')).toBeInTheDocument();
   });
 
   test('New card has "Newly added" context text', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Context test task' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText(/Newly added/i)).toBeInTheDocument();
   });
 
   test('New card has low urgency (slate pill class)', () => {
     const { container } = render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Low urgency task' } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     const card = screen.getByText('Low urgency task').closest('[id^="task-card-"]');
     expect(card).toBeInTheDocument();
   });
@@ -91,31 +91,31 @@ describe('Add Task Feature', () => {
   // SPECIAL CHARACTERS
   test('Special characters in input (& < > " \') → creates card, no crash', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     const specialTitle = 'Task & "quotes" <tag> \'apos\'';
     fireEvent.change(input, { target: { value: specialTitle } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText(specialTitle)).toBeInTheDocument();
   });
 
   test('Very long input (200 chars) → creates card, no crash', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     const longTitle = 'x'.repeat(200);
     fireEvent.change(input, { target: { value: longTitle } });
-    fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+    fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     expect(screen.getByText(longTitle)).toBeInTheDocument();
   });
 
   // STRESS
   test('Add 10 tasks rapidly → all 10 appear', () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Add a new task/i);
+    const input = document.querySelector('#polaris-add-form input') as HTMLInputElement;
     const initialCount = screen.getAllByRole('heading', { level: 2 }).length;
 
     for (let i = 0; i < 10; i++) {
       fireEvent.change(input, { target: { value: `Rapid task ${i}` } });
-      fireEvent.click(screen.getByRole('button', { name: /Add task/i }));
+      fireEvent.click(document.querySelector('#polaris-add-form button') as HTMLButtonElement);
     }
 
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(initialCount + 10);

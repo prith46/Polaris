@@ -344,7 +344,7 @@ async function startServer() {
 
       const response = await ai.models.generateContent({
         model: GEMINI_MODEL,
-        contents: [{ role: "user", parts: [{ text: `Current date: ${currentDate || new Date().toISOString()}. Parse this task: ${input}` }] }],
+        contents: [{ role: "user", parts: [{ text: `Current date and time (IST, India Standard Time, UTC+5:30): ${currentDate || new Date().toISOString()}. Parse this task: ${input}. Note: All deadlines should be interpreted and returned in IST.` }] }],
         config: {
           systemInstruction: "You are a task parser. The user will type a natural language task description that may include a task name, a deadline, and extra context. Extract each part. Return ONLY a valid JSON object with exactly these fields: { title: string (the core task name, max 8 words, no deadline info in here), deadline: string | null (the deadline phrase as typed by user, e.g. 'day after tomorrow at 5pm', or null if none mentioned), deadlineISO: string | null (the deadline as ISO 8601 datetime, or null if none), urgency: 'high' | 'medium' | 'low', description: string | null (any extra context beyond the task name and deadline, or null if none) }. If the input contains apostrophes, commas, or special characters, handle them correctly in the JSON. The description field should capture any context after the main task and deadline. For example: 'buy birthday gift for friend in 2 days, it's a surprise party' → title: 'Buy birthday gift for friend', deadline: 'in 2 days', description: 'it is a surprise party'. If the input contains words like 'ASAP', 'urgent', 'immediately', 'right now', 'as soon as possible' — treat the deadline as 'today' and set deadlineISO to today at 11:59 PM. Set urgency to 'high'. Urgency must be calculated from deadlineISO relative to currentDate: if deadlineISO is within 48 hours of currentDate → high, if within 7 days → medium, if beyond 7 days or no deadline → low. Always calculate from the actual ISO date, not from the deadline phrase. Never return anything except this JSON object.",
         },
@@ -366,7 +366,13 @@ async function startServer() {
       });
     } catch (err: any) {
       console.error("Error in /api/parse-task:", err?.message || err);
-      res.json({ title: req.body?.input || '', deadline: null, deadlineISO: null, urgency: 'low', description: null });
+      const errMsg = err?.message || err?.toString?.() || '';
+      const is503 = errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('overloaded') || err?.status === 503;
+      if (is503) {
+        res.status(503).json({ error: 'high demand' });
+      } else {
+        res.json({ title: req.body?.input || '', deadline: null, deadlineISO: null, urgency: 'low', description: null });
+      }
     }
   });
 
@@ -387,7 +393,7 @@ async function startServer() {
 
       const response = await ai.models.generateContent({
         model: GEMINI_MODEL,
-        contents: [{ role: "user", parts: [{ text: `Current date and time: ${currentDate}. Parse this deadline: ${input}` }] }],
+        contents: [{ role: "user", parts: [{ text: `Current date and time (IST, India Standard Time, UTC+5:30): ${currentDate}. Parse this deadline: ${input}. Note: All deadlines should be interpreted and returned in IST.` }] }],
         config: {
           systemInstruction: "You are a date parser. The user will give you a natural language date or deadline description. Your ONLY job is to convert it to an exact date and time. Return ONLY a valid JSON object with exactly these fields: { date: string (ISO 8601 format like '2026-06-29T23:59:00'), readable: string (human friendly like 'Friday, Jun 27 at 11:59 PM'), confidence: 'high' | 'low' }. Use the provided current date as reference for relative dates like 'tomorrow' or 'next week'. If the input is completely unparseable or nonsensical, return { date: null, readable: null, confidence: 'low' }. Never return anything except this JSON object.",
         },
