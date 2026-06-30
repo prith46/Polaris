@@ -57,7 +57,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarColor: '#F28B82',
     starred: false,
     important: false,
-    body: "Dear Customer, this is a reminder that your electricity bill of ₹2,340 for the current cycle is due on Friday the 27th. Please ensure payment is processed online before the cutoff time to avoid a late fee or potential disruption of service. Let us know if you need assistance with your payment options.",
+    body: "Dear Customer, this is a reminder that your electricity bill of ₹2,340 for the current cycle is due in 3 days. Please ensure payment is processed online before the cutoff time to avoid a late fee or potential disruption of service. Let us know if you need assistance with your payment options.",
   },
   {
     id: 'email-2',
@@ -81,7 +81,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarColor: '#FDD663',
     starred: false,
     important: false,
-    body: "Dear Applicant, we are pleased to inform you that your profile has been advanced. However, we require you to submit the enrollment confirmation form before the 30th of this month. If we do not receive your form by the deadline, your slot will be offered to the next candidate on the waiting list.",
+    body: "Dear Applicant, we are pleased to inform you that your profile has been advanced. However, we require you to submit the enrollment confirmation form within the next 5 days. If we do not receive your form by the deadline, your slot will be offered to the next candidate on the waiting list.",
   },
   {
     id: 'email-4',
@@ -93,7 +93,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarColor: '#C58AF9',
     starred: true,
     important: false,
-    body: "Hey, just confirming our project sync meeting scheduled for this Thursday at 4:00 PM. We will review the slide outline and assign parts to everyone. Please come prepared with your section outline so we can wrap up quickly. Talk to you soon.",
+    body: "Hey, just confirming our project sync meeting scheduled in 3 days at 4:00 PM. We will review the slide outline and assign parts to everyone. Please come prepared with your section outline so we can wrap up quickly. Talk to you soon.",
   },
   {
     id: 'email-5',
@@ -153,7 +153,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarColor: '#8AB4F8',
     starred: true,
     important: false,
-    body: "Hey buddy, hope you are doing well. Please transfer your share of this month's rent by Saturday so I can pay the landlord on Sunday. Let me know once you make the transfer.",
+    body: "Hey buddy, hope you are doing well. Please transfer your share of this month's rent in 3 days so I can pay the landlord on Sunday. Let me know once you make the transfer.",
   },
   {
     id: 'email-10',
@@ -297,7 +297,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarColor: '#8AB4F8',
     starred: true,
     important: false,
-    body: "Hi team, I have uploaded the final UI design specification for the main portal. Please review the wireframes and leave comments before our sprint planning meeting on Thursday. Thanks for your time.",
+    body: "Hi team, I have uploaded the final UI design specification for the main portal. Please review the wireframes and leave comments before our sprint planning meeting in 3 days. Thanks for your time.",
   },
   {
     id: 'email-22',
@@ -453,7 +453,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarColor: '#FF8BCB',
     starred: true,
     important: false,
-    body: "Hey everyone, Raj's birthday is coming up next week and we are buying a nice smartwatch for him. Please transfer your contribution of ₹500 to my UPI ID by Thursday afternoon so I can order it. Thanks!",
+    body: "Hey everyone, Raj's birthday is coming up next week and we are buying a nice smartwatch for him. Please transfer your contribution of ₹500 to my UPI ID within the next 2 days so I can order it. Thanks!",
   },
   {
     id: 'email-35',
@@ -549,7 +549,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarColor: '#FC8019',
     starred: true,
     important: false,
-    body: "Hi team, the design agency sent over the first draft of our winter marketing brochure. Please add your suggestions and edits by Friday afternoon. We need to print them on Monday morning.",
+    body: "Hi team, the design agency sent over the first draft of our winter marketing brochure. Please add your suggestions and edits within the next 3 days. We need to print them on Monday morning.",
   },
   {
     id: 'email-43',
@@ -2544,6 +2544,15 @@ export default function App() {
         }
         return d;
       }
+    }
+
+    const inDaysMatch = lower.match(/\bin\s+(\d+)\s+days?\b/);
+    if (inDaysMatch) {
+      const offsetDays = parseInt(inDaysMatch[1], 10);
+      const d = nowIST();
+      d.setDate(d.getDate() + offsetDays);
+      d.setHours(23, 59, 0, 0);
+      return d;
     }
 
     const match = lower.match(/\b(\d+)(st|nd|rd|th)?\b/);
