@@ -56,7 +56,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "C",
     avatarColor: '#F28B82',
     starred: false,
-    important: true,
+    important: false,
     body: "Dear Customer, this is a reminder that your electricity bill of ₹2,340 for the current cycle is due on Friday the 27th. Please ensure payment is processed online before the cutoff time to avoid a late fee or potential disruption of service. Let us know if you need assistance with your payment options.",
   },
   {
@@ -68,7 +68,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "P",
     avatarColor: '#FF8BCB',
     starred: false,
-    important: true,
+    important: false,
     body: "Hi there, I wanted to gently follow up on the recommendation letter you requested. The submission portal was due 2 days ago, and I need you to send me the updated details urgently by tomorrow. Once I have the links, I can upload it immediately. Let me know if you face any issues.",
   },
   {
@@ -80,7 +80,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "S",
     avatarColor: '#FDD663',
     starred: false,
-    important: true,
+    important: false,
     body: "Dear Applicant, we are pleased to inform you that your profile has been advanced. However, we require you to submit the enrollment confirmation form before the 30th of this month. If we do not receive your form by the deadline, your slot will be offered to the next candidate on the waiting list.",
   },
   {
@@ -104,7 +104,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "H",
     avatarColor: '#8AB4F8',
     starred: false,
-    important: true,
+    important: false,
     body: "Dear Customer, the payment for your HDFC Credit Card ending in 4321 is due in 3 days. The total amount due is ₹8,450, with a minimum payment of ₹850 required to avoid late fees. A standard late payment charge and interest will apply if payment is not received by the due date.",
   },
   {
@@ -127,8 +127,8 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "M",
     avatarColor: '#0077B5',
-    starred: true,
-    important: true,
+    starred: false,
+    important: false,
     body: "Dear Developer, your Azure free trial subscription is ending soon. Please upgrade to a pay-as-you-go plan before the 28th to prevent your active services from being deleted. You can manage this from your Azure portal.",
   },
   {
@@ -139,7 +139,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "G",
     avatarColor: '#24292E',
-    starred: true,
+    starred: false,
     important: false,
     body: "Dear user, we detected an outdated SSH key associated with your account. Please update your credentials or verify the key within 7 days to maintain write access to your repositories. Thank you.",
   },
@@ -151,8 +151,8 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "S",
     avatarColor: '#8AB4F8',
-    starred: false,
-    important: true,
+    starred: true,
+    important: false,
     body: "Hey buddy, hope you are doing well. Please transfer your share of this month's rent by Saturday so I can pay the landlord on Sunday. Let me know once you make the transfer.",
   },
   {
@@ -160,7 +160,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "DigiLocker Support",
     subject: "Verify your Aadhaar linkage",
     time: "June 21 13:14 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "D",
     avatarColor: '#4285F4',
     starred: false,
@@ -248,7 +248,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "U",
     avatarColor: '#FF9900',
     starred: false,
-    important: true,
+    important: false,
     body: "Congratulations on completing the Nanodegree program. Your digital certificate is ready and can be shared directly to your LinkedIn profile. Best wishes for your career.",
   },
   {
@@ -256,7 +256,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "Vikram Seth",
     subject: "Submit your research draft",
     time: "June 13 9:22 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "V",
     avatarColor: '#FC8019',
     starred: false,
@@ -295,7 +295,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "A",
     avatarColor: '#8AB4F8',
-    starred: false,
+    starred: true,
     important: false,
     body: "Hi team, I have uploaded the final UI design specification for the main portal. Please review the wireframes and leave comments before our sprint planning meeting on Thursday. Thanks for your time.",
   },
@@ -307,7 +307,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "V",
     avatarColor: '#000000',
-    starred: true,
+    starred: false,
     important: false,
     body: "We are excited to announce major performance updates to our image rendering pipeline. Websites will load faster while consuming less bandwidth. Read our blog for configuration tips.",
   },
@@ -316,11 +316,11 @@ const INITIAL_EMAILS: Email[] = [
     from: "Amit Bhargava",
     subject: "Meeting request: Thesis progress sync",
     time: "June 23 14:27 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "A",
     avatarColor: '#FDD663',
     starred: false,
-    important: true,
+    important: false,
     body: "Hello, I would like to schedule our weekly review meeting. Please let me know your availability for a 30-minute call this Thursday between 2 PM and 5 PM. I will send out the calendar invite once you reply.",
   },
   {
@@ -356,7 +356,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "S",
     avatarColor: '#81C995',
     starred: false,
-    important: true,
+    important: false,
     body: "We were unable to renew your Premium subscription because your card payment failed. Please update your payment method within 48 hours to continue enjoying uninterrupted, ad-free music offline. Thank you.",
   },
   {
@@ -368,7 +368,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "H",
     avatarColor: '#81C995',
     starred: false,
-    important: true,
+    important: false,
     body: "The new weekly coding contest is live. Test your problem-solving skills against developers worldwide and earn points to rank up your profile. Click to join the challenge.",
   },
   {
@@ -380,7 +380,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "A",
     avatarColor: '#000000',
     starred: false,
-    important: true,
+    important: false,
     body: "Thank you for subscribing to Apple Care protection. This email contains the official PDF invoice for your coverage. The service has been automatically linked to your device.",
   },
   {
@@ -404,7 +404,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "D",
     avatarColor: '#F28B82',
     starred: false,
-    important: true,
+    important: false,
     body: "Dear patient, your next therapy session is scheduled for Friday at 9:00 AM. Please reply to this mail by Thursday evening to confirm your slot, or call the clinic if you need to reschedule.",
   },
   {
@@ -416,7 +416,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "D",
     avatarColor: '#81C995',
     starred: false,
-    important: true,
+    important: false,
     body: "Your Spanish learning streak is at risk. Spend just five minutes today to complete a lesson and secure your progress. Duo the owl is cheering you on from the sidelines.",
   },
   {
@@ -436,7 +436,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "Divya Teja",
     subject: "Hostel room allotment form",
     time: "June 13 12:37 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "D",
     avatarColor: '#FF8BCB',
     starred: false,
@@ -451,8 +451,8 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "N",
     avatarColor: '#FF8BCB',
-    starred: false,
-    important: true,
+    starred: true,
+    important: false,
     body: "Hey everyone, Raj's birthday is coming up next week and we are buying a nice smartwatch for him. Please transfer your contribution of ₹500 to my UPI ID by Thursday afternoon so I can order it. Thanks!",
   },
   {
@@ -476,7 +476,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "D",
     avatarColor: '#0077B5',
     starred: false,
-    important: true,
+    important: false,
     body: "The sports gear order has been successfully picked up from the warehouse and is in transit. We expect delivery by Friday afternoon. Thank you for choosing Decathlon.",
   },
   {
@@ -484,11 +484,11 @@ const INITIAL_EMAILS: Email[] = [
     from: "Priya Nair",
     subject: "Feedback on mock interview",
     time: "June 24 16:41 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "P",
     avatarColor: '#81C995',
     starred: false,
-    important: true,
+    important: false,
     body: "Hi, I've compiled my notes from our mock interview session yesterday. Please go through the feedback and revise your answers before our call on Tuesday. Focus particularly on the behavioral questions.",
   },
   {
@@ -524,7 +524,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "C",
     avatarColor: '#4285F4',
     starred: false,
-    important: true,
+    important: false,
     body: "Explore how neural networks generate text and images. Learn about transformers, attention mechanisms, and fine-tuning large language models. The class is now open for enrollment.",
   },
   {
@@ -547,8 +547,8 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "S",
     avatarColor: '#FC8019',
-    starred: false,
-    important: true,
+    starred: true,
+    important: false,
     body: "Hi team, the design agency sent over the first draft of our winter marketing brochure. Please add your suggestions and edits by Friday afternoon. We need to print them on Monday morning.",
   },
   {
@@ -584,7 +584,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "C",
     avatarColor: '#8AB4F8',
     starred: false,
-    important: true,
+    important: false,
     body: "Good news! Your shipment is out for delivery today. The delivery executive will contact you prior to arrival. Please ensure someone is available at the address.",
   },
   {
@@ -604,11 +604,11 @@ const INITIAL_EMAILS: Email[] = [
     from: "Ananya Roy",
     subject: "Book tickets for music concert",
     time: "June 14 14:51 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "A",
     avatarColor: '#FF8BCB',
     starred: false,
-    important: true,
+    important: false,
     body: "Hey, the early bird tickets for the coldplay concert go live tomorrow morning. Please transfer ₹5,000 to my account by tonight so I can buy tickets for both of us in the first batch. Don't miss this!",
   },
   {
@@ -632,7 +632,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "G",
     avatarColor: '#24292E',
     starred: false,
-    important: true,
+    important: false,
     body: "Thank you for supporting open-source developers. Your monthly sponsorship helps keep the project active and maintained. You can view exclusive backer updates on the profile tab.",
   },
   {
@@ -652,7 +652,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "Nisha Patel",
     subject: "URGENT: Rental agreement review",
     time: "June 25 18:55 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "N",
     avatarColor: '#FF8BCB',
     starred: false,
@@ -736,11 +736,11 @@ const INITIAL_EMAILS: Email[] = [
     from: "Harish Patel",
     subject: "Flight check-in open: Mumbai to Delhi",
     time: "June 18 13:12 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "H",
     avatarColor: '#F28B82',
     starred: false,
-    important: true,
+    important: false,
     body: "Dear Passenger, online check-in for your flight 6E-543 from Mumbai to Delhi is now open. Please select your seats and generate your boarding pass online before arriving at the airport to save time. Have a safe flight.",
   },
   {
@@ -764,7 +764,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "S",
     avatarColor: '#C58AF9',
     starred: false,
-    important: true,
+    important: false,
     body: "Here's what you missed in the developer group this week. Active channels had 15 new threads, mostly discussing the recent library release. Read on to view the highlights.",
   },
   {
@@ -800,7 +800,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "S",
     avatarColor: '#FC8019',
     starred: false,
-    important: true,
+    important: false,
     body: "We have booked a table for 4 guests under your name at 'The Bistro' for Saturday night. No further action is required. We hope you have a fantastic dining experience.",
   },
   {
@@ -820,7 +820,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "Suresh Kumar",
     subject: "Tax filing document submission",
     time: "June 11 20:19 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "S",
     avatarColor: '#8AB4F8',
     starred: false,
@@ -904,7 +904,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "Karan Johar",
     subject: "Script revisions due by Monday",
     time: "June 19 15:26 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "K",
     avatarColor: '#C58AF9',
     starred: false,
@@ -920,7 +920,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "S",
     avatarColor: '#FC8019',
     starred: false,
-    important: true,
+    important: false,
     body: "Thank you for using Swiggy Dineout at the Royal Cuisine. Your review helps us maintain high quality standards across our partner restaurants. Have a great day.",
   },
   {
@@ -928,11 +928,11 @@ const INITIAL_EMAILS: Email[] = [
     from: "Uber Support",
     subject: "Update your profile details",
     time: "June 17 17:28 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "U",
     avatarColor: '#000000',
     starred: false,
-    important: true,
+    important: false,
     body: "Hi rider, we noticed that your driver rating has dropped or profile verification is pending. Please verify your phone number and secondary email within 48 hours to prevent account suspension.",
   },
   {
@@ -956,7 +956,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "A",
     avatarColor: '#F28B82',
     starred: false,
-    important: true,
+    important: false,
     body: "Your host would love to hear feedback on your recent vacation. Leave a public review to help other travelers find the best accommodations. Thank you for booking with us.",
   },
   {
@@ -988,7 +988,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "Prof. Harish Rao",
     subject: "Quiz submission extension",
     time: "June 12 10:33 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "P",
     avatarColor: '#8AB4F8',
     starred: false,
@@ -1039,7 +1039,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "F",
     avatarColor: '#C58AF9',
-    starred: true,
+    starred: false,
     important: false,
     body: "In today's tutorial, we demonstrate how to create smooth transitions and gesture-controlled sliders. Learn to implement realistic physics and interactive animations in minutes.",
   },
@@ -1052,7 +1052,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "M",
     avatarColor: '#FF8BCB',
     starred: false,
-    important: true,
+    important: false,
     body: "Upgrade your wardrobe with the latest arrivals. The end of season sale features top brands at half the price. Check out the app to explore fresh trends and exclusive coupons.",
   },
   {
@@ -1076,7 +1076,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "L",
     avatarColor: '#0077B5',
     starred: false,
-    important: true,
+    important: false,
     body: "Based on your search history, we found new opportunities in front-end development and software engineering. View details online to see salary ranges and required skills.",
   },
   {
@@ -1099,7 +1099,7 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "A",
     avatarColor: '#81C995',
-    starred: true,
+    starred: false,
     important: false,
     body: "Hey, thanks for taking notes during our team meeting today. Please clean them up and share the minutes of the meeting by Wednesday evening with the entire project group. Let me know if you need the slides.",
   },
@@ -1136,7 +1136,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "L",
     avatarColor: '#0077B5',
     starred: false,
-    important: true,
+    important: false,
     body: "Hiring activity remains strong in cloud computing, data security, and artificial intelligence roles. Industry specialists discuss the shifting landscape and remote options.",
   },
   {
@@ -1144,7 +1144,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "State Bank of India",
     subject: "KYC update required for account",
     time: "June 14 11:46 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "S",
     avatarColor: '#4285F4',
     starred: false,
@@ -1160,7 +1160,7 @@ const INITIAL_EMAILS: Email[] = [
     avatarLetter: "S",
     avatarColor: '#FF8BCB',
     starred: false,
-    important: true,
+    important: false,
     body: "Hey! It was so wonderful seeing you last weekend. I hope your new job is going well and that you are settling in nicely. Let's get lunch sometime next month when things are calmer.",
   },
   {
@@ -1168,7 +1168,7 @@ const INITIAL_EMAILS: Email[] = [
     from: "Swiggy Genie",
     subject: "Confirm drop-off details",
     time: "June 12 13:48 AM",
-    unread: true,
+    unread: false,
     avatarLetter: "S",
     avatarColor: '#FC8019',
     starred: false,
@@ -1243,8 +1243,8 @@ const INITIAL_EMAILS: Email[] = [
     unread: false,
     avatarLetter: "D",
     avatarColor: '#FDD663',
-    starred: true,
-    important: true,
+    starred: false,
+    important: false,
     body: "Hi, I have uploaded the final deck for our presentation to the shared folder. Please review the transition slides and confirm if you are okay with the layout by tomorrow noon. I want to download it locally to avoid network issues.",
   },
 ];
@@ -2133,10 +2133,17 @@ export default function App() {
 
       const data: any = await response.json();
       if (data && Array.isArray(data.tasks)) {
-        if (data.tasks.length === 0) {
+        const existingSourceIds = new Set(
+          [...tasks, ...completedTasks].map(t => t.sourceId).filter(Boolean)
+        );
+        const tasksToAdd = data.tasks.filter(
+          (t: any) => !t.sourceId || !existingSourceIds.has(t.sourceId)
+        );
+
+        if (tasksToAdd.length === 0) {
           setImageScanResultState('empty');
         } else {
-          const newTasks: Task[] = data.tasks.map((t: any, idx: number) => ({
+          const newTasks: Task[] = tasksToAdd.map((t: any, idx: number) => ({
             id: `task-image-${Date.now()}-${idx}`,
             title: t.title,
             pillText: t.deadline || 'No deadline mentioned',
@@ -2148,7 +2155,8 @@ export default function App() {
             subtasks: [],
             decomposing: false,
             decomposed: false,
-            subtasksCollapsed: false
+            subtasksCollapsed: false,
+            sourceId: t.sourceId
           }));
 
           setTasks(prev => [...prev, ...newTasks]);
@@ -2496,6 +2504,30 @@ export default function App() {
       return d;
     }
 
+    const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+    const monthAbbr = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    const monthDayRegex = /\b(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\b|\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+(\d{1,2})(?:st|nd|rd|th)?\b/;
+    const monthDayMatch = lower.match(monthDayRegex);
+    if (monthDayMatch) {
+      const dayNum = parseInt(monthDayMatch[1] || monthDayMatch[4], 10);
+      const monthToken = monthDayMatch[2] || monthDayMatch[3];
+      let monthIndex = monthNames.indexOf(monthToken);
+      if (monthIndex === -1) monthIndex = monthAbbr.indexOf(monthToken);
+      if (monthIndex !== -1 && dayNum >= 1 && dayNum <= 31) {
+        const d = nowIST();
+        const currentYear = d.getFullYear();
+        d.setFullYear(currentYear, monthIndex, dayNum);
+        d.setHours(23, 59, 0, 0);
+        const today = nowIST();
+        today.setHours(0, 0, 0, 0);
+        if (d < today) {
+          d.setFullYear(currentYear + 1, monthIndex, dayNum);
+          d.setHours(23, 59, 0, 0);
+        }
+        return d;
+      }
+    }
+
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     for (let i = 0; i < 7; i++) {
       if (lower.includes(daysOfWeek[i])) {
@@ -2683,7 +2715,9 @@ export default function App() {
       );
 
       if (!response.ok) {
-        throw new Error(`Response not OK (${response.status})`);
+        const statusError: any = new Error(`Response not OK (${response.status})`);
+        statusError.status = response.status;
+        throw statusError;
       }
 
       const data: any = await response.json();
@@ -2719,15 +2753,23 @@ export default function App() {
           if (item.urgency === 'high' || item.urgency === 'medium' || item.urgency === 'low') {
             urgency = item.urgency;
           }
-          validatedTasks.push({ title, deadline, urgency });
+          const sourceId = typeof item.sourceId === 'string' ? item.sourceId : undefined;
+          validatedTasks.push({ title, deadline, urgency, sourceId });
         }
       }
 
       if (validatedTasks.length === 0) {
         setScanResult({ status: 'none' });
       } else {
+        const existingSourceIds = new Set(
+          [...tasks, ...completedTasks].map(t => t.sourceId).filter(Boolean)
+        );
+        const tasksToAdd = validatedTasks.filter(
+          t => !t.sourceId || !existingSourceIds.has(t.sourceId)
+        );
+
         // Add each validated task to the Tasks list
-        const newTasks: Task[] = validatedTasks.map((t, idx) => ({
+        const newTasks: Task[] = tasksToAdd.map((t, idx) => ({
           id: `task-scanned-${Date.now()}-${idx}`,
           title: t.title,
           pillText: t.deadline,
@@ -2739,7 +2781,8 @@ export default function App() {
           subtasks: [],
           decomposing: false,
           decomposed: false,
-          subtasksCollapsed: false
+          subtasksCollapsed: false,
+          sourceId: t.sourceId
         }));
 
         setTasks((prevTasks) => [...prevTasks, ...newTasks]);
@@ -2757,10 +2800,14 @@ export default function App() {
         setScanResult({ status: 'success', count: validatedTasks.length });
         setScannedCount((prev) => prev + validatedTasks.length);
       }
-    } catch (error) {
-      check503(error);
+    } catch (error: any) {
       console.error('Scan error:', error);
-      setScanResult({ status: 'error' });
+      if (error?.status === 503) {
+        setGemini503Toast(true);
+        setTimeout(() => setGemini503Toast(false), 6000);
+      } else {
+        setScanResult({ status: 'error' });
+      }
     } finally {
       setIsScanning(false);
     }
@@ -2990,7 +3037,7 @@ export default function App() {
   const handleScanEmails = async (mode: 'unread' | 'unread+starred', emailsOverride?: Email[]) => {
     let emailsToScan = emailsOverride || (mode === 'unread'
       ? emails.filter(e => e.unread && !emailReadState[e.id])
-      : emails.filter(e => (e.unread && !emailReadState[e.id]) || e.starred || e.important));
+      : emails.filter(e => (e.unread && !emailReadState[e.id]) || e.starred));
     const seen = new Set<string>();
     emailsToScan = emailsToScan.filter(e => { if (seen.has(e.id)) return false; seen.add(e.id); return true; });
 
@@ -3030,25 +3077,31 @@ export default function App() {
         if (!response.ok) throw new Error(`Not OK (${response.status})`);
         const data = await response.json();
         if (data.result) {
-          let parsed: Array<{ title: string; deadline: string; urgency: string }>;
+          let parsed: Array<{ title: string; deadline: string; urgency: string; sourceId?: string }>;
           try {
             parsed = JSON.parse(data.result);
             if (!Array.isArray(parsed)) parsed = [];
           } catch { parsed = []; }
 
           const existingTitles = new Set(tasks.map(t => t.title.toLowerCase()));
+          const existingSourceIds = new Set(
+            [...tasks, ...completedTasks].map(t => t.sourceId).filter(Boolean)
+          );
           const newTasks: Task[] = [];
           const newEntries: ExtractionLogEntry[] = [];
 
           for (const t of parsed) {
             if (!t.title || existingTitles.has(t.title.toLowerCase())) continue;
+            if (t.sourceId && existingSourceIds.has(t.sourceId)) continue;
             existingTitles.add(t.title.toLowerCase());
+            if (t.sourceId) existingSourceIds.add(t.sourceId);
             const id = `task-scan-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
             const urgency = (['high', 'medium', 'low'].includes(t.urgency) ? t.urgency : 'low') as 'high' | 'medium' | 'low';
             newTasks.push({
               id, title: t.title, pillText: t.deadline || 'No deadline mentioned', urgency,
               context: `Found in your inbox — ${email.from}`, primaryAction: 'Handle it now', secondaryAction: 'Snooze',
               createdAt: Date.now(), subtasks: [], decomposing: false, decomposed: false, subtasksCollapsed: false,
+              sourceId: t.sourceId,
             });
             newEntries.push({
               id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
@@ -3143,6 +3196,8 @@ export default function App() {
   };
 
   const handleLoadTestTasks = () => {
+    setEmails(INITIAL_EMAILS);
+    setEmailReadState({});
     setTasks([]);
     setCompletedTasks([]);
     setCompletedCount(0);

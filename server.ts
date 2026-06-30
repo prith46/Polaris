@@ -21,6 +21,45 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+const DEDUPE_STOP_WORDS = new Set(['the', 'a', 'an', 'for', 'to', 'of', 'and', 'is', 'your']);
+
+function getSignificantWords(title: string): string[] {
+  return title
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w && !DEDUPE_STOP_WORDS.has(w));
+}
+
+function dedupeTasksByTitle<T extends { title: string }>(tasks: T[]): T[] {
+  const kept: T[] = [];
+  const keptWordSets: string[][] = [];
+  for (const task of tasks) {
+    const words = getSignificantWords(task.title || '');
+    let isDuplicate = false;
+    for (const existingWords of keptWordSets) {
+      if (words.length === 0 || existingWords.length === 0) continue;
+      const overlap = words.filter((w) => existingWords.includes(w)).length;
+      if (overlap / words.length > 0.5) {
+        isDuplicate = true;
+        break;
+      }
+    }
+    if (!isDuplicate) {
+      kept.push(task);
+      keptWordSets.push(words);
+    }
+  }
+  return kept;
+}
+
 async function startServer() {
   const app = express();
   app.use(express.json({ limit: '50mb' }));
@@ -37,7 +76,7 @@ async function startServer() {
   app.post("/api/scan-email", async (req, res) => {
     try {
       const GEMINI_MODEL = process.env.GEMINI_MODEL;
-      const { bodyText } = req.body;
+      const { bodyText, emailId, senderName } = req.body;
       if (!bodyText) {
         return res.status(400).json({ error: "No email body text provided" });
       }
@@ -56,7 +95,7 @@ async function startServer() {
         },
       });
 
-      const systemInstruction = "You are a deadline extraction engine. Your ONLY job is to read the email text provided and extract every commitment, task, or deadline mentioned. You must return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences — just the raw JSON array. Each item in the array must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the deadline phrase exactly as mentioned in the email, or 'No deadline mentioned' if none), urgency (string: must be exactly one of 'high', 'medium', or 'low' — high means due within 48 hours or overdue, medium means due within a week, low means due later or no clear deadline). If you find no tasks or deadlines, return an empty array: []. Never return anything except the JSON array.";
+      const systemInstruction = "You are a deadline extraction engine. Your ONLY job is to read the email text provided and extract every commitment, task, or deadline mentioned. Before finalizing your output, review all extracted items. If two or more items refer to the same underlying commitment — even if phrased differently (e.g. 'pay rent' and 'transfer rent share', or 'send recommendation letter' and 'upload recommendation letter') — merge them into a single task using the clearest, most actionable phrasing. Only output genuinely distinct commitments as separate tasks. When in doubt, merge rather than split. You must return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences — just the raw JSON array. Each item in the array must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the deadline phrase exactly as mentioned in the email, or 'No deadline mentioned' if none), urgency (string: must be exactly one of 'high', 'medium', or 'low' — high means due within 48 hours or overdue, medium means due within a week, low means due later or no clear deadline). If you find no tasks or deadlines, return an empty array: []. Never return anything except the JSON array.";
 
       const response = await ai.models.generateContent({
         model: GEMINI_MODEL,
@@ -68,10 +107,22 @@ async function startServer() {
       });
 
       const rawText = response.text || "[]";
-      res.json({ result: rawText });
+      let tasksArray: any[];
+      try {
+        tasksArray = JSON.parse(rawText);
+        if (!Array.isArray(tasksArray)) tasksArray = [];
+      } catch {
+        tasksArray = [];
+      }
+      const sourceId = emailId || simpleHash(`${senderName || ''}${bodyText}`);
+      const tasksWithSourceId = tasksArray.map((t: any) => ({ ...t, sourceId }));
+      const dedupedTasks = dedupeTasksByTitle(tasksWithSourceId);
+      res.json({ result: JSON.stringify(dedupedTasks) });
     } catch (err: any) {
       console.error("Error in /api/scan-email:", err);
-      res.status(500).json({ error: err.message || "Internal server error" });
+      const errMsg = err?.message || err?.toString?.() || '';
+      const is503 = errMsg.includes('UNAVAILABLE') || errMsg.includes('high demand') || err?.status === 503;
+      res.status(is503 ? 503 : 500).json({ error: is503 ? 'high demand' : 'fallback' });
     }
   });
 
@@ -275,7 +326,7 @@ async function startServer() {
   app.post("/api/scan-image", async (req, res) => {
     try {
       const GEMINI_MODEL = process.env.GEMINI_MODEL;
-      const { imageBase64, mimeType } = req.body;
+      const { imageBase64, mimeType, imageFileName } = req.body;
       if (!imageBase64 || !mimeType) {
         return res.status(400).json({ error: "Missing imageBase64 or mimeType" });
       }
@@ -308,7 +359,7 @@ async function startServer() {
                   }
                 },
                 {
-                  text: "Look carefully at every part of this image and extract ALL tasks, commitments, plans, meetups, and deadlines visible in the text. This includes: explicit deadlines (pay by Friday), scheduled meetings (meet Saturday at 5 PM), plans that were agreed upon (we're meeting at X place on Y date), things someone needs to do or remember (book hotel, pay fee, confirm headcount). Be thorough — read every message carefully. Return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences. Each item must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the specific date/time mentioned, or 'No deadline mentioned' if none), urgency (string: must be exactly 'high', 'medium', or 'low' — high means due within 48 hours, medium means due within a week, low means due later or no clear deadline). If you genuinely find nothing actionable, return []. Never return anything except the JSON array."
+                  text: "Look carefully at every part of this image and extract tasks, commitments, plans, meetups, and deadlines visible in the text. This includes: explicit deadlines (pay by Friday), scheduled meetings (meet Saturday at 5 PM), plans that were agreed upon (we're meeting at X place on Y date), things someone needs to do or remember (book hotel, pay fee, confirm headcount). Be thorough — read every message carefully. Treat the entire image as ONE conversation. If the conversation is about a single shared plan, event, or trip, extract AT MOST ONE task for it, using the most specific and final commitment mentioned (e.g. the actual date/activity agreed upon, not earlier discussion or confirmations about it). Ignore casual back-and-forth, voting, or restating of the same plan — only extract the final decided action item. Only extract multiple tasks if they are genuinely unrelated commitments. Return ONLY a valid JSON array with no explanation, no preamble, no markdown, no code fences. Each item must have exactly these three fields: title (string: a short clear task name, max 8 words), deadline (string: the specific date/time mentioned, or 'No deadline mentioned' if none), urgency (string: must be exactly 'high', 'medium', or 'low' — high means due within 48 hours, medium means due within a week, low means due later or no clear deadline). If you genuinely find nothing actionable, return []. Never return anything except the JSON array."
                 }
               ]
             }
@@ -329,7 +380,11 @@ async function startServer() {
       cleanText = cleanText.trim();
       
       let parsed = JSON.parse(cleanText);
-      res.json({ tasks: parsed });
+      if (!Array.isArray(parsed)) parsed = [];
+      const sourceId = imageFileName ? simpleHash(imageFileName) : simpleHash(imageBase64.slice(0, 100));
+      const tasksWithSourceId = parsed.map((t: any) => ({ ...t, sourceId }));
+      const dedupedTasks = dedupeTasksByTitle(tasksWithSourceId);
+      res.json({ tasks: dedupedTasks });
     } catch (err: any) {
       console.error("Error in /api/scan-image:", err);
       const errMsg = err?.message || err?.toString?.() || '';

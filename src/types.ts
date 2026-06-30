@@ -15,6 +15,7 @@ export interface Task {
   inProgress?: boolean;
   snoozed?: boolean;
   notes?: string;
+  sourceId?: string;
 }
 
 export interface Email {
